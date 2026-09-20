@@ -1,0 +1,1131 @@
+<!doctype html>
+<html lang="ru"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Поиск олимпиадных задач</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f7f7f7;
+      --surface-warm: #eeeeee;
+      --fg: #111111;
+      --fg-2: #3a3a3a;
+      --muted: #707070;
+      --meta: #111111;
+      --border: #d9d9d9;
+      --border-soft: #eeeeee;
+      --accent: #111111;
+      --accent-on: #ffffff;
+      --accent-hover: color-mix(in oklab, var(--accent), black 8%);
+      --accent-active: color-mix(in oklab, var(--accent), black 14%);
+      --success: #168a46;
+      --warn: #b7791f;
+      --danger: #c53030;
+      --font-display: Inter, system-ui, sans-serif;
+      --font-body: Inter, system-ui, sans-serif;
+      --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+      --text-xs: 12px;
+      --text-sm: 14px;
+      --text-base: 16px;
+      --text-lg: 18px;
+      --text-xl: 24px;
+      --text-2xl: 36px;
+      --text-3xl: 54px;
+      --text-4xl: 76px;
+      --leading-body: 1.52;
+      --leading-tight: 1.06;
+      --tracking-display: -0.025em;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-12: 48px;
+      --section-y-desktop: 96px;
+      --section-y-tablet: 68px;
+      --section-y-phone: 48px;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-pill: 9999px;
+      --elev-flat: none;
+      --elev-ring: 0 0 0 1px var(--border);
+      --elev-raised: 0 16px 40px rgba(0, 0, 0, 0.10);
+      --focus-ring: 0 0 0 3px rgba(17, 17, 17, 0.18);
+      --motion-fast: 150ms;
+      --motion-base: 240ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+      --container-max: 1180px;
+      --container-gutter-desktop: 36px;
+      --container-gutter-tablet: 24px;
+      --container-gutter-phone: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: var(--leading-body);
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; }
+    button, select { cursor: pointer; }
+    button { color: inherit; }
+    svg { display: block; }
+    h1, h2, h3 { margin: 0; font-family: var(--font-display); text-wrap: balance; }
+    p { text-wrap: pretty; }
+    [hidden] { display: none !important; }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    :focus-visible {
+      outline: 0;
+      box-shadow: var(--focus-ring);
+    }
+
+    .container {
+      width: min(100%, 760px);
+      margin-inline: auto;
+      padding-inline: var(--container-gutter-phone);
+    }
+
+    .topnav {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 20;
+      background: color-mix(in oklab, var(--bg) 92%, transparent);
+      border-bottom: 1px solid var(--border-soft);
+      backdrop-filter: blur(16px);
+    }
+
+    .topnav-inner {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .brand {
+      overflow: hidden;
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: var(--tracking-display);
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: var(--radius-pill);
+      background: transparent;
+      transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard);
+    }
+
+    .icon-btn:hover { border-color: var(--border); background: var(--surface); }
+    .icon-btn:active { transform: translateY(1px); }
+    .icon-btn svg { width: 20px; height: 20px; }
+    .icon-btn[data-active="true"] { border-color: var(--border); background: var(--surface-warm); color: var(--fg); }
+    .icon-btn[data-active="true"] svg { fill: currentColor; }
+
+    .section { padding-block: var(--space-5) var(--section-y-phone); }
+
+    .subject-switch {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+
+    .subject-label {
+      color: var(--muted);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .subject-select {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 var(--space-4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+    }
+
+    .subject-select:hover { border-color: var(--fg-2); background: var(--bg); }
+    .subject-select:focus-visible { border-color: var(--fg); outline: 0; box-shadow: var(--focus-ring); }
+
+    .search-field {
+      position: relative;
+      border-radius: var(--radius-md);
+      box-shadow: var(--elev-ring);
+      background: var(--surface);
+    }
+
+    .search-field > svg {
+      position: absolute;
+      inset-inline-start: var(--space-4);
+      inset-block-start: 50%;
+      width: 20px;
+      height: 20px;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      min-height: 54px;
+      padding: 12px 50px 12px 46px;
+      border: 0;
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--fg);
+      font-size: 16px;
+    }
+
+    .search-input::placeholder { color: var(--muted); }
+    .search-input:focus { outline: 0; box-shadow: var(--focus-ring); }
+    .clear-search { position: absolute; inset-inline-end: 5px; inset-block-start: 5px; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .control-btn,
+    .sort-select {
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--fg);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .control-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: var(--space-2);
+      padding-inline: var(--space-3);
+      transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+    }
+
+    .control-btn:hover { background: var(--surface); }
+    .control-btn:active { background: var(--surface-warm); }
+    .control-btn svg { width: 17px; height: 17px; }
+
+    .count-badge {
+      min-width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      padding-inline: var(--space-1);
+      border-radius: var(--radius-pill);
+      background: var(--fg);
+      color: var(--surface);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+    }
+
+    .sort-wrap { position: relative; border-inline-start: 1px solid var(--border-soft); }
+    .sort-wrap svg {
+      position: absolute;
+      inset-inline-start: var(--space-3);
+      inset-block-start: 50%;
+      width: 17px;
+      height: 17px;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .sort-select {
+      appearance: none;
+      padding: 0 32px 0 36px;
+    }
+
+    .sort-wrap::after {
+      content: '';
+      position: absolute;
+      inset-inline-end: var(--space-3);
+      inset-block-start: 50%;
+      width: 7px;
+      height: 7px;
+      border-inline-end: 1.5px solid var(--fg);
+      border-block-end: 1.5px solid var(--fg);
+      transform: translateY(-70%) rotate(45deg);
+      pointer-events: none;
+    }
+
+    .active-filters {
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+      padding: var(--space-3) 0 2px;
+      scrollbar-width: none;
+    }
+
+    .active-filters::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      flex: 0 0 auto;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      color: var(--fg-2);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .filter-chip:hover { border-color: var(--fg-2); color: var(--fg); }
+    .filter-chip:active { background: var(--surface-warm); }
+
+    .results-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-start;
+      gap: var(--space-3);
+      margin: var(--space-5) 0 var(--space-2);
+    }
+
+    .results-count {
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .task-list {
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .task-card {
+      padding: var(--space-5) 0;
+      background: var(--bg);
+      transition: background var(--motion-fast) var(--ease-standard);
+    }
+
+    .task-card + .task-card { border-top: 1px solid var(--border-soft); }
+    .task-card:hover { background: color-mix(in oklab, var(--surface) 58%, var(--bg)); }
+
+    .task-top,
+    .task-actions,
+    .task-meta,
+    .source-line {
+      display: flex;
+      align-items: center;
+    }
+
+    .task-top { justify-content: space-between; gap: var(--space-3); }
+    .task-actions { flex: 0 0 auto; gap: 0; }
+    .task-actions .icon-btn { color: var(--muted); }
+    .task-actions .icon-btn:hover { color: var(--fg); }
+    .task-number {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      letter-spacing: 0;
+    }
+
+    .task-title {
+      margin: var(--space-2) 0 var(--space-2);
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -0.012em;
+    }
+
+    .task-title a { color: inherit; text-decoration: none; }
+    .task-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    .task-fragment {
+      display: -webkit-box;
+      margin: 0;
+      overflow: hidden;
+      color: var(--fg-2);
+      font-size: var(--text-base);
+      line-height: 1.55;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .task-description {
+      margin: var(--space-2) 0 0;
+      color: var(--muted);
+      font-size: var(--text-sm);
+      line-height: 1.45;
+    }
+
+    .task-meta {
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      margin-top: var(--space-2);
+      color: var(--fg-2);
+      font-size: var(--text-sm);
+    }
+
+    .meta-item { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; }
+    .meta-item svg { width: 17px; height: 17px; }
+    .difficulty-dot { width: 9px; height: 9px; border-radius: var(--radius-pill); }
+    .difficulty-easy .difficulty-dot { background: var(--success); }
+    .difficulty-medium .difficulty-dot { background: var(--warn); }
+    .difficulty-hard .difficulty-dot { background: var(--danger); }
+
+    .source-line {
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+      color: var(--muted);
+      font-size: var(--text-sm);
+      line-height: 1.45;
+    }
+
+    .source-line svg { flex: 0 0 auto; width: 18px; height: 18px; }
+
+    .demo-note {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      margin: var(--space-4) 0 0;
+      color: var(--muted);
+      font-size: var(--text-sm);
+    }
+
+    .demo-note svg { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px; }
+
+    .empty-state {
+      padding: var(--space-12) var(--space-4);
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .empty-state h3 { font-size: var(--text-xl); font-weight: 600; letter-spacing: -0.01em; }
+    .empty-state p { max-width: 36ch; margin: var(--space-2) auto var(--space-5); color: var(--muted); font-size: var(--text-base); }
+
+    .text-btn {
+      min-height: 44px;
+      padding-inline: var(--space-4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .text-btn:hover { border-color: var(--fg-2); background: var(--surface); }
+
+    dialog {
+      width: min(100% - 20px, 520px);
+      height: min(88dvh, 720px);
+      max-height: calc(100dvh - 20px);
+      margin: auto auto 10px;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      color: var(--fg);
+      box-shadow: var(--elev-raised);
+    }
+
+    dialog[open] { display: flex; flex-direction: column; }
+
+    dialog::backdrop { background: color-mix(in oklab, var(--fg) 42%, transparent); backdrop-filter: blur(3px); }
+
+    .sheet-head {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .sheet-head h2 { font-size: var(--text-xl); font-weight: 600; letter-spacing: -0.01em; }
+    .sheet-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 0 var(--space-4) var(--space-4);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+    .filter-group { padding: var(--space-4) 0; border-bottom: 1px solid var(--border-soft); }
+    .filter-group:last-child { border-bottom: 0; }
+    .filter-group h3 { margin-bottom: var(--space-3); font-family: var(--font-body); font-size: var(--text-base); font-weight: 600; letter-spacing: 0; }
+    .choice-grid { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .choice { position: relative; }
+    .choice input { position: absolute; opacity: 0; pointer-events: none; }
+    .choice span {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+    }
+
+    .choice input:focus-visible + span { box-shadow: var(--focus-ring); }
+    .choice input:checked + span { border-color: var(--fg); background: var(--fg); color: var(--surface); }
+    .choice:hover span { border-color: var(--fg-2); }
+
+    #filter-dialog .filter-selects { display: grid; gap: var(--space-3); }
+    #filter-dialog .select-field { display: grid; gap: var(--space-2); }
+    #filter-dialog .select-field > span { color: var(--muted); font-size: var(--text-sm); font-weight: 600; }
+    #filter-dialog .filter-select {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 var(--space-4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      color: var(--fg);
+      font: 500 var(--text-base)/1 var(--font-body);
+      letter-spacing: 0;
+    }
+    #filter-dialog .filter-select:hover { border-color: var(--fg-2); }
+    #filter-dialog .filter-select:focus-visible { border-color: var(--fg); outline: 0; box-shadow: var(--focus-ring); }
+    #filter-dialog .filter-select:disabled { background: var(--surface-warm); color: var(--muted); cursor: not-allowed; }
+
+    .sheet-actions {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1.35fr;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-5) max(var(--space-3), env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border-soft);
+      background: var(--surface);
+    }
+
+    .btn {
+      min-height: 48px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard);
+    }
+
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { cursor: not-allowed; opacity: 0.48; transform: none; }
+    .btn-secondary { border-color: var(--border); background: transparent; color: var(--fg); }
+    .btn-secondary:hover { border-color: var(--fg-2); background: var(--surface-warm); }
+    .btn-primary { border-color: var(--accent); background: var(--accent); color: var(--accent-on); }
+    .btn-primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); color: var(--accent-on); }
+    .btn-primary:active { border-color: var(--accent-active); background: var(--accent-active); color: var(--accent-on); }
+
+    .toast {
+      position: fixed;
+      z-index: 50;
+      inset-inline: var(--container-gutter-phone);
+      inset-block-end: max(var(--space-5), env(safe-area-inset-bottom));
+      width: min(calc(100% - var(--container-gutter-phone) * 2), 520px);
+      margin-inline: auto;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--fg);
+      color: var(--surface);
+      box-shadow: var(--elev-raised);
+      font-size: var(--text-sm);
+      text-align: center;
+    }
+
+    @media (min-width: 600px) {
+      .container { padding-inline: var(--container-gutter-tablet); }
+      .section { padding-block-start: var(--space-8); }
+      .task-card { padding-block: var(--space-6); }
+      dialog { margin: auto; }
+    }
+
+    @media (max-width: 390px) {
+      .sort-select { padding-inline-end: 28px; }
+      dialog { width: calc(100% - 12px); height: calc(100dvh - 12px); margin-block-end: 6px; }
+      .sheet-head { padding-inline: var(--space-4); }
+      .sheet-actions { padding-inline: var(--space-4); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="container topnav-inner">
+      <button class="icon-btn" type="button" aria-label="Назад" data-od-id="back-button" onclick="history.length &gt; 1 ? history.back() : showToast('Это начало демонстрационного сценария')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m15 18-6-6 6-6"></path><path d="M9 12h10"></path></svg>
+      </button>
+      <h1 class="brand" data-od-id="site-title">Олимпиадные задачи</h1>
+      <button class="icon-btn" type="button" aria-label="Показать избранное" data-od-id="favorites-button" onclick="toggleFavoritesOnly()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.47A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="content">
+    <section class="section" data-od-id="task-search-screen">
+      <div class="container">
+        <label class="subject-switch" for="subject-select" data-od-id="subject-switch">
+          <span class="subject-label">Предмет</span>
+          <select class="subject-select" id="subject-select" aria-label="Выбранный предмет" data-od-id="subject-select">
+            <option value="math">Математика</option>
+            <option value="physics">Физика</option>
+          </select>
+        </label>
+
+        <div class="search-field" data-od-id="search-field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+          <label class="visually-hidden" for="task-query">Поиск по задачам</label>
+          <input class="search-input" id="task-query" type="search" autocomplete="off" placeholder="Например, инвариант или закон Ома" data-od-id="search-input">
+          <button class="icon-btn clear-search" type="button" aria-label="Очистить поиск" data-od-id="clear-search" hidden="">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>
+          </button>
+        </div>
+
+        <div class="toolbar" data-od-id="search-toolbar">
+          <button class="control-btn" type="button" data-od-id="open-filters" aria-haspopup="dialog" aria-controls="filter-dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4"></path></svg>
+            <span>Фильтры</span>
+            <span class="count-badge" id="filter-count" hidden="">0</span>
+          </button>
+          <div class="sort-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h12M8 12h8M8 18h4M4 5v14"></path></svg>
+            <label class="visually-hidden" for="sort-select">Сортировка</label>
+            <select class="sort-select" id="sort-select" data-od-id="sort-select">
+              <option value="relevance">По релевантности</option>
+              <option value="easy">Сначала проще</option>
+              <option value="hard">Сначала сложнее</option>
+              <option value="time">По времени</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="active-filters" id="active-filters" data-od-id="active-filters" aria-label="Активные фильтры" hidden=""></div>
+
+        <div class="results-head">
+          <h2 class="visually-hidden" id="results-heading" data-od-id="results-heading">Результаты</h2>
+          <span class="results-count" id="results-count" aria-live="polite">0 заданий</span>
+        </div>
+
+        <div class="task-list" id="task-list" data-od-id="task-list" aria-labelledby="results-heading"></div>
+        <div class="empty-state" id="empty-state" data-od-id="empty-state" role="status" hidden="">
+          <h3 id="empty-title">Ничего не найдено</h3>
+          <p id="empty-copy">Попробуйте другой запрос или уберите часть фильтров.</p>
+          <button class="text-btn" id="empty-action" type="button" data-od-id="reset-search">Сбросить поиск</button>
+        </div>
+        <p class="demo-note" data-od-id="demo-data-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          <span>Условия и метаданные приведены для демонстрации интерфейса.</span>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="filter-dialog" aria-labelledby="filter-title" data-od-id="filter-dialog">
+    <div class="sheet-head">
+      <h2 id="filter-title">Фильтры</h2>
+      <button class="icon-btn" type="button" aria-label="Закрыть фильтры" data-od-id="close-filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="filter-group" data-od-id="topic-filter-group">
+        <h3>Тема и подтема</h3>
+        <div class="filter-selects">
+          <label class="select-field" for="topic-filter">
+            <span>Тема</span>
+            <select class="filter-select" id="topic-filter" data-filter-group="topic" data-od-id="topic-filter">
+              <option value="">Все темы</option>
+            </select>
+          </label>
+          <label class="select-field" for="subtopic-filter">
+            <span>Подтема</span>
+            <select class="filter-select" id="subtopic-filter" data-filter-group="subtopic" data-od-id="subtopic-filter" disabled>
+              <option value="">Сначала выберите тему</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="filter-group" data-od-id="olympiad-filter-group">
+        <h3>Олимпиада</h3>
+        <label class="select-field" for="olympiad-filter">
+          <span>Источник задачи</span>
+          <select class="filter-select" id="olympiad-filter" data-filter-group="olympiad" data-od-id="olympiad-filter">
+            <option value="">Все олимпиады</option>
+          </select>
+        </label>
+      </div>
+      <div class="filter-group">
+        <h3>Сложность</h3>
+        <div class="choice-grid" data-filter-group="difficulty">
+          <label class="choice"><input type="checkbox" value="Базовая"><span>Базовая</span></label>
+          <label class="choice"><input type="checkbox" value="Средняя"><span>Средняя</span></label>
+          <label class="choice"><input type="checkbox" value="Высокая"><span>Высокая</span></label>
+        </div>
+      </div>
+      <div class="filter-group">
+        <h3>Ожидаемое время</h3>
+        <div class="choice-grid" data-filter-group="duration">
+          <label class="choice"><input type="checkbox" value="short"><span>До 20 минут</span></label>
+          <label class="choice"><input type="checkbox" value="medium"><span>20–40 минут</span></label>
+          <label class="choice"><input type="checkbox" value="long"><span>Более 40 минут</span></label>
+        </div>
+      </div>
+      <div class="filter-group">
+        <h3>Класс</h3>
+        <div class="choice-grid" data-filter-group="grade">
+          <label class="choice"><input type="checkbox" value="8"><span>8 класс</span></label>
+          <label class="choice"><input type="checkbox" value="9"><span>9 класс</span></label>
+          <label class="choice"><input type="checkbox" value="10"><span>10 класс</span></label>
+          <label class="choice"><input type="checkbox" value="11"><span>11 класс</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" type="button" data-od-id="reset-filters">Сбросить</button>
+      <button class="btn btn-primary" type="button" data-od-id="apply-filters">Показать задачи</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden=""></div>
+
+  <script>
+    const tasks = [
+      {
+        id: 'm-12', subject: 'math', number: '№ 12', grade: '9', difficulty: 'Средняя', difficultyRank: 2, minutes: 25,
+        title: 'Инвариант на клетчатой доске',
+        fragment: 'На клетчатой доске отмечены несколько клеток. За один ход разрешается изменить состояние двух клеток, имеющих общую сторону…',
+        description: 'Комбинаторика · поиск сохраняющейся величины',
+        olympiad: 'ВсОШ · муниципальный этап'
+      },
+      {
+        id: 'm-27', subject: 'math', number: '№ 27', grade: '10', difficulty: 'Высокая', difficultyRank: 3, minutes: 45,
+        title: 'Делимость последовательности',
+        fragment: 'Последовательность натуральных чисел задаётся рекуррентно. Докажите, что среди нескольких последовательных членов найдётся число с требуемым делителем…',
+        description: 'Теория чисел · рекуррентные соотношения',
+        olympiad: 'Турнир городов'
+      },
+      {
+        id: 'm-08', subject: 'math', number: '№ 8', grade: '8', difficulty: 'Базовая', difficultyRank: 1, minutes: 15,
+        title: 'Углы в равнобедренном треугольнике',
+        fragment: 'Внутри равнобедренного треугольника выбрана точка. Известны три угла между сторонами и проведёнными отрезками…',
+        description: 'Геометрия · дополнительное построение',
+        olympiad: 'Математический праздник'
+      },
+      {
+        id: 'p-16', subject: 'physics', number: '№ 16', grade: '9', difficulty: 'Средняя', difficultyRank: 2, minutes: 30,
+        title: 'Цепь с одинаковыми резисторами',
+        fragment: 'Из одинаковых резисторов собрали симметричную электрическую цепь. Найдите эквивалентное сопротивление между указанными точками…',
+        description: 'Электричество · симметрия цепи',
+        olympiad: 'Олимпиада «Физтех»'
+      },
+      {
+        id: 'p-31', subject: 'physics', number: '№ 31', grade: '10', difficulty: 'Высокая', difficultyRank: 3, minutes: 50,
+        title: 'Брусок на подвижном клине',
+        fragment: 'Небольшой брусок начинает скользить по гладкой наклонной поверхности клина, который может свободно двигаться по горизонтальному столу…',
+        description: 'Механика · законы сохранения',
+        olympiad: 'ВсОШ · региональный этап'
+      },
+      {
+        id: 'p-05', subject: 'physics', number: '№ 5', grade: '8', difficulty: 'Базовая', difficultyRank: 1, minutes: 18,
+        title: 'Смешивание воды разной температуры',
+        fragment: 'В теплоизолированный сосуд последовательно наливают несколько порций воды. Определите установившуюся температуру смеси…',
+        description: 'Тепловые явления · тепловой баланс',
+        olympiad: 'Олимпиада Максвелла'
+      }
+    ];
+
+    const state = {
+      subject: 'math',
+      query: '',
+      sort: 'relevance',
+      favoritesOnly: false,
+      filters: { topic: [], subtopic: [], olympiad: [], difficulty: [], duration: [], grade: [] },
+      favorites: new Set(JSON.parse(localStorage.getItem('olympiad-favorites') || '[]'))
+    };
+
+    const taskList = document.getElementById('task-list');
+    const emptyState = document.getElementById('empty-state');
+    const resultCount = document.getElementById('results-count');
+    const queryInput = document.getElementById('task-query');
+    const clearSearchButton = document.querySelector('[data-od-id="clear-search"]');
+    const filterDialog = document.getElementById('filter-dialog');
+    const activeFilters = document.getElementById('active-filters');
+    const filterCount = document.getElementById('filter-count');
+    const favoritesButton = document.querySelector('[data-od-id="favorites-button"]');
+    const filterButton = document.querySelector('[data-od-id="open-filters"]');
+    const emptyTitle = document.getElementById('empty-title');
+    const emptyCopy = document.getElementById('empty-copy');
+    const emptyAction = document.getElementById('empty-action');
+    let toastTimer;
+
+    function durationBucket(minutes) {
+      if (minutes < 20) return 'short';
+      if (minutes <= 40) return 'medium';
+      return 'long';
+    }
+
+    function taskTaxonomy(task) {
+      const [topic = '', subtopic = ''] = task.description.split('·').map(part => part.trim());
+      return { topic, subtopic };
+    }
+
+    function declension(count) {
+      const lastTwo = count % 100;
+      const last = count % 10;
+      if (lastTwo >= 11 && lastTwo <= 14) return 'заданий';
+      if (last === 1) return 'задание';
+      if (last >= 2 && last <= 4) return 'задания';
+      return 'заданий';
+    }
+
+    function getVisibleTasks() {
+      const normalizedQuery = state.query.trim().toLocaleLowerCase('ru');
+      const filtered = tasks.filter(task => {
+        const haystack = `${task.title} ${task.fragment} ${task.description} ${task.olympiad}`.toLocaleLowerCase('ru');
+        const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
+        const matchesDifficulty = !state.filters.difficulty.length || state.filters.difficulty.includes(task.difficulty);
+        const matchesDuration = !state.filters.duration.length || state.filters.duration.includes(durationBucket(task.minutes));
+        const matchesGrade = !state.filters.grade.length || state.filters.grade.includes(task.grade);
+        const taxonomy = taskTaxonomy(task);
+        const matchesTopic = !state.filters.topic.length || state.filters.topic.includes(taxonomy.topic);
+        const matchesSubtopic = !state.filters.subtopic.length || state.filters.subtopic.includes(taxonomy.subtopic);
+        const matchesOlympiad = !state.filters.olympiad.length || state.filters.olympiad.includes(task.olympiad);
+        const matchesFavorite = !state.favoritesOnly || state.favorites.has(task.id);
+        return task.subject === state.subject && matchesQuery && matchesTopic && matchesSubtopic && matchesOlympiad && matchesDifficulty && matchesDuration && matchesGrade && matchesFavorite;
+      });
+
+      return filtered.sort((a, b) => {
+        if (state.sort === 'easy') return a.difficultyRank - b.difficultyRank;
+        if (state.sort === 'hard') return b.difficultyRank - a.difficultyRank;
+        if (state.sort === 'time') return a.minutes - b.minutes;
+        return tasks.indexOf(a) - tasks.indexOf(b);
+      });
+    }
+
+    function taskCard(task) {
+      const favorite = state.favorites.has(task.id);
+      const difficultyClass = task.difficultyRank === 1 ? 'easy' : task.difficultyRank === 2 ? 'medium' : 'hard';
+      const titleMarkup = task.id === 'm-12'
+        ? `<a href="olympiad-task-view.html" data-od-id="open-task-${task.id}">${task.title}</a>`
+        : task.title;
+      return `
+        <article class="task-card" aria-labelledby="task-title-${task.id}" data-od-id="task-card-${task.id}">
+          <div class="task-top">
+            <span class="task-number">${task.number} · ${task.grade} класс</span>
+            <div class="task-actions">
+              <button class="icon-btn" type="button" aria-label="${favorite ? 'Убрать из избранного' : 'Добавить в избранное'}" aria-pressed="${favorite}" data-active="${favorite}" data-od-id="favorite-${task.id}" onclick="toggleFavorite('${task.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.47A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z"/></svg>
+              </button>
+              <button class="icon-btn" type="button" aria-label="Поделиться задачей" data-od-id="share-${task.id}" onclick="shareTask('${task.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg>
+              </button>
+            </div>
+          </div>
+          <h3 class="task-title" id="task-title-${task.id}">${titleMarkup}</h3>
+          <p class="task-fragment">${task.fragment}</p>
+          <p class="task-description">${task.description}</p>
+          <div class="task-meta">
+            <span class="meta-item difficulty-${difficultyClass}"><span class="difficulty-dot" aria-hidden="true"></span>${task.difficulty}</span>
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
+              ${task.minutes} мин
+            </span>
+          </div>
+          <div class="source-line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19.5V6a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v13.5M4 19.5a2.5 2.5 0 0 1 2.5-2.5H19M4 19.5A2.5 2.5 0 0 0 6.5 22H19v-5"/></svg>
+            <span>${task.olympiad}</span>
+          </div>
+        </article>`;
+    }
+
+    function render() {
+      try {
+        const visibleTasks = getVisibleTasks();
+        const hasFilters = Object.values(state.filters).some(values => values.length);
+        taskList.innerHTML = visibleTasks.map(taskCard).join('');
+        resultCount.textContent = `${visibleTasks.length} ${declension(visibleTasks.length)}`;
+        taskList.hidden = visibleTasks.length === 0;
+        emptyState.hidden = visibleTasks.length !== 0;
+
+        if (!visibleTasks.length) {
+          if (state.favoritesOnly) {
+            emptyTitle.textContent = 'В избранном пока пусто';
+            emptyCopy.textContent = 'Сохраните подходящую задачу кнопкой с сердцем — она появится здесь.';
+            emptyAction.textContent = 'Показать все задачи';
+            emptyAction.dataset.action = 'reset';
+          } else if (state.query || hasFilters) {
+            emptyTitle.textContent = 'Подходящих задач нет';
+            emptyCopy.textContent = 'Измените запрос или снимите один из выбранных фильтров.';
+            emptyAction.textContent = 'Сбросить поиск и фильтры';
+            emptyAction.dataset.action = 'reset';
+          } else {
+            emptyTitle.textContent = 'Задачи пока не добавлены';
+            emptyCopy.textContent = 'Выберите другой предмет или вернитесь к поиску позже.';
+            emptyAction.textContent = 'Сбросить поиск';
+            emptyAction.dataset.action = 'reset';
+          }
+        }
+
+        favoritesButton.dataset.active = String(state.favoritesOnly);
+        favoritesButton.setAttribute('aria-pressed', String(state.favoritesOnly));
+        favoritesButton.setAttribute('aria-label', state.favoritesOnly ? 'Показать все задачи' : 'Показать избранное');
+      } catch (error) {
+        taskList.hidden = true;
+        emptyState.hidden = false;
+        resultCount.textContent = 'Не удалось показать задания';
+        emptyTitle.textContent = 'Что-то пошло не так';
+        emptyCopy.textContent = 'Повторите попытку. Настройки поиска сохранятся.';
+        emptyAction.textContent = 'Повторить';
+        emptyAction.dataset.action = 'retry';
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.hidden = false;
+      toastTimer = setTimeout(() => { toast.hidden = true; }, 2300);
+    }
+
+    function toggleFavorite(id) {
+      if (state.favorites.has(id)) {
+        state.favorites.delete(id);
+        showToast('Задача удалена из избранного');
+      } else {
+        state.favorites.add(id);
+        showToast('Задача добавлена в избранное');
+      }
+      localStorage.setItem('olympiad-favorites', JSON.stringify([...state.favorites]));
+      render();
+    }
+
+    function toggleFavoritesOnly() {
+      state.favoritesOnly = !state.favoritesOnly;
+      showToast(state.favoritesOnly ? 'Показаны только избранные' : 'Показаны все задачи');
+      render();
+    }
+
+    async function shareTask(id) {
+      const task = tasks.find(item => item.id === id);
+      const shareData = {
+        title: `${task.number}: ${task.title}`,
+        text: `${task.title} — ${task.olympiad}`,
+        url: `${location.href.split('#')[0]}#${id}`
+      };
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else {
+          await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+          showToast('Ссылка на задачу скопирована');
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') showToast('Не удалось поделиться задачей');
+      }
+    }
+
+    function updateFilterSummary() {
+      const labels = {
+        short: 'До 20 минут', medium: '20–40 минут', long: 'Более 40 минут',
+        '8': '8 класс', '9': '9 класс', '10': '10 класс', '11': '11 класс'
+      };
+      const entries = Object.entries(state.filters).flatMap(([group, values]) => values.map(value => ({ group, value, label: labels[value] || value })));
+      activeFilters.innerHTML = entries.map(item => `
+        <button class="filter-chip" type="button" data-group="${item.group}" data-value="${item.value}" aria-label="Убрать фильтр ${item.label}">
+          ${item.label}
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m4 4 8 8M12 4 4 12"/></svg>
+        </button>`).join('');
+      activeFilters.hidden = entries.length === 0;
+      filterCount.hidden = entries.length === 0;
+      filterCount.textContent = entries.length;
+    }
+
+    function setSelectOptions(select, values, emptyLabel, selectedValue = '') {
+      select.innerHTML = `<option value="">${emptyLabel}</option>` + values.map(value => `<option value="${value}">${value}</option>`).join('');
+      select.value = values.includes(selectedValue) ? selectedValue : '';
+    }
+
+    function populateSubjectFilters(topicValue = state.filters.topic[0] || '', subtopicValue = state.filters.subtopic[0] || '', olympiadValue = state.filters.olympiad[0] || '') {
+      const subjectTasks = tasks.filter(task => task.subject === state.subject);
+      const topics = [...new Set(subjectTasks.map(task => taskTaxonomy(task).topic))].sort((a, b) => a.localeCompare(b, 'ru'));
+      const topicSelect = document.getElementById('topic-filter');
+      const subtopicSelect = document.getElementById('subtopic-filter');
+      const olympiadSelect = document.getElementById('olympiad-filter');
+      setSelectOptions(topicSelect, topics, 'Все темы', topicValue);
+
+      const selectedTopic = topicSelect.value;
+      const subtopics = selectedTopic
+        ? [...new Set(subjectTasks.filter(task => taskTaxonomy(task).topic === selectedTopic).map(task => taskTaxonomy(task).subtopic))].sort((a, b) => a.localeCompare(b, 'ru'))
+        : [];
+      setSelectOptions(subtopicSelect, subtopics, selectedTopic ? 'Все подтемы' : 'Сначала выберите тему', subtopicValue);
+      subtopicSelect.disabled = !selectedTopic;
+
+      const olympiads = [...new Set(subjectTasks.map(task => task.olympiad))].sort((a, b) => a.localeCompare(b, 'ru'));
+      setSelectOptions(olympiadSelect, olympiads, 'Все олимпиады', olympiadValue);
+    }
+
+    function syncDialogFromState() {
+      populateSubjectFilters();
+      filterDialog.querySelectorAll('[data-filter-group]').forEach(group => {
+        const groupName = group.dataset.filterGroup;
+        if (group.matches('select')) {
+          group.value = state.filters[groupName].includes(group.value) ? group.value : (state.filters[groupName][0] || '');
+        } else {
+          group.querySelectorAll('input').forEach(input => { input.checked = state.filters[groupName].includes(input.value); });
+        }
+      });
+    }
+
+    function applyFilters() {
+      filterDialog.querySelectorAll('[data-filter-group]').forEach(group => {
+        state.filters[group.dataset.filterGroup] = group.matches('select')
+          ? (group.value ? [group.value] : [])
+          : [...group.querySelectorAll('input:checked')].map(input => input.value);
+      });
+      updateFilterSummary();
+      filterDialog.close();
+      render();
+    }
+
+    function resetFilters(closeDialog = false) {
+      state.filters = { topic: [], subtopic: [], olympiad: [], difficulty: [], duration: [], grade: [] };
+      syncDialogFromState();
+      updateFilterSummary();
+      if (closeDialog) filterDialog.close();
+      render();
+    }
+
+    function resetSearch() {
+      state.query = '';
+      state.favoritesOnly = false;
+      queryInput.value = '';
+      clearSearchButton.hidden = true;
+      resetFilters();
+      render();
+      queryInput.focus();
+    }
+
+    document.getElementById('subject-select').addEventListener('change', event => {
+      state.subject = event.target.value;
+      state.filters.topic = [];
+      state.filters.subtopic = [];
+      state.filters.olympiad = [];
+      updateFilterSummary();
+      render();
+    });
+
+    document.getElementById('topic-filter').addEventListener('change', event => {
+      populateSubjectFilters(event.target.value, '', document.getElementById('olympiad-filter').value);
+    });
+
+    emptyAction.addEventListener('click', () => {
+      if (emptyAction.dataset.action === 'retry') render();
+      else resetSearch();
+    });
+
+    queryInput.addEventListener('input', event => {
+      state.query = event.target.value;
+      clearSearchButton.hidden = !state.query;
+      render();
+    });
+
+    clearSearchButton.addEventListener('click', () => {
+      state.query = '';
+      queryInput.value = '';
+      clearSearchButton.hidden = true;
+      queryInput.focus();
+      render();
+    });
+
+    document.getElementById('sort-select').addEventListener('change', event => {
+      state.sort = event.target.value;
+      render();
+    });
+
+    filterButton.addEventListener('click', () => {
+      syncDialogFromState();
+      filterDialog.showModal();
+    });
+
+    document.querySelector('[data-od-id="close-filters"]').addEventListener('click', () => filterDialog.close());
+    document.querySelector('[data-od-id="apply-filters"]').addEventListener('click', applyFilters);
+    document.querySelector('[data-od-id="reset-filters"]').addEventListener('click', () => resetFilters(false));
+
+    activeFilters.addEventListener('click', event => {
+      const chip = event.target.closest('.filter-chip');
+      if (!chip) return;
+      state.filters[chip.dataset.group] = state.filters[chip.dataset.group].filter(value => value !== chip.dataset.value);
+      if (chip.dataset.group === 'topic') state.filters.subtopic = [];
+      syncDialogFromState();
+      updateFilterSummary();
+      render();
+    });
+
+    filterDialog.addEventListener('click', event => {
+      const bounds = filterDialog.getBoundingClientRect();
+      const outside = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
+      if (outside) filterDialog.close();
+    });
+
+    filterDialog.addEventListener('close', () => filterButton.focus());
+
+    render();
+  </script>
+
+
+</body></html>
