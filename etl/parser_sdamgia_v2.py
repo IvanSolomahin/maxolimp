@@ -1,28 +1,31 @@
 #!/usr/bin/env python3
-"""Сбор задач по математике и физике с olymp.sdamgia.ru в SQLite."""
+"""Сбор задач по математике и физике с СДАМ ГИА в SQLite."""
 
+import argparse
 import html
 import re
 import sqlite3
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
 
 SUBJECTS = {
-    "math": "https://math-olymp.sdamgia.ru",
-    "physics": "https://phys-olymp.sdamgia.ru",
+    "math": ("https://math-olymp.sdamgia.ru", 12691),
+    "physics": ("https://phys-olymp.sdamgia.ru", 8035),
 }
 
-OUT_DIR = Path("olimpiads_data_v2")
+OUT_DIR = Path(__file__).resolve().parent / "olimpiads_data_v2"
 DB_FILE = OUT_DIR / "olimpiads.sqlite3"
-ERROR_FILE = OUT_DIR / "errors.log"
 
-DELAY = 0.2
-TIMEOUT = 60
+DELAY = 0.1
+TIMEOUT = 20
+WORKERS = 16
+RETRIES = 3
 
 PROBLEM_RE = re.compile(r"/problem\?(?:[^#]*&)?id=(\d+)")
 YEAR_RE = re.compile(r"\b(19\d{2}|20\d{2})\b")
@@ -31,11 +34,6 @@ YEAR_RE = re.compile(r"\b(19\d{2}|20\d{2})\b")
 def clean_line(value):
     value = html.unescape(str(value or "")).replace("\xa0", " ").replace("\xad", "")
     return re.sub(r"\s+", " ", value).strip()
-
-
-def clean_text(value):
-    lines = [clean_line(line) for line in str(value or "").splitlines()]
-    return "\n".join(line for line in lines if line)
 
 
 def wrap_alt(value):
@@ -64,50 +62,8 @@ def fetch(session, url):
     return response.content.decode("utf-8")
 
 
-def soup_from(html_text):
-    return BeautifulSoup(html_text, "html.parser")
-
-
-def links_matching(soup, pattern, base_url):
-    urls = set()
-    for tag in soup.find_all("a", href=True):
-        url = urljoin(base_url, tag["href"]).split("#", 1)[0]
-        if pattern.search(url):
-            urls.add(url)
-    return urls
-
-
-def collect_test_urls(session, base_url):
-    """Получает тематические страницы задач из API React-каталога."""
-    response = session.post(f"{base_url}/newapi/catalog/types", json={}, timeout=TIMEOUT)
-    response.raise_for_status()
-    data = response.json()
-    urls = set()
-
-    def visit(node):
-        if isinstance(node, dict):
-            href = node.get("href", "")
-            if href.startswith("/test?"):
-                separator = "&" if "?" in href else "?"
-                if "filter=" not in href:
-                    href += f"{separator}filter=all"
-                urls.add(urljoin(base_url, href))
-            for value in node.values():
-                visit(value)
-        elif isinstance(node, list):
-            for value in node:
-                visit(value)
-
-    visit(data.get("types", []))
-    return sorted(urls)
-
-
-def collect_problem_urls(session, test_url, base_url):
-    soup = soup_from(fetch(session, test_url))
-    return sorted(
-        links_matching(soup, PROBLEM_RE, base_url),
-        key=lambda url: int(PROBLEM_RE.search(url).group(1)),
-    )
+class UnavailableProblem(Exception):
+    """Сайт сообщает, что доступа к задаче нет."""
 
 
 def replace_images(root):
@@ -150,9 +106,15 @@ def parse_metadata(lines):
 def parse_problem(session, url):
     problem_id = PROBLEM_RE.search(url).group(1)
     html_text = fetch(session, url)
-    soup = soup_from(html_text)
+    soup = BeautifulSoup(html_text, "html.parser")
     main = soup.select_one(".prob_maindiv")
     if not main:
+        page_text = clean_line(soup.get_text(" ", strip=True))
+        if any(message in page_text for message in (
+            "Доступ к заданию ограничен",
+            "Такого задания не существует",
+        )):
+            raise UnavailableProblem(problem_id)
         raise ValueError("На странице нет блока .prob_maindiv")
     replace_images(main)
 
@@ -190,8 +152,8 @@ def parse_problem(session, url):
     }
 
 
-def open_database():
-    connection = sqlite3.connect(DB_FILE)
+def open_database(db_file=DB_FILE):
+    connection = sqlite3.connect(db_file)
     connection.execute("PRAGMA journal_mode=WAL")
     connection.execute("PRAGMA foreign_keys=ON")
     connection.execute(
@@ -216,6 +178,16 @@ def open_database():
     )
     connection.execute("CREATE INDEX IF NOT EXISTS idx_problems_grade ON problems(subject, grade)")
     connection.execute("CREATE INDEX IF NOT EXISTS idx_problems_year ON problems(subject, year)")
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS unavailable_ids (
+            subject TEXT NOT NULL,
+            problem_id INTEGER NOT NULL,
+            checked_at TEXT NOT NULL,
+            PRIMARY KEY (subject, problem_id)
+        )
+        """
+    )
     connection.commit()
     return connection
 
@@ -244,68 +216,113 @@ def save_problem(connection, subject, row):
     connection.commit()
 
 
-def log_error(kind, url, exc):
-    with ERROR_FILE.open("a", encoding="utf-8") as file:
+def log_error(error_file, kind, url, exc):
+    with error_file.open("a", encoding="utf-8") as file:
         file.write(f"{kind}\t{url}\t{exc!r}\n")
 
 
-def main():
-    OUT_DIR.mkdir(exist_ok=True)
-    session = create_session()
-    connection = open_database()
+_THREAD = threading.local()
 
-    try:
-        for subject, base_url in SUBJECTS.items():
-            print(f"\n[{subject}] Получаю каталог...", flush=True)
-            test_urls = collect_test_urls(session, base_url)
-            print(f"[{subject}] Разделов каталога: {len(test_urls)}", flush=True)
 
-            problem_urls = set()
-            for index, test_url in enumerate(test_urls, 1):
-                try:
-                    problem_urls.update(collect_problem_urls(session, test_url, base_url))
-                except Exception as exc:
-                    log_error(f"{subject}:TEST", test_url, exc)
-                if index % 20 == 0 or index == len(test_urls):
-                    print(
-                        f"[{subject}] Каталог {index}/{len(test_urls)}, "
-                        f"уникальных задач: {len(problem_urls)}",
-                        flush=True,
-                    )
+def scan_id(item):
+    subject, base_url, problem_id = item
+    if not hasattr(_THREAD, "session"):
+        _THREAD.session = create_session()
+    url = f"{base_url}/problem?id={problem_id}"
+    for attempt in range(RETRIES):
+        try:
+            row = parse_problem(_THREAD.session, url)
+            return problem_id, row, None
+        except UnavailableProblem:
+            return problem_id, None, None
+        except Exception as exc:
+            if attempt == RETRIES - 1:
+                return problem_id, None, exc
+            time.sleep(attempt + 1)
+        finally:
+            time.sleep(DELAY)
 
-            done = {
-                row[0] for row in connection.execute(
-                    "SELECT problem_id FROM problems WHERE subject = ?", (subject,)
+
+def chunks(items, size):
+    for start in range(0, len(items), size):
+        yield items[start:start + size]
+
+
+def scan_subject(connection, pool, subject, base_url, last_id, error_file):
+    done = {
+        row[0] for row in connection.execute(
+            "SELECT problem_id FROM problems WHERE subject = ?", (subject,)
+        )
+    }
+    unavailable = {
+        row[0] for row in connection.execute(
+            "SELECT problem_id FROM unavailable_ids WHERE subject = ?", (subject,)
+        )
+    }
+    pending = [
+        (subject, base_url, problem_id)
+        for problem_id in range(1, last_id + 1)
+        if problem_id not in done and problem_id not in unavailable
+    ]
+    saved = missing = failed = 0
+    print(
+        f"[{subject}] ID 1–{last_id}; в БД: {len(done)}, "
+        f"недоступны: {len(unavailable)}, осталось проверить: {len(pending)}",
+        flush=True,
+    )
+
+    for batch in chunks(pending, 100):
+        for problem_id, row, error in pool.map(scan_id, batch):
+            if row:
+                save_problem(connection, subject, row)
+                saved += 1
+            elif error:
+                failed += 1
+                log_error(
+                    error_file, f"{subject}:PROBLEM",
+                    f"{base_url}/problem?id={problem_id}", error,
                 )
-            }
-            pending = sorted(
-                (url for url in problem_urls if int(PROBLEM_RE.search(url).group(1)) not in done),
-                key=lambda url: int(PROBLEM_RE.search(url).group(1)),
-            )
-            print(
-                f"[{subject}] Всего: {len(problem_urls)}, уже в БД: {len(done)}, "
-                f"осталось: {len(pending)}",
-                flush=True,
-            )
+            else:
+                connection.execute(
+                    "INSERT OR IGNORE INTO unavailable_ids VALUES (?, ?, ?)",
+                    (subject, problem_id, datetime.now(timezone.utc).isoformat()),
+                )
+                connection.commit()
+                missing += 1
+        checked = saved + missing + failed
+        print(
+            f"[{subject}] {checked}/{len(pending)}: "
+            f"+{saved} задач, {missing} недоступны, {failed} ошибок",
+            flush=True,
+        )
+    print(f"[{subject}] Сохранено всего: {len(done) + saved}", flush=True)
+    return failed
 
-            for index, url in enumerate(pending, 1):
-                problem_id = PROBLEM_RE.search(url).group(1)
-                try:
-                    save_problem(connection, subject, parse_problem(session, url))
-                except Exception as exc:
-                    print(f"[{subject}] Ошибка задачи {problem_id}: {exc}", flush=True)
-                    log_error(f"{subject}:PROBLEM", url, exc)
-                if index % 25 == 0 or index == len(pending):
-                    print(f"[{subject}] Задачи {index}/{len(pending)}", flush=True)
-                time.sleep(DELAY)
+
+def main(db_file=DB_FILE):
+    db_file.parent.mkdir(parents=True, exist_ok=True)
+    connection = open_database(db_file)
+    error_file = db_file.with_suffix(".errors.log")
+    failed = 0
+    try:
+        with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+            for subject, (base_url, last_id) in SUBJECTS.items():
+                failed += scan_subject(
+                    connection, pool, subject, base_url, last_id, error_file
+                )
     finally:
         connection.close()
 
-    print(f"\nГотово. SQLite: {DB_FILE.resolve()}")
+    print(f"\nГотово. SQLite: {db_file.resolve()}")
+    return failed
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--db", type=Path, default=DB_FILE, help="Путь к SQLite базе")
+    args = parser.parse_args()
     try:
-        main()
+        raise SystemExit(1 if main(args.db.resolve()) else 0)
     except KeyboardInterrupt:
         print("Остановлено пользователем. Прогресс сохранён.")
+        raise SystemExit(130)
