@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Incremental hybrid search over the olympiad database.
-
-The source database is opened read-only. Embeddings and FTS live in a separate
-SQLite file, one file per (model, dimensions) pair.
-"""
+"""Incremental hybrid search in the same SQLite database as the problems."""
 
 import argparse
 import hashlib
@@ -28,8 +24,12 @@ from parser_sdamgia_v2 import DB_FILE
 DEFAULT_MODEL = "qwen/qwen3-embedding-4b"
 DEFAULT_DIMENSIONS = 2560
 DEFAULT_MAX_TOKENS = 32768
-DEFAULT_TOKENIZER_URL = "https://huggingface.co/Qwen/Qwen3-Embedding-4B/resolve/main/tokenizer.json"
-DEFAULT_INDEX_DIR = Path(__file__).resolve().parent / "olimpiads_data_v2" / "search_indexes"
+DEFAULT_TOKENIZER_URL = (
+    "https://huggingface.co/Qwen/Qwen3-Embedding-4B/resolve/main/tokenizer.json"
+)
+DEFAULT_INDEX_DIR = (
+    Path(__file__).resolve().parent / "olimpiads_data_v2" / "search_indexes"
+)
 API_URL = "https://openrouter.ai/api/v1/embeddings"
 RETRYABLE_STATUS = {429, 500, 502, 503, 504, 520, 522, 524, 529}
 MAX_API_ATTEMPTS = 8
@@ -46,14 +46,18 @@ def digest(text):
 
 
 def topic_text(row):
-    return "\n".join(part for part in (row["classifier"].strip(), row["statement"].strip()) if part)
+    return "\n".join(
+        part for part in (row["classifier"].strip(), row["statement"].strip()) if part
+    )
 
 
 def get_tokenizer(path, url=None):
     try:
         from tokenizers import Tokenizer
     except ImportError as exc:
-        raise RuntimeError("Установите зависимости: pip install -r requirements.txt") from exc
+        raise RuntimeError(
+            "Установите зависимости: pip install -r requirements.txt"
+        ) from exc
     path = Path(path)
     if not path.exists():
         if not url:
@@ -82,51 +86,98 @@ class Config:
         if self.tokenizer:
             return Path(self.tokenizer)
         if self.model != DEFAULT_MODEL and not self.tokenizer_url:
-            raise ValueError("Для другой модели укажите --tokenizer или --tokenizer-url")
+            raise ValueError(
+                "Для другой модели укажите --tokenizer или --tokenizer-url"
+            )
         if self.model != DEFAULT_MODEL:
-            return Path(self.index_dir) / f"tokenizer-{hashlib.sha256(self.model.encode()).hexdigest()[:12]}.json"
+            return (
+                Path(self.index_dir)
+                / f"tokenizer-{hashlib.sha256(self.model.encode()).hexdigest()[:12]}.json"
+            )
         return Path(self.index_dir) / "qwen3-embedding-4b-tokenizer.json"
 
     def tokenizer_source(self):
-        return self.tokenizer_url or (DEFAULT_TOKENIZER_URL if self.model == DEFAULT_MODEL else None)
+        return self.tokenizer_url or (
+            DEFAULT_TOKENIZER_URL if self.model == DEFAULT_MODEL else None
+        )
 
 
-def open_index(config):
-    path = index_path(config.index_dir, config.model, config.dimensions)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(path)
+def open_index(config, writable=True):
+    path = Path(config.db).resolve()
+    connection = sqlite3.connect(
+        path if writable else f"file:{path}?mode=ro", uri=not writable
+    )
     connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys=ON")
+    if not writable:
+        if not connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE name='search_vectors'"
+        ).fetchone():
+            connection.close()
+            raise RuntimeError(
+                "Поисковые таблицы отсутствуют: выполните index или migrate"
+            )
+        return connection
     connection.execute("PRAGMA journal_mode=WAL")
+    fts_exists = (
+        connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE name='problem_fts'"
+        ).fetchone()
+        is not None
+    )
     connection.executescript("""
-        CREATE TABLE IF NOT EXISTS documents (
-            subject TEXT NOT NULL, problem_id INTEGER NOT NULL,
-            grade TEXT NOT NULL, year TEXT NOT NULL, url TEXT NOT NULL,
-            statement TEXT NOT NULL, classifier TEXT NOT NULL, solution TEXT NOT NULL,
-            topic_hash TEXT NOT NULL, solution_hash TEXT NOT NULL,
-            PRIMARY KEY(subject, problem_id)
+        CREATE TABLE IF NOT EXISTS search_meta (
+            key TEXT PRIMARY KEY, value TEXT NOT NULL
         );
-        CREATE VIRTUAL TABLE IF NOT EXISTS document_fts USING fts5(
-            subject UNINDEXED, problem_id UNINDEXED, topic, solution,
-            tokenize='unicode61'
+        INSERT OR IGNORE INTO search_meta(key,value) VALUES ('schema_version','1');
+        CREATE VIRTUAL TABLE IF NOT EXISTS problem_fts USING fts5(
+            subject UNINDEXED, problem_id UNINDEXED,
+            classifier, statement, solution,
+            content='problems', content_rowid='rowid', tokenize='unicode61'
         );
-        CREATE TABLE IF NOT EXISTS vectors (
+        CREATE TRIGGER IF NOT EXISTS search_fts_ai AFTER INSERT ON problems BEGIN
+            INSERT INTO problem_fts(rowid,subject,problem_id,classifier,statement,solution)
+            VALUES (new.rowid,new.subject,new.problem_id,new.classifier,new.statement,new.solution);
+        END;
+        CREATE TRIGGER IF NOT EXISTS search_fts_ad AFTER DELETE ON problems BEGIN
+            INSERT INTO problem_fts(problem_fts,rowid,subject,problem_id,classifier,statement,solution)
+            VALUES ('delete',old.rowid,old.subject,old.problem_id,old.classifier,old.statement,old.solution);
+        END;
+        CREATE TRIGGER IF NOT EXISTS search_fts_au
+        AFTER UPDATE OF subject,problem_id,classifier,statement,solution ON problems BEGIN
+            INSERT INTO problem_fts(problem_fts,rowid,subject,problem_id,classifier,statement,solution)
+            VALUES ('delete',old.rowid,old.subject,old.problem_id,old.classifier,old.statement,old.solution);
+            INSERT INTO problem_fts(rowid,subject,problem_id,classifier,statement,solution)
+            VALUES (new.rowid,new.subject,new.problem_id,new.classifier,new.statement,new.solution);
+        END;
+        CREATE TABLE IF NOT EXISTS search_vectors (
+            model TEXT NOT NULL, dimensions INTEGER NOT NULL,
             subject TEXT NOT NULL, problem_id INTEGER NOT NULL,
             kind TEXT NOT NULL CHECK(kind IN ('topic', 'solution')),
             text_hash TEXT NOT NULL, vector BLOB NOT NULL,
-            PRIMARY KEY(subject, problem_id, kind)
+            PRIMARY KEY(model, dimensions, subject, problem_id, kind),
+            FOREIGN KEY(subject,problem_id) REFERENCES problems(subject,problem_id) ON DELETE CASCADE
         );
-        CREATE TABLE IF NOT EXISTS skipped (
+        CREATE INDEX IF NOT EXISTS idx_search_vectors_lookup
+            ON search_vectors(model,dimensions,kind,subject,problem_id);
+        CREATE TABLE IF NOT EXISTS search_skipped (
+            model TEXT NOT NULL, dimensions INTEGER NOT NULL,
             subject TEXT NOT NULL, problem_id INTEGER NOT NULL,
             kind TEXT NOT NULL, text_hash TEXT NOT NULL,
             tokens INTEGER NOT NULL, reason TEXT NOT NULL,
-            PRIMARY KEY(subject, problem_id, kind)
+            PRIMARY KEY(model,dimensions,subject,problem_id,kind),
+            FOREIGN KEY(subject,problem_id) REFERENCES problems(subject,problem_id) ON DELETE CASCADE
         );
     """)
-    metadata = connection.execute("PRAGMA user_version").fetchone()[0]
-    if metadata == 0:
-        connection.execute("PRAGMA user_version=1")
-    elif metadata != 1:
-        raise RuntimeError(f"Неизвестная версия поискового индекса: {metadata}")
+    version = connection.execute(
+        "SELECT value FROM search_meta WHERE key='schema_version'"
+    ).fetchone()[0]
+    if version != "1":
+        connection.close()
+        raise RuntimeError(f"Неизвестная версия поисковой схемы: {version}")
+    if not fts_exists:
+        connection.execute("INSERT INTO problem_fts(problem_fts) VALUES ('rebuild')")
+    connection.commit()
     return connection
 
 
@@ -183,14 +234,18 @@ def embed(texts, config, session=None, gate=None):
             if gate:
                 gate.acquire()
             try:
-                response = session.post(API_URL, headers={"Authorization": f"Bearer {key}"},
-                                        json=payload, timeout=120)
+                response = session.post(
+                    API_URL,
+                    headers={"Authorization": f"Bearer {key}"},
+                    json=payload,
+                    timeout=120,
+                )
             except requests.RequestException:
                 if gate:
                     gate.release("retry")
                 if attempt == MAX_API_ATTEMPTS - 1:
                     raise
-                time.sleep(min(30, 2 ** attempt) + random.uniform(0, 1))
+                time.sleep(min(30, 2**attempt) + random.uniform(0, 1))
                 continue
             if response.status_code in RETRYABLE_STATUS:
                 if gate:
@@ -198,7 +253,11 @@ def embed(texts, config, session=None, gate=None):
                 if attempt == MAX_API_ATTEMPTS - 1:
                     response.raise_for_status()
                 retry_after = response.headers.get("Retry-After", "")
-                delay = float(retry_after) if retry_after.replace(".", "", 1).isdigit() else 2 ** attempt
+                delay = (
+                    float(retry_after)
+                    if retry_after.replace(".", "", 1).isdigit()
+                    else 2**attempt
+                )
                 time.sleep(min(60, delay) + random.uniform(0, 1))
                 continue
             if gate:
@@ -216,12 +275,23 @@ def embed(texts, config, session=None, gate=None):
     for item in data:
         position = item.get("index")
         vector = item.get("embedding")
-        if not isinstance(position, int) or not 0 <= position < len(texts) or vectors[position] is not None:
-            raise ValueError("OpenRouter вернул неверные индексы векторов")
-        if not isinstance(vector, list) or len(vector) != config.dimensions or not all(
-            isinstance(value, (int, float)) and math.isfinite(value) for value in vector
+        if (
+            not isinstance(position, int)
+            or not 0 <= position < len(texts)
+            or vectors[position] is not None
         ):
-            raise ValueError("OpenRouter вернул неверную размерность или значения вектора")
+            raise ValueError("OpenRouter вернул неверные индексы векторов")
+        if (
+            not isinstance(vector, list)
+            or len(vector) != config.dimensions
+            or not all(
+                isinstance(value, (int, float)) and math.isfinite(value)
+                for value in vector
+            )
+        ):
+            raise ValueError(
+                "OpenRouter вернул неверную размерность или значения вектора"
+            )
         vectors[position] = vector
     return vectors, (body.get("usage") or {}).get("total_tokens", 0)
 
@@ -233,49 +303,45 @@ def _source(config):
     return connection
 
 
-def _save_document(index, row):
+def _pending_kinds(index, config, row):
     subject, problem_id = row["subject"], row["problem_id"]
-    topic = topic_text(row)
-    solution = row["solution"].strip()
-    topic_hash, solution_hash = digest(topic), digest(solution)
-    previous = index.execute(
-        "SELECT rowid, topic_hash, solution_hash, grade, year, url, statement, classifier, solution FROM documents WHERE subject=? AND problem_id=?",
-        (subject, problem_id),
-    ).fetchone()
-    changed = previous is None or any(previous[field] != row[field] for field in ("statement", "classifier", "solution"))
-    if changed or previous["grade"] != row["grade"] or previous["year"] != row["year"] or previous["url"] != row["url"]:
-        index.execute("""INSERT INTO documents
-            (subject,problem_id,grade,year,url,statement,classifier,solution,topic_hash,solution_hash)
-            VALUES (?,?,?,?,?,?,?,?,?,?)
-            ON CONFLICT(subject,problem_id) DO UPDATE SET
-            grade=excluded.grade,year=excluded.year,url=excluded.url,
-            statement=excluded.statement,classifier=excluded.classifier,solution=excluded.solution,
-            topic_hash=excluded.topic_hash,solution_hash=excluded.solution_hash""",
-            (subject, problem_id, row["grade"], row["year"], row["url"],
-             row["statement"], row["classifier"], row["solution"], topic_hash, solution_hash))
-    if changed:
-        rowid = index.execute("SELECT rowid FROM documents WHERE subject=? AND problem_id=?", (subject, problem_id)).fetchone()[0]
-        index.execute("DELETE FROM document_fts WHERE rowid=?", (rowid,))
-        index.execute("INSERT INTO document_fts(rowid,subject,problem_id,topic,solution) VALUES (?,?,?,?,?)",
-                      (rowid, subject, problem_id, topic, solution))
     work = []
-    for kind, text, hash_value, old_hash in (
-        ("topic", topic, topic_hash, previous["topic_hash"] if previous else None),
-        ("solution", solution, solution_hash, previous["solution_hash"] if previous else None),
+    for kind, content in (
+        ("topic", topic_text(row)),
+        ("solution", row["solution"].strip()),
     ):
-        if hash_value != old_hash:
-            work.append((kind, text, hash_value))
-        elif text and not index.execute(
-            "SELECT 1 FROM vectors WHERE subject=? AND problem_id=? AND kind=? AND text_hash=? UNION ALL "
-            "SELECT 1 FROM skipped WHERE subject=? AND problem_id=? AND kind=? AND text_hash=? LIMIT 1",
-            (subject, problem_id, kind, hash_value, subject, problem_id, kind, hash_value),
-        ).fetchone():
-            work.append((kind, text, hash_value))
+        key = (config.model, config.dimensions, subject, problem_id, kind)
+        vector = index.execute(
+            """SELECT text_hash FROM search_vectors
+            WHERE model=? AND dimensions=? AND subject=? AND problem_id=? AND kind=?""",
+            key,
+        ).fetchone()
+        skipped = index.execute(
+            """SELECT text_hash FROM search_skipped
+            WHERE model=? AND dimensions=? AND subject=? AND problem_id=? AND kind=?""",
+            key,
+        ).fetchone()
+        hash_value = digest(content)
+        if not content:
+            if vector or skipped:
+                work.append((kind, content, hash_value))
+        elif not (
+            (vector and vector["text_hash"] == hash_value and not skipped)
+            or (not vector and skipped and skipped["text_hash"] == hash_value)
+        ):
+            work.append((kind, content, hash_value))
     return work
 
 
-def build_index(config=Config(), limit=None, batch_size=32, session=None, workers=1,
-                subject=None, progress=None):
+def build_index(
+    config=Config(),
+    limit=None,
+    batch_size=32,
+    session=None,
+    workers=1,
+    subject=None,
+    progress=None,
+):
     """Update the index. A limit is for pilot runs and suppresses deletion of unseen rows."""
     if batch_size < 1 or workers < 1 or (limit is not None and limit < 1):
         raise ValueError("batch_size, workers и limit должны быть положительными")
@@ -283,8 +349,16 @@ def build_index(config=Config(), limit=None, batch_size=32, session=None, worker
         raise ValueError("Предмет: math или physics")
     tokenizer = get_tokenizer(config.tokenizer_path(), config.tokenizer_source())
     import numpy as np
+
     start = time.monotonic()
-    report = {"scanned": 0, "embedded": 0, "unchanged": 0, "skipped": [], "deleted": 0, "tokens": 0}
+    report = {
+        "scanned": 0,
+        "embedded": 0,
+        "unchanged": 0,
+        "skipped": [],
+        "deleted": 0,
+        "tokens": 0,
+    }
     index, source = open_index(config), _source(config)
     pending = []
     inflight = deque()
@@ -293,18 +367,30 @@ def build_index(config=Config(), limit=None, batch_size=32, session=None, worker
     total_query = "SELECT count(*) FROM problems WHERE (trim(statement)!='' OR trim(classifier)!='' OR trim(solution)!='')"
     if subject:
         total_query += " AND subject=?"
-    source_total = source.execute(total_query, (subject,) if subject else ()).fetchone()[0]
+    source_total = source.execute(
+        total_query, (subject,) if subject else ()
+    ).fetchone()[0]
     if limit is not None:
         source_total = min(source_total, limit)
 
     def update_progress(final=False):
         if progress:
             active, concurrency, retries = gate.snapshot()
-            progress({"scanned": report["scanned"], "total": source_total,
-                      "embedded": report["embedded"], "tokens": report["tokens"],
-                      "skipped": len(report["skipped"]), "inflight": len(inflight),
-                      "api_active": active, "api_limit": concurrency, "retries": retries,
-                      "seconds": time.monotonic() - start, "final": final})
+            progress(
+                {
+                    "scanned": report["scanned"],
+                    "total": source_total,
+                    "embedded": report["embedded"],
+                    "tokens": report["tokens"],
+                    "skipped": len(report["skipped"]),
+                    "inflight": len(inflight),
+                    "api_active": active,
+                    "api_limit": concurrency,
+                    "retries": retries,
+                    "seconds": time.monotonic() - start,
+                    "final": final,
+                }
+            )
 
     def finish_one():
         done, _ = wait([future for _, future in inflight], return_when=FIRST_COMPLETED)
@@ -314,9 +400,25 @@ def build_index(config=Config(), limit=None, batch_size=32, session=None, worker
         report["tokens"] += used
         for (subj, problem_id, kind, _, hash_value), vector in zip(items, vectors):
             blob = np.asarray(vector, dtype="<f4").tobytes()
-            index.execute("INSERT INTO vectors VALUES (?,?,?,?,?) ON CONFLICT(subject,problem_id,kind) DO UPDATE SET text_hash=excluded.text_hash, vector=excluded.vector",
-                          (subj, problem_id, kind, hash_value, blob))
-            index.execute("DELETE FROM skipped WHERE subject=? AND problem_id=? AND kind=?", (subj, problem_id, kind))
+            index.execute(
+                """INSERT INTO search_vectors VALUES (?,?,?,?,?,?,?)
+                ON CONFLICT(model,dimensions,subject,problem_id,kind)
+                DO UPDATE SET text_hash=excluded.text_hash, vector=excluded.vector""",
+                (
+                    config.model,
+                    config.dimensions,
+                    subj,
+                    problem_id,
+                    kind,
+                    hash_value,
+                    blob,
+                ),
+            )
+            index.execute(
+                """DELETE FROM search_skipped
+                WHERE model=? AND dimensions=? AND subject=? AND problem_id=? AND kind=?""",
+                (config.model, config.dimensions, subj, problem_id, kind),
+            )
             report["embedded"] += 1
         index.commit()
         update_progress()
@@ -342,20 +444,45 @@ def build_index(config=Config(), limit=None, batch_size=32, session=None, worker
             if limit is not None and report["scanned"] >= limit:
                 break
             report["scanned"] += 1
-            changes = _save_document(index, row)
+            changes = _pending_kinds(index, config, row)
             report["unchanged"] += 2 - len(changes)
             for kind, content, hash_value in changes:
-                index.execute("DELETE FROM vectors WHERE subject=? AND problem_id=? AND kind=?", (row["subject"], row["problem_id"], kind))
-                index.execute("DELETE FROM skipped WHERE subject=? AND problem_id=? AND kind=?", (row["subject"], row["problem_id"], kind))
+                key = (
+                    config.model,
+                    config.dimensions,
+                    row["subject"],
+                    row["problem_id"],
+                    kind,
+                )
+                index.execute(
+                    """DELETE FROM search_vectors
+                    WHERE model=? AND dimensions=? AND subject=? AND problem_id=? AND kind=?""",
+                    key,
+                )
+                index.execute(
+                    """DELETE FROM search_skipped
+                    WHERE model=? AND dimensions=? AND subject=? AND problem_id=? AND kind=?""",
+                    key,
+                )
                 if not content:
                     continue
                 count = len(tokenizer.encode(content).ids)
                 if count > config.max_tokens:
-                    item = {"subject": row["subject"], "problem_id": row["problem_id"], "kind": kind, "tokens": count}
+                    item = {
+                        "subject": row["subject"],
+                        "problem_id": row["problem_id"],
+                        "kind": kind,
+                        "tokens": count,
+                    }
                     report["skipped"].append(item)
-                    index.execute("INSERT INTO skipped VALUES (?,?,?,?,?,?)", (row["subject"], row["problem_id"], kind, hash_value, count, "too_long"))
+                    index.execute(
+                        "INSERT INTO search_skipped VALUES (?,?,?,?,?,?,?,?)",
+                        (*key, hash_value, count, "too_long"),
+                    )
                     continue
-                pending.append((row["subject"], row["problem_id"], kind, content, hash_value))
+                pending.append(
+                    (row["subject"], row["problem_id"], kind, content, hash_value)
+                )
                 if len(pending) >= batch_size:
                     flush()
             if report["scanned"] % 100 == 0:
@@ -365,23 +492,113 @@ def build_index(config=Config(), limit=None, batch_size=32, session=None, worker
         while inflight:
             finish_one()
         if limit is None and subject is None:
-            index.execute("ATTACH DATABASE ? AS source_db", (str(Path(config.db).resolve()),))
-            stale = index.execute("""SELECT d.subject,d.problem_id,d.rowid FROM documents d
-                LEFT JOIN source_db.problems p ON p.subject=d.subject AND p.problem_id=d.problem_id
-                WHERE p.problem_id IS NULL OR (trim(p.statement)='' AND trim(p.classifier)='' AND trim(p.solution)='')""").fetchall()
+            stale = index.execute(
+                """WITH indexed AS (
+                SELECT subject,problem_id FROM search_vectors WHERE model=? AND dimensions=?
+                UNION SELECT subject,problem_id FROM search_skipped WHERE model=? AND dimensions=?
+            ) SELECT v.subject,v.problem_id FROM indexed v WHERE NOT EXISTS (
+                SELECT 1 FROM problems p WHERE p.subject=v.subject AND p.problem_id=v.problem_id
+                AND (trim(p.statement)!='' OR trim(p.classifier)!='' OR trim(p.solution)!='')
+            )""",
+                (config.model, config.dimensions, config.model, config.dimensions),
+            ).fetchall()
             for row in stale:
-                index.execute("DELETE FROM document_fts WHERE rowid=?", (row["rowid"],))
-                for table in ("vectors", "skipped", "documents"):
-                    index.execute(f"DELETE FROM {table} WHERE subject=? AND problem_id=?", (row["subject"], row["problem_id"]))
+                key = (
+                    config.model,
+                    config.dimensions,
+                    row["subject"],
+                    row["problem_id"],
+                )
+                for table in ("search_vectors", "search_skipped"):
+                    index.execute(
+                        f"""DELETE FROM {table} WHERE model=? AND dimensions=?
+                        AND subject=? AND problem_id=?""",
+                        key,
+                    )
             report["deleted"] = len(stale)
         index.commit()
-        report["skipped"] = [dict(row) for row in index.execute("SELECT subject,problem_id,kind,tokens FROM skipped ORDER BY subject,problem_id,kind")]
+        report["skipped"] = [
+            dict(row)
+            for row in index.execute(
+                """SELECT subject,problem_id,kind,tokens
+            FROM search_skipped WHERE model=? AND dimensions=? ORDER BY subject,problem_id,kind""",
+                (config.model, config.dimensions),
+            )
+        ]
         report["seconds"] = round(time.monotonic() - start, 2)
         update_progress(final=True)
         return report
     finally:
         pool.shutdown(wait=True)
         source.close()
+        index.close()
+
+
+def migrate_legacy_index(config=Config(), legacy_path=None):
+    """Copy the existing separate index into the source DB without API calls."""
+    legacy_path = Path(
+        legacy_path or index_path(config.index_dir, config.model, config.dimensions)
+    ).resolve()
+    if not legacy_path.is_file() or legacy_path == Path(config.db).resolve():
+        raise ValueError(f"Не найден отдельный индекс: {legacy_path}")
+    legacy = sqlite3.connect(f"file:{legacy_path}?mode=ro", uri=True)
+    legacy.row_factory = sqlite3.Row
+    index = open_index(config)
+    try:
+        count = 0
+        for item in legacy.execute(
+            "SELECT subject,problem_id,kind,text_hash,length(vector) AS bytes FROM vectors"
+        ):
+            row = index.execute(
+                """SELECT classifier,statement,solution FROM problems
+                WHERE subject=? AND problem_id=?""",
+                (item["subject"], item["problem_id"]),
+            ).fetchone()
+            if row is None:
+                raise ValueError(
+                    f"Нет исходной задачи: {item['subject']}/{item['problem_id']}"
+                )
+            content = (
+                topic_text(row) if item["kind"] == "topic" else row["solution"].strip()
+            )
+            if (
+                not content
+                or digest(content) != item["text_hash"]
+                or item["bytes"] != config.dimensions * 4
+            ):
+                raise ValueError(
+                    f"Исходный текст или размерность изменились: {item['subject']}/{item['problem_id']}/{item['kind']}"
+                )
+            count += 1
+        index.execute("ATTACH DATABASE ? AS legacy_search", (str(legacy_path),))
+        index.execute(
+            """INSERT OR REPLACE INTO search_vectors
+            (model,dimensions,subject,problem_id,kind,text_hash,vector)
+            SELECT ?,?,subject,problem_id,kind,text_hash,vector FROM legacy_search.vectors""",
+            (config.model, config.dimensions),
+        )
+        index.execute(
+            """INSERT OR REPLACE INTO search_skipped
+            (model,dimensions,subject,problem_id,kind,text_hash,tokens,reason)
+            SELECT ?,?,subject,problem_id,kind,text_hash,tokens,reason FROM legacy_search.skipped""",
+            (config.model, config.dimensions),
+        )
+        index.commit()
+        stored = index.execute(
+            """SELECT count(*) FROM search_vectors
+            WHERE model=? AND dimensions=?""",
+            (config.model, config.dimensions),
+        ).fetchone()[0]
+        if stored != count:
+            raise RuntimeError(f"Перенесено {stored} из {count} векторов")
+        return {
+            "model": config.model,
+            "dimensions": config.dimensions,
+            "vectors": stored,
+            "problems": index.execute("SELECT count(*) FROM problems").fetchone()[0],
+        }
+    finally:
+        legacy.close()
         index.close()
 
 
@@ -392,51 +609,93 @@ def _filters(alias, subject, grade, year):
             clauses.append(f"{alias}.{name}=?")
             parameters.append(str(value))
     if grade is not None:
-        clauses.append(f"({alias}.grade=? OR (instr({alias}.grade,'-')>0 AND CAST(substr({alias}.grade,1,instr({alias}.grade,'-')-1) AS INTEGER)<=? AND CAST(substr({alias}.grade,instr({alias}.grade,'-')+1) AS INTEGER)>=?))")
+        clauses.append(
+            f"({alias}.grade=? OR (instr({alias}.grade,'-')>0 AND CAST(substr({alias}.grade,1,instr({alias}.grade,'-')-1) AS INTEGER)<=? AND CAST(substr({alias}.grade,instr({alias}.grade,'-')+1) AS INTEGER)>=?))"
+        )
         parameters.extend((str(grade), int(grade), int(grade)))
     return (" AND ".join(clauses) if clauses else "1=1"), parameters
 
 
-def search(query, mode="both", k=10, subject=None, grade=None, year=None,
-           method="hybrid", config=Config(), session=None):
+def search(
+    query,
+    mode="both",
+    k=10,
+    subject=None,
+    grade=None,
+    year=None,
+    method="hybrid",
+    config=Config(),
+    session=None,
+):
     """Return ranked problems. mode: topic, solution, both; method: hybrid, vector, fts."""
     if not query.strip() or k < 1:
         raise ValueError("Нужны непустой запрос и положительное число результатов")
-    if mode not in ("topic", "solution", "both") or method not in ("hybrid", "vector", "fts"):
+    if mode not in ("topic", "solution", "both") or method not in (
+        "hybrid",
+        "vector",
+        "fts",
+    ):
         raise ValueError("Неизвестный режим поиска")
     if subject not in (None, "math", "physics"):
         raise ValueError("Предмет: math или physics")
     import numpy as np
-    index = open_index(config)
+
+    index = open_index(config, writable=False)
     try:
-        count = index.execute("SELECT count(*) FROM documents").fetchone()[0]
-        if not count:
-            raise RuntimeError("Индекс пуст: сначала выполните команду index")
+        if (
+            method in ("vector", "hybrid")
+            and not index.execute(
+                """SELECT 1 FROM search_vectors
+            WHERE model=? AND dimensions=? LIMIT 1""",
+                (config.model, config.dimensions),
+            ).fetchone()
+        ):
+            raise RuntimeError(
+                "Для этой модели нет векторов: сначала выполните index или migrate"
+            )
         scores = {}
         where, params = _filters("d", subject, grade, year)
         if method in ("fts", "hybrid"):
             terms = re.findall(r"[^\W_]+", query, flags=re.UNICODE)
             if terms:
-                fields = ("topic", "solution") if mode == "both" else (mode,)
-                expression = " OR ".join(f'{field}:"{term}"' for field in fields for term in terms)
-                rows = index.execute(f"""SELECT d.subject,d.problem_id,bm25(document_fts) AS score
-                    FROM document_fts JOIN documents d ON d.rowid=document_fts.rowid
-                    WHERE document_fts MATCH ? AND {where} ORDER BY score LIMIT ?""",
+                fields = (
+                    ("classifier", "statement", "solution")
+                    if mode == "both"
+                    else (
+                        ("classifier", "statement")
+                        if mode == "topic"
+                        else ("solution",)
+                    )
+                )
+                expression = " OR ".join(
+                    f'{field}:"{term}"' for field in fields for term in terms
+                )
+                rows = index.execute(
+                    f"""SELECT d.subject,d.problem_id,bm25(problem_fts) AS score
+                    FROM problem_fts JOIN problems d ON d.rowid=problem_fts.rowid
+                    WHERE problem_fts MATCH ? AND {where} ORDER BY score LIMIT ?""",
                     (expression, *params, max(k * 20, 200)),
                 ).fetchall()
                 for rank, row in enumerate(rows, 1):
-                    scores.setdefault((row["subject"], row["problem_id"]), {})["fts"] = rank
+                    scores.setdefault((row["subject"], row["problem_id"]), {})[
+                        "fts"
+                    ] = rank
         if method in ("vector", "hybrid"):
-            tokenizer = get_tokenizer(config.tokenizer_path(), config.tokenizer_source())
+            tokenizer = get_tokenizer(
+                config.tokenizer_path(), config.tokenizer_source()
+            )
             if len(tokenizer.encode(query).ids) > config.max_tokens:
                 raise ValueError("Запрос превышает лимит токенов модели")
             qvector = np.asarray(embed([query], config, session)[0][0], dtype="<f4")
             qnorm = np.linalg.norm(qvector)
             kinds = ("topic", "solution") if mode == "both" else (mode,)
             for kind in kinds:
-                rows = index.execute(f"""SELECT v.subject,v.problem_id,v.vector FROM vectors v
-                    JOIN documents d ON d.subject=v.subject AND d.problem_id=v.problem_id
-                    WHERE v.kind=? AND {where}""", (kind, *params))
+                rows = index.execute(
+                    f"""SELECT v.subject,v.problem_id,v.vector FROM search_vectors v
+                    JOIN problems d ON d.subject=v.subject AND d.problem_id=v.problem_id
+                    WHERE v.model=? AND v.dimensions=? AND v.kind=? AND {where}""",
+                    (config.model, config.dimensions, kind, *params),
+                )
                 similarities = []
                 for row in rows:
                     vector = np.frombuffer(row["vector"], dtype="<f4")
@@ -446,20 +705,50 @@ def search(query, mode="both", k=10, subject=None, grade=None, year=None,
                     similarity = float(np.dot(vector, qvector) / norm) if norm else 0.0
                     similarities.append((similarity, row["subject"], row["problem_id"]))
                 similarities.sort(reverse=True)
-                for rank, (_, subj, problem_id) in enumerate(similarities[:max(k * 20, 200)], 1):
+                for rank, (_, subj, problem_id) in enumerate(
+                    similarities[: max(k * 20, 200)], 1
+                ):
                     scores.setdefault((subj, problem_id), {})[kind] = rank
-        ranked = sorted(scores, key=lambda key: (-sum(1 / (60 + rank) for rank in scores[key].values()), key))
+        ranked = sorted(
+            scores,
+            key=lambda key: (
+                -sum(1 / (60 + rank) for rank in scores[key].values()),
+                key,
+            ),
+        )
         results, seen = [], {}
         for subj, problem_id in ranked:
-            row = index.execute("SELECT * FROM documents WHERE subject=? AND problem_id=?", (subj, problem_id)).fetchone()
+            row = index.execute(
+                "SELECT * FROM problems WHERE subject=? AND problem_id=?",
+                (subj, problem_id),
+            ).fetchone()
             if not row:
                 continue
-            duplicate_key = (subj, digest(row["statement"].strip()) if row["statement"].strip() else f"id:{problem_id}")
+            duplicate_key = (
+                subj,
+                digest(row["statement"].strip())
+                if row["statement"].strip()
+                else f"id:{problem_id}",
+            )
             if duplicate_key in seen:
                 seen[duplicate_key]["duplicates"].append(problem_id)
                 continue
-            item = {field: row[field] for field in ("subject", "problem_id", "grade", "year", "url", "statement", "classifier", "solution")}
-            item["score"] = round(sum(1 / (60 + rank) for rank in scores[(subj, problem_id)].values()), 6)
+            item = {
+                field: row[field]
+                for field in (
+                    "subject",
+                    "problem_id",
+                    "grade",
+                    "year",
+                    "url",
+                    "statement",
+                    "classifier",
+                    "solution",
+                )
+            }
+            item["score"] = round(
+                sum(1 / (60 + rank) for rank in scores[(subj, problem_id)].values()), 6
+            )
             item["duplicates"] = []
             seen[duplicate_key] = item
             results.append(item)
@@ -468,10 +757,18 @@ def search(query, mode="both", k=10, subject=None, grade=None, year=None,
         for item in results:
             if item["statement"].strip():
                 duplicate_where, duplicate_params = _filters("d", subject, grade, year)
-                item["duplicates"] = [row[0] for row in index.execute(
-                    f"SELECT d.problem_id FROM documents d WHERE d.subject=? AND trim(d.statement)=? AND d.problem_id!=? AND {duplicate_where} ORDER BY d.problem_id",
-                    (item["subject"], item["statement"].strip(), item["problem_id"], *duplicate_params),
-                )]
+                item["duplicates"] = [
+                    row[0]
+                    for row in index.execute(
+                        f"SELECT d.problem_id FROM problems d WHERE d.subject=? AND trim(d.statement)=? AND d.problem_id!=? AND {duplicate_where} ORDER BY d.problem_id",
+                        (
+                            item["subject"],
+                            item["statement"].strip(),
+                            item["problem_id"],
+                            *duplicate_params,
+                        ),
+                    )
+                ]
         return results
     finally:
         index.close()
@@ -487,7 +784,9 @@ class ProgressPrinter:
 
     def __call__(self, state):
         now = time.monotonic()
-        if not state["final"] and now - self.last_print < (0.25 if self.terminal else 5):
+        if not state["final"] and now - self.last_print < (
+            0.25 if self.terminal else 5
+        ):
             return
         self.last_print = now
         total = state["total"]
@@ -515,23 +814,33 @@ class ProgressPrinter:
         if self.terminal:
             filled = round(24 * fraction)
             prefix = "[" + "#" * filled + "." * (24 - filled) + "] "
-        line = (f"{prefix}{state['scanned']}/{total} задач ({fraction:.1%}) | "
-                f"+{state['embedded']} векторов | {state['tokens']:,} токенов | "
-                f"API {state['api_active']} (лимит {state['api_limit']}, повторы {state['retries']}) | "
-                f"{self._duration(elapsed)} прошло | {remaining}")
-        print(("\r" if self.terminal else "") + line,
-              end="\n" if state["final"] or not self.terminal else "", file=sys.stderr, flush=True)
+        line = (
+            f"{prefix}{state['scanned']}/{total} задач ({fraction:.1%}) | "
+            f"+{state['embedded']} векторов | {state['tokens']:,} токенов | "
+            f"API {state['api_active']} (лимит {state['api_limit']}, повторы {state['retries']}) | "
+            f"{self._duration(elapsed)} прошло | {remaining}"
+        )
+        print(
+            ("\r" if self.terminal else "") + line,
+            end="\n" if state["final"] or not self.terminal else "",
+            file=sys.stderr,
+            flush=True,
+        )
 
     @staticmethod
     def _duration(seconds):
         seconds = max(0, round(seconds))
         hours, remainder = divmod(seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-        return f"{hours}:{minutes:02}:{seconds:02}" if hours else f"{minutes}:{seconds:02}"
+        return (
+            f"{hours}:{minutes:02}:{seconds:02}" if hours else f"{minutes}:{seconds:02}"
+        )
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Гибридный поиск по олимпиадным задачам")
+    parser = argparse.ArgumentParser(
+        description="Гибридный поиск по олимпиадным задачам"
+    )
     parser.add_argument("--db", type=Path, default=DB_FILE)
     parser.add_argument("--index-dir", type=Path, default=DEFAULT_INDEX_DIR)
     parser.add_argument("--model", default=DEFAULT_MODEL)
@@ -539,15 +848,29 @@ def main():
     parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
     parser.add_argument("--tokenizer", type=Path)
     parser.add_argument("--tokenizer-url")
-    parser.add_argument("--api-key-file", type=Path, help="Файл с ключом OpenRouter вместо переменной окружения")
+    parser.add_argument(
+        "--api-key-file",
+        type=Path,
+        help="Файл с ключом OpenRouter вместо переменной окружения",
+    )
     commands = parser.add_subparsers(dest="command", required=True)
     build = commands.add_parser("index", help="Создать или обновить индекс")
     build.add_argument("--limit", type=int, help="Число задач для пробного запуска")
     build.add_argument("--batch-size", type=int, default=32)
     build.add_argument("--workers", type=int, default=1)
-    build.add_argument("--subject", choices=("math", "physics"), help="Индексировать только один предмет")
-    build.add_argument("--price-per-million", type=float, help="Цена модели в USD за миллион входных токенов")
-    build.add_argument("--no-progress", action="store_true", help="Скрыть ход индексирования")
+    build.add_argument(
+        "--subject",
+        choices=("math", "physics"),
+        help="Индексировать только один предмет",
+    )
+    build.add_argument(
+        "--price-per-million",
+        type=float,
+        help="Цена модели в USD за миллион входных токенов",
+    )
+    build.add_argument(
+        "--no-progress", action="store_true", help="Скрыть ход индексирования"
+    )
     find = commands.add_parser("search", help="Искать задачи")
     find.add_argument("query")
     find.add_argument("--mode", choices=("topic", "solution", "both"), default="both")
@@ -556,10 +879,28 @@ def main():
     find.add_argument("--subject", choices=("math", "physics"))
     find.add_argument("--grade")
     find.add_argument("--year")
+    migrate = commands.add_parser(
+        "migrate", help="Перенести отдельный индекс в исходную БД без API"
+    )
+    migrate.add_argument(
+        "--legacy-index", type=Path, help="Путь к прежнему отдельному индексу"
+    )
     args = parser.parse_args()
-    key = args.api_key_file.read_text(encoding="utf-8").strip() if args.api_key_file else None
-    config = Config(args.db, args.index_dir, args.model, args.dimensions,
-                    args.max_tokens, args.tokenizer, args.tokenizer_url, key)
+    key = (
+        args.api_key_file.read_text(encoding="utf-8").strip()
+        if args.api_key_file
+        else None
+    )
+    config = Config(
+        args.db,
+        args.index_dir,
+        args.model,
+        args.dimensions,
+        args.max_tokens,
+        args.tokenizer,
+        args.tokenizer_url,
+        key,
+    )
     if config.dimensions < 1 or config.max_tokens < 1:
         parser.error("dimensions и max-tokens должны быть положительными")
     try:
@@ -567,13 +908,31 @@ def main():
             if args.price_per_million is not None and args.price_per_million < 0:
                 raise ValueError("Цена должна быть неотрицательной")
             reporter = None if args.no_progress else ProgressPrinter()
-            result = build_index(config, args.limit, args.batch_size, workers=args.workers,
-                                 subject=args.subject, progress=reporter)
+            result = build_index(
+                config,
+                args.limit,
+                args.batch_size,
+                workers=args.workers,
+                subject=args.subject,
+                progress=reporter,
+            )
             if args.price_per_million is not None:
-                result["estimated_usd"] = round(result["tokens"] * args.price_per_million / 1_000_000, 6)
+                result["estimated_usd"] = round(
+                    result["tokens"] * args.price_per_million / 1_000_000, 6
+                )
+        elif args.command == "migrate":
+            result = migrate_legacy_index(config, args.legacy_index)
         else:
-            result = search(args.query, args.mode, args.k, args.subject, args.grade,
-                            args.year, args.method, config)
+            result = search(
+                args.query,
+                args.mode,
+                args.k,
+                args.subject,
+                args.grade,
+                args.year,
+                args.method,
+                config,
+            )
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except (ValueError, RuntimeError, requests.RequestException) as exc:
         parser.exit(1, f"Ошибка: {exc}\n")

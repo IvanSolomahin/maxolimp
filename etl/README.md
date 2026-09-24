@@ -21,7 +21,7 @@ python3 parser_sdamgia_v2.py
 
 ## Поиск по задачам
 
-Поиск использует Qwen3-Embedding-4B через OpenRouter, отдельный SQLite-индекс и FTS5. На проверенном снимке построено 39 235 векторов для 19 646 задач; индекс и ключ хранятся в игнорируемом Git каталоге `olimpiads_data_v2/`. Подробности подготовки текстов, схемы, обновления, ранжирования и проверок — в [SEARCH.md](SEARCH.md).
+Поиск использует Qwen3-Embedding-4B через OpenRouter и FTS5 **в исходной SQLite-базе** `olimpiads_data_v2/olimpiads.sqlite3`. На проверенном снимке в ней 19 653 задач и 39 235 векторов; ключ и база исключены из Git. Подробности подготовки текстов, схемы, обновления, ранжирования и проверок — в [SEARCH.md](SEARCH.md).
 
 ```bash
 python3 -m pip install -r requirements.txt

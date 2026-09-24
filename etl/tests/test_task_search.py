@@ -76,7 +76,9 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(again["embedded"], 0)
         self.assertEqual(again["unchanged"], 8)
         index = search.open_index(self.config)
-        index.execute("DELETE FROM vectors WHERE subject='math' AND problem_id=1 AND kind='topic'")
+        index.execute("""DELETE FROM search_vectors WHERE model=? AND dimensions=?
+            AND subject='math' AND problem_id=1 AND kind='topic'""",
+            (self.config.model, self.config.dimensions))
         index.commit()
         index.close()
         recovered = search.build_index(self.config, session=session)
@@ -93,19 +95,25 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(results[0]["problem_id"], 3)
         lexical = search.search("шесть", mode="solution", subject="physics", method="fts", config=self.config)
         self.assertEqual(lexical[0]["problem_id"], 4)
-        self.put("physics", 3, "10", "2021", "Найдите энергию", "механика", "геометрическое построение")
+        self.conn.execute("UPDATE problems SET solution='геометрическое построение' WHERE subject='physics' AND problem_id=3")
         self.conn.commit()
         changed = search.build_index(self.config, session=session)
         self.assertEqual(changed["embedded"], 1)
+        self.assertEqual(search.search("построение", mode="solution", subject="physics",
+                                       method="fts", config=self.config)[0]["problem_id"], 3)
         self.conn.execute("DELETE FROM problems WHERE subject='math' AND problem_id=2")
         self.conn.commit()
         deleted = search.build_index(self.config, session=session)
         self.assertEqual(deleted["deleted"], 1)
+        self.assertEqual(search.search("геометрия", mode="topic", subject="math",
+                                       method="fts", config=self.config)[0]["duplicates"], [])
         other = search.Config(db=self.db, index_dir=self.config.index_dir, model="another/model", dimensions=3,
                               max_tokens=5, tokenizer=Path("unused"), api_key="fake")
-        self.assertNotEqual(search.index_path(other.index_dir, other.model, 3), search.index_path(self.config.index_dir, self.config.model, 3))
         self.assertEqual(search.build_index(other, limit=1, session=session)["embedded"], 2)
         self.assertEqual(search.build_index(self.config, session=session)["embedded"], 0)
+        index = search.open_index(self.config)
+        self.assertEqual(index.execute("SELECT count(*) FROM search_vectors WHERE model=?", (other.model,)).fetchone()[0], 2)
+        index.close()
 
     def test_invalid_embedding_response(self):
         class BadSession:
@@ -132,6 +140,32 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(len(vectors[0]), 3)
         self.assertEqual(tokens, 3)
         self.assertEqual(gate.snapshot(), (0, 2, 2))
+
+    def test_migrate_legacy_index_without_api(self):
+        import numpy as np
+
+        legacy_path = search.index_path(self.config.index_dir, self.config.model, self.config.dimensions)
+        legacy_path.parent.mkdir(parents=True)
+        legacy = sqlite3.connect(legacy_path)
+        legacy.execute("CREATE TABLE vectors (subject TEXT, problem_id INTEGER, kind TEXT, text_hash TEXT, vector BLOB)")
+        legacy.execute("CREATE TABLE skipped (subject TEXT, problem_id INTEGER, kind TEXT, text_hash TEXT, tokens INTEGER, reason TEXT)")
+        row = self.conn.execute("SELECT classifier,statement,solution FROM problems WHERE subject='math' AND problem_id=1").fetchone()
+        topic = row[0] + "\n" + row[1]
+        blob = np.asarray([1.0, 0.0, 1.0], dtype="<f4").tobytes()
+        for kind, content in (("topic", topic), ("solution", row[2])):
+            legacy.execute("INSERT INTO vectors VALUES (?,?,?,?,?)",
+                           ("math", 1, kind, search.digest(content), blob))
+        legacy.commit()
+        legacy.close()
+
+        result = search.migrate_legacy_index(self.config, legacy_path)
+        self.assertEqual(result["vectors"], 2)
+        self.assertEqual(search.migrate_legacy_index(self.config, legacy_path)["vectors"], 2)
+        with search.open_index(self.config, writable=False) as unified:
+            self.assertEqual(unified.execute("SELECT count(*) FROM search_vectors").fetchone()[0], 2)
+            self.assertEqual(unified.execute("SELECT count(*) FROM problems").fetchone()[0], 4)
+        hits = search.search("геометрия", mode="topic", method="fts", config=self.config)
+        self.assertEqual(hits[0]["subject"], "math")
 
 
 if __name__ == "__main__":
