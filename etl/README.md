@@ -13,8 +13,21 @@
 Файл `olimpiads_data_v2/olimpiads.sqlite3` содержит таблицы `problems` (одна задача на пару `subject, problem_id`) и `unavailable_ids` (проверенные недоступные ID). Повторный запуск пропускает обе группы; ошибки загрузки и разбора пишет в `olimpiads_data_v2/olimpiads.errors.log` и оставляет эти ID для следующего запуска.
 
 ```bash
-python -m pip install -r requirements.txt
-python parser_sdamgia_v2.py
+python3 -m pip install -r requirements.txt
+python3 parser_sdamgia_v2.py
 ```
 
 Путь к базе можно изменить через `--db путь/к/базе.sqlite3`. База, резервные копии и логи лежат в `olimpiads_data_v2/` и не добавляются в Git.
+
+## Поиск по задачам
+
+Поиск использует Qwen3-Embedding-4B через OpenRouter, отдельный SQLite-индекс и FTS5. На проверенном снимке построено 39 235 векторов для 19 646 задач; индекс и ключ хранятся в игнорируемом Git каталоге `olimpiads_data_v2/`. Подробности подготовки текстов, схемы, обновления, ранжирования и проверок — в [SEARCH.md](SEARCH.md).
+
+```bash
+python3 -m pip install -r requirements.txt
+./run_search_index.sh
+.venv/bin/python task_search.py --api-key-file olimpiads_data_v2/openrouter.key search \
+  'закон сохранения импульса' --mode topic --subject physics -k 5
+```
+
+Для замера размера пакета используйте `benchmark_batch_sizes.py`, для сравнения методов по размеченным запросам — `evaluate_search.py`.
