@@ -2,3 +2,4 @@
 __pycache__/
 *.py[cod]
 olimpiads_data_v2/
+experiments/*.sqlite3
