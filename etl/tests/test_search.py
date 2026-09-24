@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import requests
 
-import task_search as search
+from search import task_search as search
 
 
 class FakeTokenizer:

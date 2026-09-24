@@ -10,7 +10,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from task_search import Config, RequestGate, embed, get_tokenizer, topic_text
+from search.task_search import Config, RequestGate, embed, get_tokenizer, topic_text
 
 
 def sample_texts(db, per_subject, seed):

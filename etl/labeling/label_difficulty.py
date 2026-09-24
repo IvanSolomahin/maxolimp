@@ -13,7 +13,7 @@ import time
 
 import requests
 
-from parser_sdamgia_v2 import DB_FILE
+from scrape.parser_sdamgia_v2 import DB_FILE
 
 API_URL = "https://openrouter.ai/api/alpha/decisions"
 MODEL = "typesafe/jev-1.13"

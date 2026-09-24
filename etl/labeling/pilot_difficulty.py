@@ -10,8 +10,13 @@ import sqlite3
 import sys
 import time
 
-from label_difficulty import DEFAULT_KEY_FILE, DEFAULT_PROXY, score_one, score_to_difficulty
-from parser_sdamgia_v2 import DB_FILE
+from labeling.label_difficulty import (
+    DEFAULT_KEY_FILE,
+    DEFAULT_PROXY,
+    score_one,
+    score_to_difficulty,
+)
+from scrape.parser_sdamgia_v2 import DB_FILE
 
 
 def initialize(source, output, per_subject, repeats, seed):

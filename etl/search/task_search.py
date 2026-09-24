@@ -19,7 +19,7 @@ from pathlib import Path
 
 import requests
 
-from parser_sdamgia_v2 import DB_FILE
+from scrape.parser_sdamgia_v2 import DB_FILE
 
 DEFAULT_MODEL = "qwen/qwen3-embedding-4b"
 DEFAULT_DIMENSIONS = 2560
@@ -28,7 +28,7 @@ DEFAULT_TOKENIZER_URL = (
     "https://huggingface.co/Qwen/Qwen3-Embedding-4B/resolve/main/tokenizer.json"
 )
 DEFAULT_INDEX_DIR = (
-    Path(__file__).resolve().parent / "olimpiads_data_v2" / "search_indexes"
+    Path(__file__).resolve().parents[1] / "olimpiads_data_v2" / "search_indexes"
 )
 API_URL = "https://openrouter.ai/api/v1/embeddings"
 RETRYABLE_STATUS = {429, 500, 502, 503, 504, 520, 522, 524, 529}

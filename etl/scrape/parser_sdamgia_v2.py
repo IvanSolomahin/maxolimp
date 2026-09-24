@@ -19,7 +19,8 @@ SUBJECTS = {
     "physics": ("https://phys-olymp.sdamgia.ru", 8035),
 }
 
-OUT_DIR = Path(__file__).resolve().parent / "olimpiads_data_v2"
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+OUT_DIR = PROJECT_DIR / "olimpiads_data_v2"
 DB_FILE = OUT_DIR / "olimpiads.sqlite3"
 
 DELAY = 0.1

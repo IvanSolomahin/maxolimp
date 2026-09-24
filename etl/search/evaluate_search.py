@@ -5,7 +5,7 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from task_search import Config, search
+from search.task_search import Config, search
 
 
 def evaluate(labels, config, k=10):

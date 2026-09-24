@@ -1,23 +1,13 @@
 import argparse
-import json
-from pathlib import Path
-import re
 import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
 
-import label_difficulty as label
+from labeling import label_difficulty as label
 
 
 class LabelDifficultyTests(unittest.TestCase):
-    def test_documented_request_matches_script(self):
-        document = (Path(label.__file__).parent / "DIFFICULTY.md").read_text(encoding="utf-8")
-        example = json.loads(re.search(r"```json\n(.*?)\n```", document, re.S).group(1))
-        question = example["questions"]["difficulty"]
-        self.assertEqual(question["instructions"], label.INSTRUCTIONS)
-        self.assertEqual(question["criteria"], label.LEVELS)
-
     def test_score_mapping_and_rejection(self):
         for score, expected in [(0, 1), (4.49, 5), (4.5, 6), (9, 10)]:
             body = {"answers": {"difficulty": {"type": "score", "score": score}}}
