@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     embedding_dimension: int = 2560
     openrouter_api_key: str | None = None
     rrf_k: int = 60
+    olymp_find_service_url: str = "http://olymp-app:8000"
 
 
 settings = Settings()
