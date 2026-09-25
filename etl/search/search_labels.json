@@ -1,0 +1,10 @@
+[
+  {"subject": "math", "mode": "topic", "query": "арифметическая и геометрическая прогрессия из одних чисел", "relevant_ids": [1]},
+  {"subject": "math", "mode": "topic", "query": "окружность касательные к треугольнику угол 60 градусов", "relevant_ids": [2]},
+  {"subject": "math", "mode": "solution", "query": "контрпример разрезание прямоугольника на единичные квадраты", "relevant_ids": [8]},
+  {"subject": "math", "mode": "solution", "query": "остатки возрастов детей по модулю 5 для простых чисел", "relevant_ids": [9]},
+  {"subject": "physics", "mode": "topic", "query": "скорость насекомого и веточки по сохранению импульса", "relevant_ids": [3, 5]},
+  {"subject": "physics", "mode": "topic", "query": "нагреватель из проволоки максимальная мощность сопротивление", "relevant_ids": [6]},
+  {"subject": "physics", "mode": "solution", "query": "перейти в систему отсчета движущихся кораблей", "relevant_ids": [10]},
+  {"subject": "physics", "mode": "solution", "query": "масса масла равна массе воды для равновесия весов", "relevant_ids": [11]}
+]
