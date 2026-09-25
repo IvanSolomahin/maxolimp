@@ -24,10 +24,15 @@ class TopicRef(BaseModel):
 class OlympiadRef(BaseModel):
     id: uuid.UUID
     name: str
-    short_name: str
+    short_name: str | None
 
 
 class SourceInfo(BaseModel):
+    system: str | None = None
+    external_id: str | None = None
+    url: str | None = None
+    subject: str | None = None
+    grade: int | None = None
     year: int | None = None
     stage: str | None = None
     number: str | None = None
@@ -36,7 +41,7 @@ class SourceInfo(BaseModel):
 class TaskListItem(BaseModel):
     id: uuid.UUID
     title: str
-    difficulty: int
+    difficulty: int | None
     solution_method: SolutionMethodRef | None = None
     snippet: str | None = None
     score: float | None = None
@@ -55,7 +60,11 @@ class TaskDetail(BaseModel):
     title: str
     statement: str
     answer: str | None
-    difficulty: int
+    difficulty: int | None
+    subject: str | None = None
+    grade: int | None = None
+    classifier: str | None = None
+    problem_type: str | None = None
     topics: list[TopicRef]
     olympiads: list[OlympiadRef]
     solution_method: SolutionMethodRef | None
@@ -156,10 +165,14 @@ class GenerateSolutionResponse(BaseModel):
 
 
 class CreateTaskRequest(BaseModel):
-    title: str
+    title: str | None = None
     statement: str
     answer: str | None = None
-    difficulty: int = Field(ge=1, le=10)
+    difficulty: int | None = Field(default=None, ge=1, le=10)
+    subject: Literal["math", "physics"] | None = None
+    grade: int | None = None
+    classifier: str | None = None
+    problem_type: str | None = None
     status: str = "draft"
     topics: list[uuid.UUID] = Field(default_factory=list)
     solution_method_id: uuid.UUID | None = None
@@ -177,6 +190,10 @@ class UpdateTaskRequest(BaseModel):
     statement: str | None = None
     answer: str | None = None
     difficulty: int | None = Field(default=None, ge=1, le=10)
+    subject: Literal["math", "physics"] | None = None
+    grade: int | None = None
+    classifier: str | None = None
+    problem_type: str | None = None
     status: str | None = None
     solution_method_id: uuid.UUID | None = None
     source_stage: str | None = None

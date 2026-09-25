@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db import SessionLocal, get_db
-from app.models import Hint, Solution, Task, TaskOlympiad, TaskTopic
+from app.models import Hint, Solution, Task, TaskOlympiad, TaskTopic, TaskEmbedding
+from app.config import settings
 from app.schemas import (
     AssignOlympiadsRequest,
     AssignSolutionMethodRequest,
@@ -47,6 +48,10 @@ from app.services.search import (
 router = APIRouter(tags=["tasks"])
 
 
+def _display_title(task: Task) -> str:
+    return task.title or task.classifier or _snippet(task.statement, 100) or "Задача без условия"
+
+
 def _parse_csv_uuids(value: str | None) -> list[uuid.UUID]:
     if not value:
         return []
@@ -69,6 +74,9 @@ def _method_ref(task: Task) -> SolutionMethodRef | None:
 async def list_tasks(
     db: Annotated[AsyncSession, Depends(get_db)],
     q: str | None = None,
+    subject: str | None = Query(None, pattern="^(math|physics)$"),
+    grade: int | None = None,
+    mode: str = Query("topic", pattern="^(topic|solution|both)$"),
     difficulty_min: int | None = None,
     difficulty_max: int | None = None,
     year_from: int | None = None,
@@ -82,6 +90,9 @@ async def list_tasks(
     total, rows = await hybrid_search_tasks(
         db,
         q=q,
+        subject=subject,
+        grade=grade,
+        mode=mode,
         difficulty_min=difficulty_min,
         difficulty_max=difficulty_max,
         year_from=year_from,
@@ -111,7 +122,7 @@ async def list_tasks(
         items.append(
             TaskListItem(
                 id=t.id,
-                title=t.title,
+                title=_display_title(t),
                 difficulty=t.difficulty,
                 solution_method=_method_ref(t),
                 snippet=r.get("snippet") or _snippet(t.statement),
@@ -142,7 +153,7 @@ async def list_tasks_by_topics(
     items = [
         TaskListItem(
             id=t.id,
-            title=t.title,
+            title=_display_title(t),
             difficulty=t.difficulty,
             solution_method=_method_ref(t),
         )
@@ -174,7 +185,7 @@ async def list_tasks_by_olympiads(
     items = [
         TaskListItem(
             id=t.id,
-            title=t.title,
+            title=_display_title(t),
             difficulty=t.difficulty,
             solution_method=_method_ref(t),
         )
@@ -209,7 +220,7 @@ async def search_by_keywords(
         items.append(
             TaskListItem(
                 id=t.id,
-                title=t.title,
+                title=_display_title(t),
                 difficulty=t.difficulty,
                 solution_method=_method_ref(t),
                 snippet=r.get("snippet"),
@@ -230,6 +241,7 @@ async def get_task(task_id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_d
             selectinload(Task.task_olympiads).selectinload(TaskOlympiad.olympiad),
             selectinload(Task.solutions),
             selectinload(Task.hints),
+            selectinload(Task.sources),
         )
     )
     task = result.scalar_one_or_none()
@@ -247,16 +259,25 @@ async def get_task(task_id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_d
     sm = task.solution_method
     return TaskDetail(
         id=task.id,
-        title=task.title,
+        title=_display_title(task),
         statement=task.statement,
         answer=task.answer,
         difficulty=task.difficulty,
+        subject=task.subject,
+        grade=task.grade,
+        classifier=task.classifier,
+        problem_type=task.problem_type,
         topics=topics,
         olympiads=olympiads,
         solution_method=(
             SolutionMethodRef(id=sm.id, name=sm.name, path=sm.path) if sm else None
         ),
         source=SourceInfo(
+            system=task.sources[0].source_system if task.sources else None,
+            external_id=task.sources[0].external_id if task.sources else None,
+            url=task.sources[0].url if task.sources else None,
+            subject=task.subject,
+            grade=task.grade,
             year=task.source_year,
             stage=task.source_stage,
             number=task.source_problem_number,
@@ -433,6 +454,10 @@ async def create_task(
         statement=body.statement,
         answer=body.answer,
         difficulty=body.difficulty,
+        subject=body.subject,
+        grade=body.grade,
+        classifier=body.classifier,
+        problem_type=body.problem_type,
         status=body.status,
         solution_method_id=body.solution_method_id,
         source_stage=body.source_stage,
@@ -450,7 +475,8 @@ async def create_task(
         async with SessionLocal() as session:
             await compute_and_store_task_embedding(session, task.id)
 
-    background_tasks.add_task(_embed)
+    if settings.openrouter_api_key:
+        background_tasks.add_task(_embed)
     return CreateTaskResponse(id=task.id)
 
 
@@ -459,13 +485,24 @@ async def update_task(
     task_id: uuid.UUID,
     body: UpdateTaskRequest,
     db: Annotated[AsyncSession, Depends(get_db)],
+    background_tasks: BackgroundTasks,
 ):
     task = await db.get(Task, task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(task, field, value)
+    needs_reindex = bool({"statement", "classifier"} & body.model_fields_set)
+    if needs_reindex:
+        await db.execute(delete(TaskEmbedding).where(
+            TaskEmbedding.task_id == task_id, TaskEmbedding.kind == "topic"
+        ))
     await db.commit()
+    if needs_reindex and task.status == "published" and settings.openrouter_api_key:
+        async def _embed():
+            async with SessionLocal() as session:
+                await compute_and_store_task_embedding(session, task_id)
+        background_tasks.add_task(_embed)
     return StatusOk()
 
 
@@ -483,6 +520,8 @@ async def recompute_task_embedding(
         async with SessionLocal() as session:
             await compute_and_store_task_embedding(session, task_id)
 
+    if not settings.openrouter_api_key:
+        raise HTTPException(status_code=503, detail="OPENROUTER_API_KEY не задан")
     background_tasks.add_task(_job)
     return EmbeddingQueuedResponse()
 

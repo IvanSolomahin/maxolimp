@@ -5,9 +5,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+asyncpg://gazprompt:gazprompt@localhost:5432/gazprompt"
-    embedding_model: str = "intfloat/multilingual-e5-large"
-    embedding_model_version: str = "1.0"
-    embedding_dimension: int = 1024
+    embedding_model: str = "qwen/qwen3-embedding-4b"
+    embedding_dimension: int = 2560
+    openrouter_api_key: str | None = None
     rrf_k: int = 60
 
 

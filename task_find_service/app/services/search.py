@@ -17,6 +17,9 @@ def _snippet(statement: str, max_len: int = 160) -> str:
 
 def _task_filters_sql(prefix: str = "t") -> str:
     return f"""
+        (CAST(:subject AS TEXT) IS NULL OR {prefix}.subject = CAST(:subject AS TEXT))
+        AND (CAST(:grade AS SMALLINT) IS NULL OR {prefix}.grade = CAST(:grade AS SMALLINT))
+        AND
         (CAST(:difficulty_min AS SMALLINT) IS NULL
             OR {prefix}.difficulty >= CAST(:difficulty_min AS SMALLINT))
         AND (CAST(:difficulty_max AS SMALLINT) IS NULL
@@ -42,8 +45,12 @@ def _filter_params(
     stage: str | None,
     solution_method_id: uuid.UUID | None,
     include_draft: bool = False,
+    subject: str | None = None,
+    grade: int | None = None,
 ) -> dict[str, Any]:
     return {
+        "subject": subject,
+        "grade": grade,
         "difficulty_min": difficulty_min,
         "difficulty_max": difficulty_max,
         "year_from": year_from,
@@ -67,6 +74,9 @@ async def hybrid_search_tasks(
     sort: str,
     page: int,
     size: int,
+    subject: str | None = None,
+    grade: int | None = None,
+    mode: str = "topic",
 ) -> tuple[int, list[dict]]:
     offset = (page - 1) * size
     params = _filter_params(
@@ -76,6 +86,8 @@ async def hybrid_search_tasks(
         year_to=year_to,
         stage=stage,
         solution_method_id=solution_method_id,
+        subject=subject,
+        grade=grade,
     )
     params["limit"] = size
     params["offset"] = offset
@@ -83,34 +95,64 @@ async def hybrid_search_tasks(
 
     if q and q.strip():
         params["q"] = q.strip()
-        params["query_vec"] = vector_to_pg(embed_text(params["q"]))
+        query = params["q"]
+        can_embed = bool(settings.openrouter_api_key)
+        if can_embed:
+            params["query_vec"] = vector_to_pg(await embed_text(query))
+        params["model"] = settings.embedding_model
+        params["dimensions"] = settings.embedding_dimension
+        params["mode"] = mode
+        kind_filter = "e.kind = 'topic'" if mode == "topic" else "e.kind = 'solution'" if mode == "solution" else "e.kind IN ('topic', 'solution')"
+        vector_cte = ""
+        vector_union = ""
+        if can_embed:
+            vector_cte = f"""
+        , vec AS (
+            SELECT id, row_number() OVER (ORDER BY distance) AS rn FROM (
+                SELECT e.task_id AS id,
+                       e.embedding::halfvec(2560) <=> CAST(:query_vec AS halfvec(2560)) AS distance
+                FROM task_embeddings e JOIN tasks t ON t.id = e.task_id
+                WHERE {kind_filter} AND e.model = CAST(:model AS TEXT)
+                  AND e.dimensions = CAST(:dimensions AS INTEGER) AND {_task_filters_sql('t')}
+                ORDER BY e.embedding::halfvec(2560) <=> CAST(:query_vec AS halfvec(2560))
+                LIMIT 500
+            ) candidates
+        )
+            """
+            vector_union = "UNION ALL SELECT id, 1.0 / (CAST(:rrf_k AS INTEGER) + rn) FROM vec"
         sql = f"""
         WITH fts AS (
             SELECT t.id,
                    ROW_NUMBER() OVER (
-                       ORDER BY ts_rank(t.search_vector, plainto_tsquery('russian', :q)) DESC
+                       ORDER BY GREATEST(
+                           CASE WHEN :mode IN ('topic', 'both') THEN ts_rank(t.topic_search_vector, plainto_tsquery('russian', :q)) ELSE 0 END,
+                           CASE WHEN :mode IN ('solution', 'both') THEN COALESCE((
+                               SELECT max(ts_rank(s.search_vector, plainto_tsquery('russian', :q)))
+                               FROM solutions s WHERE s.task_id = t.id AND NOT s.is_generated
+                           ), 0) ELSE 0 END
+                       ) DESC
                    ) AS rn
             FROM tasks t
-            WHERE t.search_vector @@ plainto_tsquery('russian', :q)
+            WHERE ((:mode IN ('topic', 'both') AND t.topic_search_vector @@ plainto_tsquery('russian', :q))
+                OR (:mode IN ('solution', 'both') AND EXISTS (
+                    SELECT 1 FROM solutions s WHERE s.task_id = t.id AND NOT s.is_generated
+                    AND s.search_vector @@ plainto_tsquery('russian', :q))))
               AND {_task_filters_sql("t")}
+            ORDER BY GREATEST(
+                CASE WHEN :mode IN ('topic', 'both') THEN ts_rank(t.topic_search_vector, plainto_tsquery('russian', :q)) ELSE 0 END,
+                CASE WHEN :mode IN ('solution', 'both') THEN COALESCE((
+                    SELECT max(ts_rank(s.search_vector, plainto_tsquery('russian', :q)))
+                    FROM solutions s WHERE s.task_id = t.id AND NOT s.is_generated
+                ), 0) ELSE 0 END
+            ) DESC
             LIMIT 500
-        ),
-        vec AS (
-            SELECT id, rn FROM (
-                SELECT t.id,
-                       ROW_NUMBER() OVER (ORDER BY t.embedding <=> :query_vec::vector) AS rn
-                FROM tasks t
-                WHERE t.embedding IS NOT NULL
-                  AND {_task_filters_sql("t")}
-            ) vsub
-            WHERE rn <= 500
-        ),
+        )
+        {vector_cte},
         rrf AS (
-            SELECT COALESCE(f.id, v.id) AS id,
-                   COALESCE(1.0 / (CAST(:rrf_k AS INTEGER) + f.rn), 0)
-                       + COALESCE(1.0 / (CAST(:rrf_k AS INTEGER) + v.rn), 0) AS score
-            FROM fts f
-            FULL OUTER JOIN vec v ON f.id = v.id
+            SELECT id, sum(part_score) AS score FROM (
+                SELECT id, 1.0 / (CAST(:rrf_k AS INTEGER) + rn) AS part_score FROM fts
+                {vector_union}
+            ) hits GROUP BY id
         ),
         ranked AS (
             SELECT r.id, r.score,
@@ -193,14 +235,14 @@ async def keyword_search(
     sql = """
     WITH matched AS (
         SELECT t.id,
-               ts_rank(t.search_vector, to_tsquery('russian', :tsq)) AS rank,
+               ts_rank(t.topic_search_vector, to_tsquery('russian', :tsq)) AS rank,
                ts_headline(
                    'russian', t.statement, to_tsquery('russian', :tsq),
                    'MaxWords=20, MinWords=5'
                ) AS snippet
         FROM tasks t
         WHERE t.status = 'published'
-          AND t.search_vector @@ to_tsquery('russian', :tsq)
+          AND t.topic_search_vector @@ to_tsquery('russian', :tsq)
     )
     SELECT COUNT(*) OVER () AS total_count, id, rank, snippet
     FROM matched
@@ -315,21 +357,24 @@ async def similar_tasks(
     task: Task,
     limit: int,
 ) -> list[dict]:
-    if task.embedding is None:
-        return []
-    vec = vector_to_pg(list(task.embedding))
     sql = """
-    SELECT t.id, t.title, 1 - (t.embedding <=> :vec::vector) AS score
-    FROM tasks t
-    WHERE t.id <> CAST(:task_id AS UUID)
-      AND t.embedding IS NOT NULL
+    SELECT t.id, COALESCE(t.title, LEFT(t.statement, 100)) AS title,
+           1 - (e.embedding <=> source.embedding) AS score
+    FROM task_embeddings source
+    JOIN task_embeddings e ON e.kind = source.kind AND e.model = source.model
+        AND e.dimensions = source.dimensions
+    JOIN tasks t ON t.id = e.task_id
+    WHERE source.task_id = CAST(:task_id AS UUID)
+      AND source.kind = 'topic' AND source.model = CAST(:model AS TEXT)
+      AND source.dimensions = 2560
+      AND t.id <> source.task_id
       AND t.status = 'published'
-    ORDER BY t.embedding <=> :vec::vector
+    ORDER BY e.embedding::halfvec(2560) <=> source.embedding::halfvec(2560)
     LIMIT CAST(:limit AS INTEGER)
     """
     result = await session.execute(
         text(sql),
-        {"vec": vec, "task_id": task.id, "limit": limit},
+        {"task_id": task.id, "model": settings.embedding_model, "limit": limit},
     )
     return [dict(r) for r in result.mappings().all()]
 

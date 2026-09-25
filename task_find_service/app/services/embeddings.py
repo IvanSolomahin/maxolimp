@@ -1,46 +1,66 @@
 import hashlib
-from datetime import datetime, timezone
+import math
+import uuid
 
-import numpy as np
-from sqlalchemy import select, update
+import httpx
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import Task
 
 
-def embed_text(text: str, dimension: int | None = None) -> list[float]:
-    """Детерминированный stub-эмбеддинг для dev (замените на вызов модели в prod)."""
-    dim = dimension or settings.embedding_dimension
-    digest = hashlib.sha512(text.encode("utf-8")).digest()
-    rng = np.random.default_rng(int.from_bytes(digest[:8], "big"))
-    vec = rng.standard_normal(dim).astype(np.float32)
-    norm = np.linalg.norm(vec)
-    if norm > 0:
-        vec = vec / norm
-    return vec.tolist()
+def topic_text(task: Task) -> str:
+    return "\n".join(part for part in ((task.classifier or "").strip(), task.statement.strip()) if part)
 
 
 def vector_to_pg(vec: list[float]) -> str:
-    return "[" + ",".join(f"{x:.8f}" for x in vec) + "]"
+    return "[" + ",".join(str(x) for x in vec) + "]"
 
 
-async def compute_and_store_task_embedding(session: AsyncSession, task_id) -> None:
-    result = await session.execute(select(Task).where(Task.id == task_id))
-    task = result.scalar_one_or_none()
+async def embed_text(value: str) -> list[float]:
+    if not settings.openrouter_api_key:
+        raise RuntimeError("OPENROUTER_API_KEY не задан")
+    async with httpx.AsyncClient(timeout=120) as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/embeddings",
+            headers={"Authorization": f"Bearer {settings.openrouter_api_key}"},
+            json={"model": settings.embedding_model, "input": [value]},
+        )
+        response.raise_for_status()
+    data = response.json()["data"]
+    if len(data) != 1 or data[0].get("index") != 0:
+        raise ValueError("Неверный ответ сервиса эмбеддингов")
+    vector = data[0]["embedding"]
+    if len(vector) != settings.embedding_dimension or any(not math.isfinite(x) for x in vector):
+        raise ValueError("Неверная размерность или значения эмбеддинга")
+    return vector
+
+
+async def compute_and_store_task_embedding(session: AsyncSession, task_id: uuid.UUID) -> None:
+    task = await session.get(Task, task_id)
     if task is None:
         return
-    text = f"{task.title}\n{task.statement}"
-    vec = embed_text(text)
-    now = datetime.now(timezone.utc)
-    await session.execute(
-        update(Task)
-        .where(Task.id == task_id)
-        .values(
-            embedding=vec,
-            embedding_model=settings.embedding_model,
-            embedding_model_version=settings.embedding_model_version,
-            embedding_updated_at=now,
-        )
+    result = await session.execute(
+        text("SELECT content FROM solutions WHERE task_id = :id AND NOT is_generated ORDER BY created_at LIMIT 1"),
+        {"id": task_id},
     )
+    solution = result.scalar_one_or_none() or ""
+    for kind, value in (("topic", topic_text(task)), ("solution", solution)):
+        params = {"id": task_id, "kind": kind, "model": settings.embedding_model,
+                  "dimensions": settings.embedding_dimension}
+        if not value:
+            await session.execute(text("DELETE FROM task_embeddings WHERE task_id = :id AND kind = :kind AND model = :model"), params)
+            continue
+        content_hash = hashlib.sha256(value.encode()).hexdigest()
+        existing = await session.execute(text("SELECT text_hash FROM task_embeddings WHERE task_id = :id AND kind = :kind AND model = :model AND dimensions = :dimensions"), params)
+        if existing.scalar_one_or_none() == content_hash:
+            continue
+        vector = await embed_text(value)
+        await session.execute(text("""
+            INSERT INTO task_embeddings (task_id, kind, model, dimensions, text_hash, embedding)
+            VALUES (:id, :kind, :model, :dimensions, :hash, CAST(:vector AS vector))
+            ON CONFLICT (task_id, kind, model, dimensions) DO UPDATE SET
+                text_hash = EXCLUDED.text_hash, embedding = EXCLUDED.embedding, updated_at = now()
+        """), {**params, "hash": content_hash, "vector": vector_to_pg(vector)})
     await session.commit()

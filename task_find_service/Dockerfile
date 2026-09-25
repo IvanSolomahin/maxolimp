@@ -10,6 +10,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY import_etl.py ./import_etl.py
 
 EXPOSE 8000
 
