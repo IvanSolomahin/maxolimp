@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     embedding_model_version: str = "1.0"
     embedding_dimension: int = 1024
     rrf_k: int = 60
+    olymp_find_service_url: str = "http://olymp-app:8000"
 
 
 settings = Settings()
