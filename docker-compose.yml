@@ -3,6 +3,17 @@ networks:
     driver: bridge
 
 services:
+  frontend:
+    build:
+      context: ./ui
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - task-app
+      - olymp-app
+    networks:
+      - gazprompt
+
   task-db:
     image: pgvector/pgvector:pg16
     environment:
@@ -13,7 +24,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./task_find_service/sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     networks:
       - gazprompt
     healthcheck:
@@ -26,7 +37,7 @@ services:
     build:
       context: ./task_find_service
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     env_file:
       - .env
     environment:
@@ -52,7 +63,7 @@ services:
       - olymp-pgdata:/var/lib/postgresql/data
       - ./olymp_find_service/sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     networks:
       - gazprompt
     healthcheck:
@@ -65,7 +76,7 @@ services:
     build:
       context: ./olymp_find_service
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
     env_file:
       - .env
     environment:

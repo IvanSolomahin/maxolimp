@@ -252,13 +252,7 @@
             <div class="intro"><h1 data-od-id="university-heading">Куда хотите поступать?</h1><p>Выберем олимпиады, которые учитывает нужный вам вуз.</p></div>
             <label class="field-label" for="university-search">Найти вуз</label>
             <div class="search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input class="search-input" id="university-search" type="search" placeholder="Название или город" autocomplete="off" data-search="university"></div>
-            <div class="choice-list" data-options="university">
-              <label class="choice-card"><input type="radio" name="university" value="hse"><span class="choice-body"><span><span class="choice-title">НИУ ВШЭ</span><span class="choice-note">Москва · Нижний Новгород · Санкт-Петербург · Пермь</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="university" value="msu"><span class="choice-body"><span><span class="choice-title">МГУ им. М. В. Ломоносова</span><span class="choice-note">Москва</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="university" value="mipt"><span class="choice-body"><span><span class="choice-title">МФТИ</span><span class="choice-note">Долгопрудный</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="university" value="itmo"><span class="choice-body"><span><span class="choice-title">Университет ИТМО</span><span class="choice-note">Санкт-Петербург</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="university" value="spbu"><span class="choice-body"><span><span class="choice-title">СПбГУ</span><span class="choice-note">Санкт-Петербург</span></span><span class="radio-dot"></span></span></label>
-            </div>
+            <div class="choice-list" data-options="university"></div>
             <p class="empty-state" data-empty="university" hidden>Такой вуз не найден</p>
           </section>
 
@@ -268,12 +262,7 @@
             <div class="intro"><h1 data-od-id="direction-heading">Какое направление?</h1><p>Сопоставим профиль олимпиады с правилами приёма программы.</p></div>
             <label class="field-label" for="direction-search">Найти направление</label>
             <div class="search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input class="search-input" id="direction-search" type="search" placeholder="Например, математика" autocomplete="off" data-search="direction"></div>
-            <div class="choice-list" data-options="direction">
-              <label class="choice-card"><input type="radio" name="direction" value="pmi"><span class="choice-body"><span><span class="choice-title">Прикладная математика и информатика</span><span class="choice-note">Математика · информатика</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="direction" value="data"><span class="choice-body"><span><span class="choice-title">Компьютерные науки и анализ данных</span><span class="choice-note">Информатика · математика</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="direction" value="economics"><span class="choice-body"><span><span class="choice-title">Экономика и анализ данных</span><span class="choice-note">Математика · экономика</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="direction" value="math"><span class="choice-body"><span><span class="choice-title">Математика</span><span class="choice-note">Математика · информатика</span></span><span class="radio-dot"></span></span></label>
-            </div>
+            <div class="choice-list" data-options="direction"></div>
             <p class="empty-state" data-empty="direction" hidden>Такое направление не найдено</p>
           </section>
 
@@ -281,11 +270,8 @@
             <div class="progress-meta"><span>ШАГ 3 ИЗ 3</span><span>Предмет · необязательно</span></div>
             <div class="progress-track"><div class="progress-value" style="width:100%"></div></div>
             <div class="intro"><h1 data-od-id="subject-heading">Есть любимый предмет?</h1><p>Сузьте подборку или посмотрите все подходящие профили.</p></div>
-            <div class="choice-list" data-options="subject">
-              <label class="choice-card"><input type="radio" name="subject" value="math"><span class="choice-body"><span><span class="choice-title">Математика</span><span class="choice-note">Алгебра · геометрия · комбинаторика</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="subject" value="informatics"><span class="choice-body"><span><span class="choice-title">Информатика</span><span class="choice-note">Алгоритмы · программирование · анализ данных</span></span><span class="radio-dot"></span></span></label>
-              <label class="choice-card"><input type="radio" name="subject" value="physics"><span class="choice-body"><span><span class="choice-title">Физика</span><span class="choice-note">Механика · электричество · термодинамика</span></span><span class="radio-dot"></span></span></label>
-            </div>
+            <div class="choice-list" data-options="subject"></div>
+            <p class="empty-state" data-empty="subject" hidden>Предметы не найдены</p>
           </section>
 
           <section class="view" data-step="3" data-od-id="results-step" hidden>
@@ -293,8 +279,10 @@
             <div class="criteria-summary" data-od-id="criteria-summary"><div class="criteria-copy"><strong id="criteria-main"></strong><span id="criteria-sub"></span></div><button class="edit-link" id="edit-criteria" type="button">Изменить</button></div>
             <div class="segment" aria-label="Фильтр по льготе" data-od-id="benefit-filter"><button type="button" aria-pressed="true" data-benefit="all">Все</button><button type="button" aria-pressed="false" data-benefit="bvi">БВИ</button><button type="button" aria-pressed="false" data-benefit="100">100 баллов</button></div>
             <div class="cards" id="results-list" data-od-id="olympiad-results"></div>
+            <button class="btn-secondary" id="more-results" type="button" hidden>Показать ещё</button>
             <p class="empty-state" id="empty-results" hidden>По этому фильтру вариантов нет</p>
-            <aside class="notice" data-od-id="admission-note">Льготы показаны как ориентир по правилам приёма 2026 года. Итог зависит от диплома, класса, подтверждающего результата ЕГЭ и конкретной программы.</aside>
+            <aside class="notice" data-od-id="admission-note">Условия льготы зависят от правил приёма выбранной программы. Проверьте их в вузе.</aside>
+            <p><a href="/olympiad-task-search.html">Перейти к поиску задач</a></p>
           </section>
         </main>
 
@@ -314,142 +302,9 @@
       <div class="sheet-head"><div><h2 id="sheet-title"></h2><p class="sheet-sub" id="sheet-sub"></p></div><button class="icon-btn" id="close-dialog" type="button" aria-label="Закрыть"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <ul class="place-list" id="place-list"></ul>
       <p class="sheet-note">Площадки могут уточняться организатором. Проверяйте адрес перед поездкой.</p>
-      <div class="sheet-actions"><a class="btn-secondary" id="source-link" href="#" target="_blank" rel="noreferrer">Открыть официальный источник</a></div>
     </div>
   </dialog>
 
-  <script>
-    const STORAGE_KEY = 'olympiad-onboarding-single-v1';
-    const FAVORITES_KEY = 'olympiad-onboarding-favorites-v1';
-    const labels = {
-      university: { hse: 'НИУ ВШЭ', msu: 'МГУ им. М. В. Ломоносова', mipt: 'МФТИ', itmo: 'Университет ИТМО', spbu: 'СПбГУ' },
-      direction: { pmi: 'Прикладная математика и информатика', data: 'Компьютерные науки и анализ данных', economics: 'Экономика и анализ данных', math: 'Математика' },
-      subject: { math: 'Математика', informatics: 'Информатика', physics: 'Физика' }
-    };
-    const olympiads = [
-      { id:'vysshaya-proba-math', subject:'math', subjectLabel:'Математика', name:'«Высшая проба»', difficulty:'Высокая', level:'hard', benefit:'БВИ', benefitKey:'bvi', places:['Москва — Старая Басманная, 21/4, стр. 5','Екатеринбург — гимназия № 9','Нижний Новгород — НИУ ВШЭ','Новосибирск — НГУЭУ','Архангельск — САФУ'], placeSummary:'Москва · Екатеринбург · ещё города', note:'Победителям и призёрам 11 класса при подтверждении предмета от 75 баллов.', source:'https://olymp.hse.ru/mmo/place' },
-      { id:'lomonosov-math', subject:'math', subjectLabel:'Математика', name:'«Ломоносов»', difficulty:'Очень высокая', level:'very-hard', benefit:'БВИ', benefitKey:'bvi', places:['Москва — площадки МГУ имени М. В. Ломоносова'], placeSummary:'Москва', note:'Особое право зависит от диплома, класса и правил выбранной программы.', source:'https://olymp.msu.ru/rus/page/main/29/page/grafik-provedeniya-zakluchitelnogo-ehtapa-2025-2026' },
-      { id:'mos-informatics', subject:'informatics', subjectLabel:'Информатика', name:'Московская олимпиада школьников', difficulty:'Очень высокая', level:'very-hard', benefit:'БВИ', benefitKey:'bvi', places:['Москва — очные площадки организатора'], placeSummary:'Москва', note:'Для дипломантов 11 класса; подтверждающий результат по математике — от 75.', source:'https://ba.hse.ru/mirror/pubs/share/1120646785' },
-      { id:'unified-math', subject:'math', subjectLabel:'Математика', name:'Объединённая межвузовская олимпиада', difficulty:'Высокая', level:'hard', benefit:'100 баллов', benefitKey:'100', places:['Москва','Санкт-Петербург','Казань','Новосибирск'], placeSummary:'Москва · Санкт-Петербург · ещё города', note:'Максимальный балл по математике — при соблюдении условий приёма.', source:'https://ba.hse.ru/mirror/pubs/share/1120646785' },
-      { id:'vysshaya-proba-physics', subject:'physics', subjectLabel:'Физика', name:'«Высшая проба»', difficulty:'Высокая', level:'hard', benefit:'100 баллов', benefitKey:'100', places:['Москва — улица Таллинская, 34','Екатеринбург — гимназия № 9','Нижний Новгород — НИУ ВШЭ','Новосибирск — НГУЭУ'], placeSummary:'Москва · Екатеринбург · ещё города', note:'Возможная льгота зависит от выбранной программы и статуса дипломанта.', source:'https://olymp.hse.ru/mmo/place' }
-    ];
-
-    function readState() {
-      try { return { step:0, university:'', direction:'', subject:'', ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') }; }
-      catch { return { step:0, university:'', direction:'', subject:'' }; }
-    }
-    let state = readState();
-    let activeBenefit = 'all';
-    const favorites = new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'));
-    const views = [...document.querySelectorAll('[data-step]')];
-    const backButton = document.getElementById('back-button');
-    const appbarTitle = document.getElementById('appbar-title');
-    const bottomAction = document.getElementById('bottom-action');
-    const primaryAction = document.getElementById('primary-action');
-    const skipAction = document.getElementById('skip-action');
-
-    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-    function showStep(step) {
-      state.step = Math.max(0, Math.min(3, step));
-      saveState();
-      views.forEach(view => { const active = Number(view.dataset.step) === state.step; view.hidden = !active; view.setAttribute('aria-hidden', String(!active)); });
-      backButton.hidden = state.step === 0;
-      appbarTitle.textContent = state.step === 3 ? 'Результаты' : 'Подбор олимпиад';
-      bottomAction.hidden = state.step === 3;
-      skipAction.hidden = state.step !== 2;
-      primaryAction.textContent = state.step === 2 ? 'Показать олимпиады' : 'Продолжить';
-      primaryAction.disabled = state.step === 0 ? !state.university : state.step === 1 ? !state.direction : false;
-      if (state.step === 3) renderResults();
-      document.querySelector('.content').scrollTop = 0;
-    }
-    function syncInputs() {
-      ['university','direction','subject'].forEach(field => document.querySelectorAll(`input[name="${field}"]`).forEach(input => { input.checked = input.value === state[field]; }));
-    }
-    document.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => {
-      state[input.name] = input.value;
-      if (input.name === 'university') { state.direction = ''; state.subject = ''; }
-      if (input.name === 'direction') state.subject = '';
-      syncInputs();
-      saveState();
-      primaryAction.disabled = state.step === 0 ? !state.university : state.step === 1 ? !state.direction : false;
-    }));
-    primaryAction.addEventListener('click', () => {
-      if (state.step === 0 && state.university) showStep(1);
-      else if (state.step === 1 && state.direction) showStep(2);
-      else if (state.step === 2) showStep(3);
-    });
-    skipAction.addEventListener('click', () => { state.subject = ''; syncInputs(); showStep(3); });
-    backButton.addEventListener('click', () => showStep(state.step - 1));
-    document.getElementById('edit-criteria').addEventListener('click', () => showStep(0));
-
-    document.querySelectorAll('[data-search]').forEach(search => search.addEventListener('input', () => {
-      const group = search.dataset.search;
-      const query = search.value.trim().toLocaleLowerCase('ru');
-      let visible = 0;
-      document.querySelectorAll(`[data-options="${group}"] .choice-card`).forEach(card => {
-        const match = card.textContent.toLocaleLowerCase('ru').includes(query);
-        card.hidden = !match;
-        if (match) visible += 1;
-      });
-      document.querySelector(`[data-empty="${group}"]`).hidden = visible !== 0;
-    }));
-
-    function icon(name) {
-      const paths = {
-        pin:'<path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"/><circle cx="12" cy="10" r="2"/>',
-        gauge:'<path d="M4 18a8 8 0 1 1 16 0"/><path d="m12 14 4-4"/>',
-        award:'<circle cx="12" cy="8" r="5"/><path d="m8.5 12-1 9 4.5-2.5 4.5 2.5-1-9"/>',
-        heart:'<path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.47A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z"/>'
-      };
-      return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
-    }
-    function visibleOlympiads() { return olympiads.filter(item => (!state.subject || item.subject === state.subject) && (activeBenefit === 'all' || item.benefitKey === activeBenefit)); }
-    function renderResults() {
-      document.getElementById('criteria-main').textContent = `${labels.university[state.university] || 'НИУ ВШЭ'} · ${labels.direction[state.direction] || 'Прикладная математика и информатика'}`;
-      document.getElementById('criteria-sub').textContent = state.subject ? `Предмет: ${labels.subject[state.subject]}` : 'Любой профиль олимпиады';
-      const items = visibleOlympiads();
-      document.getElementById('result-count').textContent = `${items.length} ${items.length === 1 ? 'вариант' : items.length < 5 ? 'варианта' : 'вариантов'}`;
-      document.getElementById('results-list').innerHTML = items.map(item => `
-        <article class="olympiad-card" data-od-id="olympiad-card-${item.id}">
-          <div class="card-head"><div><p class="card-kicker">${item.subjectLabel}</p><h2>${item.name}</h2></div><button class="icon-btn favorite" type="button" aria-label="${favorites.has(item.id) ? 'Убрать из избранного' : 'Добавить в избранное'}" aria-pressed="${favorites.has(item.id)}" data-favorite="${item.id}">${icon('heart')}</button></div>
-          <div class="card-facts"><div class="fact-row">${icon('pin')}<span class="fact-label">Очный этап</span><span class="fact-value">${item.placeSummary}</span></div><div class="fact-row">${icon('gauge')}<span class="fact-label">Сложность</span><span class="fact-value"><span class="difficulty ${item.level}">${item.difficulty}</span></span></div><div class="fact-row">${icon('award')}<span class="fact-label">Льгота</span><span class="fact-value"><span class="benefit">${item.benefit}</span></span></div></div>
-          <div class="card-foot"><p>${item.note}</p><button class="places-btn" type="button" data-places="${item.id}">Площадки</button></div>
-        </article>`).join('');
-      document.getElementById('empty-results').hidden = items.length !== 0;
-    }
-    document.querySelectorAll('[data-benefit]').forEach(button => button.addEventListener('click', () => {
-      activeBenefit = button.dataset.benefit;
-      document.querySelectorAll('[data-benefit]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-      renderResults();
-    }));
-    document.getElementById('results-list').addEventListener('click', event => {
-      const favorite = event.target.closest('[data-favorite]');
-      if (favorite) {
-        const id = favorite.dataset.favorite;
-        favorites.has(id) ? favorites.delete(id) : favorites.add(id);
-        localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
-        renderResults();
-        return;
-      }
-      const places = event.target.closest('[data-places]');
-      if (places) openPlaces(olympiads.find(item => item.id === places.dataset.places));
-    });
-
-    const dialog = document.getElementById('places-dialog');
-    function openPlaces(item) {
-      document.getElementById('sheet-title').textContent = item.name;
-      document.getElementById('sheet-sub').textContent = `${item.subjectLabel} · очный заключительный этап`;
-      document.getElementById('place-list').innerHTML = item.places.map(place => `<li>${place}</li>`).join('');
-      document.getElementById('source-link').href = item.source;
-      dialog.showModal();
-    }
-    document.getElementById('close-dialog').addEventListener('click', () => dialog.close());
-    dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
-
-    syncInputs();
-    if (state.step > 0 && !state.university) state.step = 0;
-    if (state.step > 1 && !state.direction) state.step = 1;
-    showStep(state.step);
-  </script>
+  <script src="/onboarding.js" defer></script>
 </body>
 </html>

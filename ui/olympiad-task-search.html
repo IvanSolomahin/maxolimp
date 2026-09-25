@@ -384,6 +384,8 @@
 
     .task-title a { color: inherit; text-decoration: none; }
     .task-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .task-title .text-btn { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+    .task-title .text-btn:hover { background: none; text-decoration: underline; text-underline-offset: 3px; }
 
     .task-fragment {
       display: -webkit-box;
@@ -605,11 +607,11 @@
 <body>
   <header class="topnav" data-od-id="topnav">
     <div class="container topnav-inner">
-      <button class="icon-btn" type="button" aria-label="Назад" data-od-id="back-button" onclick="history.length &gt; 1 ? history.back() : showToast('Это начало демонстрационного сценария')">
+      <a class="icon-btn" href="/olympiad-onboarding.html" aria-label="Подбор олимпиад" data-od-id="back-button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m15 18-6-6 6-6"></path><path d="M9 12h10"></path></svg>
-      </button>
+      </a>
       <h1 class="brand" data-od-id="site-title">Олимпиадные задачи</h1>
-      <button class="icon-btn" type="button" aria-label="Показать избранное" data-od-id="favorites-button" onclick="toggleFavoritesOnly()">
+      <button class="icon-btn" type="button" aria-label="Показать избранное" data-od-id="favorites-button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.47A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z"></path></svg>
       </button>
     </div>
@@ -646,9 +648,8 @@
             <label class="visually-hidden" for="sort-select">Сортировка</label>
             <select class="sort-select" id="sort-select" data-od-id="sort-select">
               <option value="relevance">По релевантности</option>
-              <option value="easy">Сначала проще</option>
-              <option value="hard">Сначала сложнее</option>
-              <option value="time">По времени</option>
+              <option value="newest">Сначала новые</option>
+              <option value="difficulty">По сложности</option>
             </select>
           </div>
         </div>
@@ -661,15 +662,12 @@
         </div>
 
         <div class="task-list" id="task-list" data-od-id="task-list" aria-labelledby="results-heading"></div>
+        <button class="btn btn-secondary" id="load-more" type="button" hidden>Показать ещё</button>
         <div class="empty-state" id="empty-state" data-od-id="empty-state" role="status" hidden="">
           <h3 id="empty-title">Ничего не найдено</h3>
           <p id="empty-copy">Попробуйте другой запрос или уберите часть фильтров.</p>
           <button class="text-btn" id="empty-action" type="button" data-od-id="reset-search">Сбросить поиск</button>
         </div>
-        <p class="demo-note" data-od-id="demo-data-note">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-          <span>Условия и метаданные приведены для демонстрации интерфейса.</span>
-        </p>
       </div>
     </section>
   </main>
@@ -682,56 +680,16 @@
       </button>
     </div>
     <div class="sheet-body">
-      <div class="filter-group" data-od-id="topic-filter-group">
-        <h3>Тема и подтема</h3>
-        <div class="filter-selects">
-          <label class="select-field" for="topic-filter">
-            <span>Тема</span>
-            <select class="filter-select" id="topic-filter" data-filter-group="topic" data-od-id="topic-filter">
-              <option value="">Все темы</option>
-            </select>
-          </label>
-          <label class="select-field" for="subtopic-filter">
-            <span>Подтема</span>
-            <select class="filter-select" id="subtopic-filter" data-filter-group="subtopic" data-od-id="subtopic-filter" disabled>
-              <option value="">Сначала выберите тему</option>
-            </select>
-          </label>
-        </div>
-      </div>
-      <div class="filter-group" data-od-id="olympiad-filter-group">
-        <h3>Олимпиада</h3>
-        <label class="select-field" for="olympiad-filter">
-          <span>Источник задачи</span>
-          <select class="filter-select" id="olympiad-filter" data-filter-group="olympiad" data-od-id="olympiad-filter">
-            <option value="">Все олимпиады</option>
-          </select>
-        </label>
-      </div>
       <div class="filter-group">
         <h3>Сложность</h3>
-        <div class="choice-grid" data-filter-group="difficulty">
-          <label class="choice"><input type="checkbox" value="Базовая"><span>Базовая</span></label>
-          <label class="choice"><input type="checkbox" value="Средняя"><span>Средняя</span></label>
-          <label class="choice"><input type="checkbox" value="Высокая"><span>Высокая</span></label>
-        </div>
-      </div>
-      <div class="filter-group">
-        <h3>Ожидаемое время</h3>
-        <div class="choice-grid" data-filter-group="duration">
-          <label class="choice"><input type="checkbox" value="short"><span>До 20 минут</span></label>
-          <label class="choice"><input type="checkbox" value="medium"><span>20–40 минут</span></label>
-          <label class="choice"><input type="checkbox" value="long"><span>Более 40 минут</span></label>
+        <div class="filter-selects">
+          <label class="select-field" for="difficulty-min"><span>От</span><input class="filter-select" id="difficulty-min" type="number" min="1" max="10" placeholder="1"></label>
+          <label class="select-field" for="difficulty-max"><span>До</span><input class="filter-select" id="difficulty-max" type="number" min="1" max="10" placeholder="10"></label>
         </div>
       </div>
       <div class="filter-group">
         <h3>Класс</h3>
-        <div class="choice-grid" data-filter-group="grade">
-          <label class="choice"><input type="checkbox" value="8"><span>8 класс</span></label>
-          <label class="choice"><input type="checkbox" value="9"><span>9 класс</span></label>
-          <label class="choice"><input type="checkbox" value="10"><span>10 класс</span></label>
-          <label class="choice"><input type="checkbox" value="11"><span>11 класс</span></label>
-        </div>
+        <select class="filter-select" id="grade-filter"><option value="">Все классы</option><option value="8">8 класс</option><option value="9">9 класс</option><option value="10">10 класс</option><option value="11">11 класс</option></select>
       </div>
     </div>
     <div class="sheet-actions">
@@ -740,392 +698,14 @@
     </div>
   </dialog>
 
+  <dialog id="task-detail" aria-labelledby="detail-title">
+    <div class="sheet-head"><h2 id="detail-title">Задача</h2><button class="icon-btn" type="button" id="detail-close" aria-label="Закрыть">×</button></div>
+    <div class="sheet-body"><p id="detail-meta"></p><p id="detail-statement" style="white-space:pre-wrap"></p><a id="detail-source" target="_blank" rel="noopener noreferrer" hidden>Открыть источник</a></div>
+  </dialog>
+
   <div class="toast" id="toast" role="status" aria-live="polite" hidden=""></div>
 
-  <script>
-    const tasks = [
-      {
-        id: 'm-12', subject: 'math', number: '№ 12', grade: '9', difficulty: 'Средняя', difficultyRank: 2, minutes: 25,
-        title: 'Инвариант на клетчатой доске',
-        fragment: 'На клетчатой доске отмечены несколько клеток. За один ход разрешается изменить состояние двух клеток, имеющих общую сторону…',
-        description: 'Комбинаторика · поиск сохраняющейся величины',
-        olympiad: 'ВсОШ · муниципальный этап'
-      },
-      {
-        id: 'm-27', subject: 'math', number: '№ 27', grade: '10', difficulty: 'Высокая', difficultyRank: 3, minutes: 45,
-        title: 'Делимость последовательности',
-        fragment: 'Последовательность натуральных чисел задаётся рекуррентно. Докажите, что среди нескольких последовательных членов найдётся число с требуемым делителем…',
-        description: 'Теория чисел · рекуррентные соотношения',
-        olympiad: 'Турнир городов'
-      },
-      {
-        id: 'm-08', subject: 'math', number: '№ 8', grade: '8', difficulty: 'Базовая', difficultyRank: 1, minutes: 15,
-        title: 'Углы в равнобедренном треугольнике',
-        fragment: 'Внутри равнобедренного треугольника выбрана точка. Известны три угла между сторонами и проведёнными отрезками…',
-        description: 'Геометрия · дополнительное построение',
-        olympiad: 'Математический праздник'
-      },
-      {
-        id: 'p-16', subject: 'physics', number: '№ 16', grade: '9', difficulty: 'Средняя', difficultyRank: 2, minutes: 30,
-        title: 'Цепь с одинаковыми резисторами',
-        fragment: 'Из одинаковых резисторов собрали симметричную электрическую цепь. Найдите эквивалентное сопротивление между указанными точками…',
-        description: 'Электричество · симметрия цепи',
-        olympiad: 'Олимпиада «Физтех»'
-      },
-      {
-        id: 'p-31', subject: 'physics', number: '№ 31', grade: '10', difficulty: 'Высокая', difficultyRank: 3, minutes: 50,
-        title: 'Брусок на подвижном клине',
-        fragment: 'Небольшой брусок начинает скользить по гладкой наклонной поверхности клина, который может свободно двигаться по горизонтальному столу…',
-        description: 'Механика · законы сохранения',
-        olympiad: 'ВсОШ · региональный этап'
-      },
-      {
-        id: 'p-05', subject: 'physics', number: '№ 5', grade: '8', difficulty: 'Базовая', difficultyRank: 1, minutes: 18,
-        title: 'Смешивание воды разной температуры',
-        fragment: 'В теплоизолированный сосуд последовательно наливают несколько порций воды. Определите установившуюся температуру смеси…',
-        description: 'Тепловые явления · тепловой баланс',
-        olympiad: 'Олимпиада Максвелла'
-      }
-    ];
-
-    const state = {
-      subject: 'math',
-      query: '',
-      sort: 'relevance',
-      favoritesOnly: false,
-      filters: { topic: [], subtopic: [], olympiad: [], difficulty: [], duration: [], grade: [] },
-      favorites: new Set(JSON.parse(localStorage.getItem('olympiad-favorites') || '[]'))
-    };
-
-    const taskList = document.getElementById('task-list');
-    const emptyState = document.getElementById('empty-state');
-    const resultCount = document.getElementById('results-count');
-    const queryInput = document.getElementById('task-query');
-    const clearSearchButton = document.querySelector('[data-od-id="clear-search"]');
-    const filterDialog = document.getElementById('filter-dialog');
-    const activeFilters = document.getElementById('active-filters');
-    const filterCount = document.getElementById('filter-count');
-    const favoritesButton = document.querySelector('[data-od-id="favorites-button"]');
-    const filterButton = document.querySelector('[data-od-id="open-filters"]');
-    const emptyTitle = document.getElementById('empty-title');
-    const emptyCopy = document.getElementById('empty-copy');
-    const emptyAction = document.getElementById('empty-action');
-    let toastTimer;
-
-    function durationBucket(minutes) {
-      if (minutes < 20) return 'short';
-      if (minutes <= 40) return 'medium';
-      return 'long';
-    }
-
-    function taskTaxonomy(task) {
-      const [topic = '', subtopic = ''] = task.description.split('·').map(part => part.trim());
-      return { topic, subtopic };
-    }
-
-    function declension(count) {
-      const lastTwo = count % 100;
-      const last = count % 10;
-      if (lastTwo >= 11 && lastTwo <= 14) return 'заданий';
-      if (last === 1) return 'задание';
-      if (last >= 2 && last <= 4) return 'задания';
-      return 'заданий';
-    }
-
-    function getVisibleTasks() {
-      const normalizedQuery = state.query.trim().toLocaleLowerCase('ru');
-      const filtered = tasks.filter(task => {
-        const haystack = `${task.title} ${task.fragment} ${task.description} ${task.olympiad}`.toLocaleLowerCase('ru');
-        const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
-        const matchesDifficulty = !state.filters.difficulty.length || state.filters.difficulty.includes(task.difficulty);
-        const matchesDuration = !state.filters.duration.length || state.filters.duration.includes(durationBucket(task.minutes));
-        const matchesGrade = !state.filters.grade.length || state.filters.grade.includes(task.grade);
-        const taxonomy = taskTaxonomy(task);
-        const matchesTopic = !state.filters.topic.length || state.filters.topic.includes(taxonomy.topic);
-        const matchesSubtopic = !state.filters.subtopic.length || state.filters.subtopic.includes(taxonomy.subtopic);
-        const matchesOlympiad = !state.filters.olympiad.length || state.filters.olympiad.includes(task.olympiad);
-        const matchesFavorite = !state.favoritesOnly || state.favorites.has(task.id);
-        return task.subject === state.subject && matchesQuery && matchesTopic && matchesSubtopic && matchesOlympiad && matchesDifficulty && matchesDuration && matchesGrade && matchesFavorite;
-      });
-
-      return filtered.sort((a, b) => {
-        if (state.sort === 'easy') return a.difficultyRank - b.difficultyRank;
-        if (state.sort === 'hard') return b.difficultyRank - a.difficultyRank;
-        if (state.sort === 'time') return a.minutes - b.minutes;
-        return tasks.indexOf(a) - tasks.indexOf(b);
-      });
-    }
-
-    function taskCard(task) {
-      const favorite = state.favorites.has(task.id);
-      const difficultyClass = task.difficultyRank === 1 ? 'easy' : task.difficultyRank === 2 ? 'medium' : 'hard';
-      const titleMarkup = task.id === 'm-12'
-        ? `<a href="olympiad-task-view.html" data-od-id="open-task-${task.id}">${task.title}</a>`
-        : task.title;
-      return `
-        <article class="task-card" aria-labelledby="task-title-${task.id}" data-od-id="task-card-${task.id}">
-          <div class="task-top">
-            <span class="task-number">${task.number} · ${task.grade} класс</span>
-            <div class="task-actions">
-              <button class="icon-btn" type="button" aria-label="${favorite ? 'Убрать из избранного' : 'Добавить в избранное'}" aria-pressed="${favorite}" data-active="${favorite}" data-od-id="favorite-${task.id}" onclick="toggleFavorite('${task.id}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.47A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z"/></svg>
-              </button>
-              <button class="icon-btn" type="button" aria-label="Поделиться задачей" data-od-id="share-${task.id}" onclick="shareTask('${task.id}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg>
-              </button>
-            </div>
-          </div>
-          <h3 class="task-title" id="task-title-${task.id}">${titleMarkup}</h3>
-          <p class="task-fragment">${task.fragment}</p>
-          <p class="task-description">${task.description}</p>
-          <div class="task-meta">
-            <span class="meta-item difficulty-${difficultyClass}"><span class="difficulty-dot" aria-hidden="true"></span>${task.difficulty}</span>
-            <span class="meta-item">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
-              ${task.minutes} мин
-            </span>
-          </div>
-          <div class="source-line">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19.5V6a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v13.5M4 19.5a2.5 2.5 0 0 1 2.5-2.5H19M4 19.5A2.5 2.5 0 0 0 6.5 22H19v-5"/></svg>
-            <span>${task.olympiad}</span>
-          </div>
-        </article>`;
-    }
-
-    function render() {
-      try {
-        const visibleTasks = getVisibleTasks();
-        const hasFilters = Object.values(state.filters).some(values => values.length);
-        taskList.innerHTML = visibleTasks.map(taskCard).join('');
-        resultCount.textContent = `${visibleTasks.length} ${declension(visibleTasks.length)}`;
-        taskList.hidden = visibleTasks.length === 0;
-        emptyState.hidden = visibleTasks.length !== 0;
-
-        if (!visibleTasks.length) {
-          if (state.favoritesOnly) {
-            emptyTitle.textContent = 'В избранном пока пусто';
-            emptyCopy.textContent = 'Сохраните подходящую задачу кнопкой с сердцем — она появится здесь.';
-            emptyAction.textContent = 'Показать все задачи';
-            emptyAction.dataset.action = 'reset';
-          } else if (state.query || hasFilters) {
-            emptyTitle.textContent = 'Подходящих задач нет';
-            emptyCopy.textContent = 'Измените запрос или снимите один из выбранных фильтров.';
-            emptyAction.textContent = 'Сбросить поиск и фильтры';
-            emptyAction.dataset.action = 'reset';
-          } else {
-            emptyTitle.textContent = 'Задачи пока не добавлены';
-            emptyCopy.textContent = 'Выберите другой предмет или вернитесь к поиску позже.';
-            emptyAction.textContent = 'Сбросить поиск';
-            emptyAction.dataset.action = 'reset';
-          }
-        }
-
-        favoritesButton.dataset.active = String(state.favoritesOnly);
-        favoritesButton.setAttribute('aria-pressed', String(state.favoritesOnly));
-        favoritesButton.setAttribute('aria-label', state.favoritesOnly ? 'Показать все задачи' : 'Показать избранное');
-      } catch (error) {
-        taskList.hidden = true;
-        emptyState.hidden = false;
-        resultCount.textContent = 'Не удалось показать задания';
-        emptyTitle.textContent = 'Что-то пошло не так';
-        emptyCopy.textContent = 'Повторите попытку. Настройки поиска сохранятся.';
-        emptyAction.textContent = 'Повторить';
-        emptyAction.dataset.action = 'retry';
-      }
-    }
-
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      clearTimeout(toastTimer);
-      toast.textContent = message;
-      toast.hidden = false;
-      toastTimer = setTimeout(() => { toast.hidden = true; }, 2300);
-    }
-
-    function toggleFavorite(id) {
-      if (state.favorites.has(id)) {
-        state.favorites.delete(id);
-        showToast('Задача удалена из избранного');
-      } else {
-        state.favorites.add(id);
-        showToast('Задача добавлена в избранное');
-      }
-      localStorage.setItem('olympiad-favorites', JSON.stringify([...state.favorites]));
-      render();
-    }
-
-    function toggleFavoritesOnly() {
-      state.favoritesOnly = !state.favoritesOnly;
-      showToast(state.favoritesOnly ? 'Показаны только избранные' : 'Показаны все задачи');
-      render();
-    }
-
-    async function shareTask(id) {
-      const task = tasks.find(item => item.id === id);
-      const shareData = {
-        title: `${task.number}: ${task.title}`,
-        text: `${task.title} — ${task.olympiad}`,
-        url: `${location.href.split('#')[0]}#${id}`
-      };
-      try {
-        if (navigator.share) {
-          await navigator.share(shareData);
-        } else {
-          await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
-          showToast('Ссылка на задачу скопирована');
-        }
-      } catch (error) {
-        if (error.name !== 'AbortError') showToast('Не удалось поделиться задачей');
-      }
-    }
-
-    function updateFilterSummary() {
-      const labels = {
-        short: 'До 20 минут', medium: '20–40 минут', long: 'Более 40 минут',
-        '8': '8 класс', '9': '9 класс', '10': '10 класс', '11': '11 класс'
-      };
-      const entries = Object.entries(state.filters).flatMap(([group, values]) => values.map(value => ({ group, value, label: labels[value] || value })));
-      activeFilters.innerHTML = entries.map(item => `
-        <button class="filter-chip" type="button" data-group="${item.group}" data-value="${item.value}" aria-label="Убрать фильтр ${item.label}">
-          ${item.label}
-          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m4 4 8 8M12 4 4 12"/></svg>
-        </button>`).join('');
-      activeFilters.hidden = entries.length === 0;
-      filterCount.hidden = entries.length === 0;
-      filterCount.textContent = entries.length;
-    }
-
-    function setSelectOptions(select, values, emptyLabel, selectedValue = '') {
-      select.innerHTML = `<option value="">${emptyLabel}</option>` + values.map(value => `<option value="${value}">${value}</option>`).join('');
-      select.value = values.includes(selectedValue) ? selectedValue : '';
-    }
-
-    function populateSubjectFilters(topicValue = state.filters.topic[0] || '', subtopicValue = state.filters.subtopic[0] || '', olympiadValue = state.filters.olympiad[0] || '') {
-      const subjectTasks = tasks.filter(task => task.subject === state.subject);
-      const topics = [...new Set(subjectTasks.map(task => taskTaxonomy(task).topic))].sort((a, b) => a.localeCompare(b, 'ru'));
-      const topicSelect = document.getElementById('topic-filter');
-      const subtopicSelect = document.getElementById('subtopic-filter');
-      const olympiadSelect = document.getElementById('olympiad-filter');
-      setSelectOptions(topicSelect, topics, 'Все темы', topicValue);
-
-      const selectedTopic = topicSelect.value;
-      const subtopics = selectedTopic
-        ? [...new Set(subjectTasks.filter(task => taskTaxonomy(task).topic === selectedTopic).map(task => taskTaxonomy(task).subtopic))].sort((a, b) => a.localeCompare(b, 'ru'))
-        : [];
-      setSelectOptions(subtopicSelect, subtopics, selectedTopic ? 'Все подтемы' : 'Сначала выберите тему', subtopicValue);
-      subtopicSelect.disabled = !selectedTopic;
-
-      const olympiads = [...new Set(subjectTasks.map(task => task.olympiad))].sort((a, b) => a.localeCompare(b, 'ru'));
-      setSelectOptions(olympiadSelect, olympiads, 'Все олимпиады', olympiadValue);
-    }
-
-    function syncDialogFromState() {
-      populateSubjectFilters();
-      filterDialog.querySelectorAll('[data-filter-group]').forEach(group => {
-        const groupName = group.dataset.filterGroup;
-        if (group.matches('select')) {
-          group.value = state.filters[groupName].includes(group.value) ? group.value : (state.filters[groupName][0] || '');
-        } else {
-          group.querySelectorAll('input').forEach(input => { input.checked = state.filters[groupName].includes(input.value); });
-        }
-      });
-    }
-
-    function applyFilters() {
-      filterDialog.querySelectorAll('[data-filter-group]').forEach(group => {
-        state.filters[group.dataset.filterGroup] = group.matches('select')
-          ? (group.value ? [group.value] : [])
-          : [...group.querySelectorAll('input:checked')].map(input => input.value);
-      });
-      updateFilterSummary();
-      filterDialog.close();
-      render();
-    }
-
-    function resetFilters(closeDialog = false) {
-      state.filters = { topic: [], subtopic: [], olympiad: [], difficulty: [], duration: [], grade: [] };
-      syncDialogFromState();
-      updateFilterSummary();
-      if (closeDialog) filterDialog.close();
-      render();
-    }
-
-    function resetSearch() {
-      state.query = '';
-      state.favoritesOnly = false;
-      queryInput.value = '';
-      clearSearchButton.hidden = true;
-      resetFilters();
-      render();
-      queryInput.focus();
-    }
-
-    document.getElementById('subject-select').addEventListener('change', event => {
-      state.subject = event.target.value;
-      state.filters.topic = [];
-      state.filters.subtopic = [];
-      state.filters.olympiad = [];
-      updateFilterSummary();
-      render();
-    });
-
-    document.getElementById('topic-filter').addEventListener('change', event => {
-      populateSubjectFilters(event.target.value, '', document.getElementById('olympiad-filter').value);
-    });
-
-    emptyAction.addEventListener('click', () => {
-      if (emptyAction.dataset.action === 'retry') render();
-      else resetSearch();
-    });
-
-    queryInput.addEventListener('input', event => {
-      state.query = event.target.value;
-      clearSearchButton.hidden = !state.query;
-      render();
-    });
-
-    clearSearchButton.addEventListener('click', () => {
-      state.query = '';
-      queryInput.value = '';
-      clearSearchButton.hidden = true;
-      queryInput.focus();
-      render();
-    });
-
-    document.getElementById('sort-select').addEventListener('change', event => {
-      state.sort = event.target.value;
-      render();
-    });
-
-    filterButton.addEventListener('click', () => {
-      syncDialogFromState();
-      filterDialog.showModal();
-    });
-
-    document.querySelector('[data-od-id="close-filters"]').addEventListener('click', () => filterDialog.close());
-    document.querySelector('[data-od-id="apply-filters"]').addEventListener('click', applyFilters);
-    document.querySelector('[data-od-id="reset-filters"]').addEventListener('click', () => resetFilters(false));
-
-    activeFilters.addEventListener('click', event => {
-      const chip = event.target.closest('.filter-chip');
-      if (!chip) return;
-      state.filters[chip.dataset.group] = state.filters[chip.dataset.group].filter(value => value !== chip.dataset.value);
-      if (chip.dataset.group === 'topic') state.filters.subtopic = [];
-      syncDialogFromState();
-      updateFilterSummary();
-      render();
-    });
-
-    filterDialog.addEventListener('click', event => {
-      const bounds = filterDialog.getBoundingClientRect();
-      const outside = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
-      if (outside) filterDialog.close();
-    });
-
-    filterDialog.addEventListener('close', () => filterButton.focus());
-
-    render();
-  </script>
+  <script src="/task-search.js" defer></script>
 
 
 </body></html>
