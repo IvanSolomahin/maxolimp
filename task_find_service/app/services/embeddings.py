@@ -19,12 +19,12 @@ def vector_to_pg(vec: list[float]) -> str:
 
 
 async def embed_text(value: str) -> list[float]:
-    if not settings.openrouter_api_key:
-        raise RuntimeError("OPENROUTER_API_KEY не задан")
+    if not settings.aitunnel_api_key:
+        raise RuntimeError("AITUNNEL_API_KEY не задан")
     async with httpx.AsyncClient(timeout=120) as client:
         response = await client.post(
-            "https://openrouter.ai/api/v1/embeddings",
-            headers={"Authorization": f"Bearer {settings.openrouter_api_key}"},
+            "https://api.aitunnel.ru/v1/embeddings",
+            headers={"Authorization": f"Bearer {settings.aitunnel_api_key}"},
             json={"model": settings.embedding_model, "input": [value]},
         )
         response.raise_for_status()

@@ -34,8 +34,11 @@ docker compose run --rm \
 сохраняются как исходные, но не как проверенные человеком. Исходное поле
 `classifier` не превращается автоматически в темы или методы решения.
 
-Для поиска по смыслу запрос должен кодироваться той же моделью Qwen3 через
-OpenRouter. Установите `OPENROUTER_API_KEY` в окружении приложения. Без ключа
+Для поиска по смыслу запрос должен кодироваться моделью Qwen3 Embedding 4B через
+[AITunnel](https://aitunnel.ru/models/qwen3-embedding-4b). Установите
+`AITUNNEL_API_KEY` в корневом `.env` вместе с
+`EMBEDDING_MODEL=qwen/qwen3-embedding-4b` и `EMBEDDING_DIMENSION=2560`.
+Полный ID модели сохраняет связь с существующими векторами в БД. Без ключа
 `GET /tasks?q=...` работает по словам, а поиск похожих задач использует уже
 импортированные векторы. Параметры `subject`, `grade` и `mode` (`topic`,
 `solution`, `both`) доступны в `GET /tasks`.

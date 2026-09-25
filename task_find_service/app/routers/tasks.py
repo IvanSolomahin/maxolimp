@@ -475,7 +475,7 @@ async def create_task(
         async with SessionLocal() as session:
             await compute_and_store_task_embedding(session, task.id)
 
-    if settings.openrouter_api_key:
+    if settings.aitunnel_api_key:
         background_tasks.add_task(_embed)
     return CreateTaskResponse(id=task.id)
 
@@ -498,7 +498,7 @@ async def update_task(
             TaskEmbedding.task_id == task_id, TaskEmbedding.kind == "topic"
         ))
     await db.commit()
-    if needs_reindex and task.status == "published" and settings.openrouter_api_key:
+    if needs_reindex and task.status == "published" and settings.aitunnel_api_key:
         async def _embed():
             async with SessionLocal() as session:
                 await compute_and_store_task_embedding(session, task_id)
@@ -520,8 +520,8 @@ async def recompute_task_embedding(
         async with SessionLocal() as session:
             await compute_and_store_task_embedding(session, task_id)
 
-    if not settings.openrouter_api_key:
-        raise HTTPException(status_code=503, detail="OPENROUTER_API_KEY не задан")
+    if not settings.aitunnel_api_key:
+        raise HTTPException(status_code=503, detail="AITUNNEL_API_KEY не задан")
     background_tasks.add_task(_job)
     return EmbeddingQueuedResponse()
 

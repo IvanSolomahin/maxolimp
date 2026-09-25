@@ -32,7 +32,6 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${TASK_DB_USER}:${TASK_DB_PASSWORD}@task-db:5432/${TASK_DB_NAME}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL}
-      EMBEDDING_MODEL_VERSION: ${EMBEDDING_MODEL_VERSION}
       EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION}
       OLYMP_FIND_SERVICE_URL: http://olymp-app:8000
     volumes:

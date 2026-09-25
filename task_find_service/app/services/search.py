@@ -96,7 +96,7 @@ async def hybrid_search_tasks(
     if q and q.strip():
         params["q"] = q.strip()
         query = params["q"]
-        can_embed = bool(settings.openrouter_api_key)
+        can_embed = bool(settings.aitunnel_api_key)
         if can_embed:
             params["query_vec"] = vector_to_pg(await embed_text(query))
         params["model"] = settings.embedding_model
