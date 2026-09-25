@@ -1,0 +1,85 @@
+networks:
+  gazprompt:
+    driver: bridge
+
+services:
+  task-db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${TASK_DB_USER}
+      POSTGRES_PASSWORD: ${TASK_DB_PASSWORD}
+      POSTGRES_DB: ${TASK_DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./task_find_service/sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - gazprompt
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TASK_DB_USER} -d ${TASK_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  task-app:
+    build:
+      context: ./task_find_service
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${TASK_DB_USER}:${TASK_DB_PASSWORD}@task-db:5432/${TASK_DB_NAME}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL}
+      EMBEDDING_MODEL_VERSION: ${EMBEDDING_MODEL_VERSION}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION}
+      OLYMP_FIND_SERVICE_URL: http://olymp-app:8000
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    depends_on:
+      task-db:
+        condition: service_healthy
+    networks:
+      - gazprompt
+
+  olymp-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${OLYMP_DB_USER}
+      POSTGRES_PASSWORD: ${OLYMP_DB_PASSWORD}
+      POSTGRES_DB: ${OLYMP_DB_NAME}
+    volumes:
+      - olymp-pgdata:/var/lib/postgresql/data
+      - ./olymp_find_service/sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - gazprompt
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${OLYMP_DB_USER} -d ${OLYMP_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  olymp-app:
+    build:
+      context: ./olymp_find_service
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${OLYMP_DB_USER}:${OLYMP_DB_PASSWORD}@olymp-db:5432/${OLYMP_DB_NAME}
+      TASK_FIND_SERVICE_URL: http://task-app:8000
+      DEFAULT_USER_ID: ${DEFAULT_USER_ID}
+    depends_on:
+      olymp-db:
+        condition: service_healthy
+    networks:
+      - gazprompt
+
+volumes:
+  pgdata:
+  olymp-pgdata:
+  hf-cache:
