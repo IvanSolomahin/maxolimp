@@ -14,7 +14,12 @@ import uuid
 from sqlalchemy import text
 
 from app.db import SessionLocal
-from app.olympiad_names import canonical_olympiad_name, has_grade_suffix, olympiad_name_key
+from app.olympiad_names import (
+    canonical_olympiad_name,
+    has_grade_suffix,
+    olympiad_name_key,
+    olympiad_short_name,
+)
 
 
 SOURCE = "sdamgia"
@@ -104,10 +109,12 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                 for key, name in canonical_by_key.items()
             }
             await session.execute(text("""
-                INSERT INTO olympiads(id, name, short_name) VALUES (:id, :name, NULL)
-                ON CONFLICT(id) DO UPDATE SET name = EXCLUDED.name
+                INSERT INTO olympiads(id, name, short_name) VALUES (:id, :name, :short_name)
+                ON CONFLICT(id) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    short_name = COALESCE(EXCLUDED.short_name, olympiads.short_name)
             """), [
-                {"id": olympiad_ids_by_key[key], "name": name}
+                {"id": olympiad_ids_by_key[key], "name": name, "short_name": olympiad_short_name(name)}
                 for key, name in canonical_by_key.items()
             ])
             await session.commit()

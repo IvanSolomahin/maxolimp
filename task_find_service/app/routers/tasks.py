@@ -130,6 +130,7 @@ async def list_tasks(
                 snippet=r.get("snippet") or _snippet(t.statement),
                 number=t.source_problem_number,
                 olympiad=t.olympiad.name if t.olympiad else None,
+                olympiad_short_name=t.olympiad.short_name if t.olympiad else None,
                 score=float(r["score"]) if r.get("score") is not None else None,
             )
         )

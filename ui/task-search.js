@@ -37,7 +37,7 @@ function render() {
       <div class="task-top"><span class="task-number">${item.number ? `№ ${escapeHtml(item.number)}` : ''}</span></div>
       <h3 class="task-title"><a class="task-link" href="/tasks/${encodeURIComponent(item.id)}" data-open="${escapeHtml(item.id)}">${escapeHtml(item.title)}</a></h3>
       <p class="task-fragment">${escapeHtml(item.snippet || '')}</p>
-      <div class="task-meta">${item.olympiad ? `<span class="meta-item">${escapeHtml(item.olympiad)}</span>` : ''}${item.difficulty == null ? '' : `<span class="difficulty-badge">Сложность ${escapeHtml(item.difficulty)} / 10</span>`}
+      <div class="task-meta">${item.olympiad ? `<span class="meta-item" title="${escapeHtml(item.olympiad)}">${escapeHtml(item.olympiad_short_name || item.olympiad)}</span>` : ''}${item.difficulty == null ? '' : `<span class="difficulty-badge">Сложность ${escapeHtml(item.difficulty)} / 10</span>`}
       ${item.solution_method ? `<span class="meta-item">${escapeHtml(item.solution_method.name)}</span>` : ''}</div>
     </article>`).join('');
   list.querySelectorAll('.task-card').forEach((card, index) => {
@@ -97,7 +97,7 @@ async function openTask(id) {
     taskMath.renderMathText($('#detail-title'), task.title);
     taskMath.renderMathText($('#detail-statement'), task.statement || 'Условие не указано');
     $('#detail-statement').classList.remove('task-loading');
-    $('#detail-meta').textContent = [task.subject === 'math' ? 'Математика' : task.subject === 'physics' ? 'Физика' : '', task.grade ? `${task.grade} класс` : '', task.olympiads?.[0]?.name, task.source?.year, task.source?.stage, task.source?.number ? `№ ${task.source.number}` : ''].filter(Boolean).join(' · ');
+    $('#detail-meta').textContent = [task.subject === 'math' ? 'Математика' : task.subject === 'physics' ? 'Физика' : '', task.grade ? `${task.grade} класс` : '', task.olympiads?.[0]?.short_name || task.olympiads?.[0]?.name, task.source?.year, task.source?.stage, task.source?.number ? `№ ${task.source.number}` : ''].filter(Boolean).join(' · ');
     if (task.source?.url && /^https?:\/\//i.test(task.source.url)) {
       $('#detail-source').href = task.source.url;
       $('#detail-source').hidden = false;
@@ -170,26 +170,16 @@ if (!/^\/tasks\/[^/]+\/?$/.test(location.pathname)) loadTasks();
 function updateOlympiadSelection() {
   const selection = $('#olympiad-selection');
   selection.hidden = !filterOlympiadId;
-  selection.textContent = filterOlympiadId ? `Выбрано: ${filterOlympiadName} ` : '';
-  if (!filterOlympiadId) return;
-  const clear = document.createElement('button');
-  clear.className = 'text-btn';
-  clear.type = 'button';
-  clear.textContent = 'Сбросить';
-  clear.addEventListener('click', () => {
-    filterOlympiadId = '';
-    filterOlympiadName = '';
-    updateOlympiadSelection();
-  });
-  selection.append(clear);
+  $('#olympiad-selection-name').textContent = filterOlympiadName;
+  $('#olympiad-search').placeholder = filterOlympiadId ? 'Найти другую олимпиаду' : 'Поиск по названию';
 }
 
 function renderOlympiadOptions(search = '') {
   const options = $('#olympiad-options');
   const needle = search.trim().toLocaleLowerCase('ru');
-  const matching = olympiads.filter(olympiad => !needle || olympiad.name.toLocaleLowerCase('ru').includes(needle));
+  const matching = olympiads.filter(olympiad => !needle || `${olympiad.short_name || ''} ${olympiad.name}`.toLocaleLowerCase('ru').includes(needle));
   options.replaceChildren();
-  const addOption = (label, id) => {
+  const addOption = (label, fullName, id) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'olympiad-option';
@@ -197,12 +187,19 @@ function renderOlympiadOptions(search = '') {
     button.setAttribute('aria-selected', String(Boolean(id && id === filterOlympiadId)));
     button.dataset.id = id;
     button.dataset.name = label;
-    button.textContent = label;
+    const shortLabel = document.createElement('strong');
+    shortLabel.textContent = label;
+    button.append(shortLabel);
+    if (fullName && fullName !== label) {
+      const fullLabel = document.createElement('small');
+      fullLabel.textContent = fullName;
+      button.append(fullLabel);
+    }
     options.append(button);
   };
-  addOption('Все олимпиады', '');
+  addOption('Все олимпиады', '', '');
   for (const olympiad of matching) {
-    addOption(olympiad.name, olympiad.id);
+    addOption(olympiad.short_name || olympiad.name, olympiad.name, olympiad.id);
   }
   if (!matching.length) {
     const message = document.createElement('p');
@@ -227,6 +224,11 @@ $('#olympiad-options').addEventListener('click', event => {
   olympiadSearch.setAttribute('aria-expanded', 'false');
   updateOlympiadSelection();
 });
+$('#clear-olympiad').addEventListener('click', () => {
+  filterOlympiadId = '';
+  filterOlympiadName = '';
+  updateOlympiadSelection();
+});
 document.addEventListener('click', event => {
   if (!event.target.closest('.olympiad-picker')) {
     $('#olympiad-options').hidden = true;
@@ -235,5 +237,5 @@ document.addEventListener('click', event => {
 });
 
 getJson('/olympiads').then(data => {
-  olympiads = data.items || [];
+  olympiads = (data.items || []).map(item => ({...item, short_name:item.short_name || ''}));
 }).catch(() => {});

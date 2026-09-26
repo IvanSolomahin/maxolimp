@@ -566,13 +566,17 @@
     #filter-dialog .filter-select:hover { border-color: var(--fg-2); }
     #filter-dialog .filter-select:focus-visible { border-color: var(--fg); outline: 0; box-shadow: var(--focus-ring); }
     #filter-dialog .filter-select:disabled { background: var(--surface-warm); color: var(--muted); cursor: not-allowed; }
-    .olympiad-picker { display: grid; gap: var(--space-2); }
+    .olympiad-picker { position: relative; display: grid; gap: var(--space-2); }
     .olympiad-options {
-      max-height: 260px;
+      position: absolute;
+      inset: calc(100% + 5px) 0 auto;
+      z-index: 15;
+      max-height: min(300px, 42vh);
       overflow-y: auto;
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       background: var(--bg);
+      box-shadow: var(--elev-raised);
       overscroll-behavior: contain;
     }
     .olympiad-option {
@@ -590,8 +594,39 @@
     }
     .olympiad-option:last-child { border-bottom: 0; }
     .olympiad-option:hover, .olympiad-option:focus-visible { background: var(--surface); }
+    .olympiad-option strong { font-size: var(--text-sm); font-weight: 600; }
+    .olympiad-option small { color: var(--muted); font-size: var(--text-xs); }
     .olympiad-empty { margin: 0; padding: 12px; color: var(--muted); font-size: var(--text-sm); }
-    .olympiad-selection { margin: 0; color: var(--muted); font-size: var(--text-xs); }
+    .olympiad-selection {
+      width: fit-content;
+      max-width: 100%;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: 34px;
+      padding: 3px 4px 3px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      color: var(--fg-2);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+    .olympiad-selection-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .olympiad-selection-clear {
+      width: 26px;
+      height: 26px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+    }
+    .olympiad-selection-clear:hover { background: var(--surface-warm); color: var(--fg); }
 
     .sheet-actions {
       flex: 0 0 auto;
@@ -735,7 +770,10 @@
         <div class="olympiad-picker">
           <input class="filter-select" id="olympiad-search" type="search" autocomplete="off" placeholder="Поиск по названию" role="combobox" aria-autocomplete="list" aria-controls="olympiad-options" aria-expanded="false">
           <div class="olympiad-options" id="olympiad-options" role="listbox" aria-label="Олимпиады" hidden></div>
-          <p class="olympiad-selection" id="olympiad-selection" hidden></p>
+          <div class="olympiad-selection" id="olympiad-selection" hidden>
+            <span class="olympiad-selection-name" id="olympiad-selection-name"></span>
+            <button class="olympiad-selection-clear" id="clear-olympiad" type="button" aria-label="Убрать выбранную олимпиаду">×</button>
+          </div>
         </div>
       </div>
       <div class="filter-group">

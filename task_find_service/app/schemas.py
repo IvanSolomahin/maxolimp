@@ -46,6 +46,7 @@ class TaskListItem(BaseModel):
     snippet: str | None = None
     number: str | None = None
     olympiad: str | None = None
+    olympiad_short_name: str | None = None
     score: float | None = None
     rank: float | None = None
 

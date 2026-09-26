@@ -15,11 +15,13 @@ PostgreSQL хранит задачи, их источник и поисковы�
 После `migrate_v3.sql` выполните `sql/migrate_v4.sql`, чтобы схлопнуть варианты
 названий олимпиад с классами и различающейся типографикой, переназначить задачи
 на одну запись и удалить дубли.
+`sql/migrate_v5.sql` заполняет короткие названия для списка и карточек задач.
 
 ```bash
 docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v2.sql
 docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v3.sql
 docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v4.sql
+docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v5.sql
 ```
 
 ## Импорт ETL
