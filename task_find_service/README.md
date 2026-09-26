@@ -29,7 +29,7 @@ docker compose run --rm \
   app python import_etl.py --sqlite /data/olimpiads.sqlite3
 ```
 
-Ожидаемый результат для текущего снимка: 19 653 задачи и 39 235 векторов.
+Ожидаемый результат для текущего снимка: 19 646 задач и 39 221 вектор.
 13 задач без условия остаются черновиками без сложности. Решения ETL
 сохраняются как исходные, но не как проверенные человеком. Исходное поле
 `classifier` не превращается автоматически в темы или методы решения.
@@ -52,7 +52,7 @@ WHERE model = 'qwen/qwen3-embedding-4b' GROUP BY kind;
 SELECT count(*) FROM tasks WHERE subject IN ('math', 'physics') AND difficulty IS NULL;
 ```
 
-Ожидаемые значения: 19 653; `topic` — 19 640, `solution` — 19 595; 13.
+Ожидаемые значения: 19 646; `topic` — 19 633, `solution` — 19 588; 13.
 После загрузки стоит отдельно сравнить выдачу с `etl/search/search_labels.json`:
 PostgreSQL использует русскую морфологию FTS, а SQLite ETL — токенизацию
 `unicode61`, поэтому порядок текстовых совпадений может отличаться.

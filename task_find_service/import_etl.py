@@ -42,7 +42,24 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
     source = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
     source.row_factory = sqlite3.Row
     try:
+        has_exclusions = source.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'excluded_ids'"
+        ).fetchone() is not None
+        exclusions = source.execute(
+            "SELECT subject, problem_id FROM excluded_ids"
+        ).fetchall() if has_exclusions else []
         async with SessionLocal() as session:
+            if exclusions:
+                async with session.begin():
+                    await session.execute(text("""
+                        DELETE FROM tasks t USING task_sources s
+                        WHERE s.task_id = t.id AND s.source_system = :source
+                          AND s.subject = :subject AND s.external_id = :external_id
+                    """), [
+                        {"source": SOURCE, "subject": row["subject"],
+                         "external_id": str(row["problem_id"])}
+                        for row in exclusions
+                    ])
             names = [row[0] for row in source.execute(
                 "SELECT DISTINCT olympiad FROM problems WHERE trim(olympiad) != ''"
             )]
@@ -57,7 +74,14 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
             await session.commit()
 
             count = 0
-            for rows in chunks(source.execute("SELECT * FROM problems ORDER BY subject, problem_id"), batch_size):
+            for rows in chunks(source.execute("""
+                SELECT p.* FROM problems p
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM excluded_ids x
+                    WHERE x.subject = p.subject AND x.problem_id = p.problem_id
+                )
+                ORDER BY p.subject, p.problem_id
+            """ if has_exclusions else "SELECT * FROM problems ORDER BY subject, problem_id"), batch_size):
                 tasks, refs, solutions, links, removed_solutions = [], [], [], [], []
                 for row in rows:
                     ident = task_id(row["subject"], row["problem_id"])
@@ -122,7 +146,18 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
 
             vectors = 0
             source_embeddings = set()
-            for rows in chunks(source.execute("SELECT * FROM search_vectors WHERE model = ? AND dimensions = 2560", (MODEL,)), batch_size):
+            vector_query = """
+                SELECT v.* FROM search_vectors v
+                WHERE v.model = ? AND v.dimensions = 2560
+            """
+            if has_exclusions:
+                vector_query += """
+                    AND NOT EXISTS (
+                        SELECT 1 FROM excluded_ids x
+                        WHERE x.subject = v.subject AND x.problem_id = v.problem_id
+                    )
+                """
+            for rows in chunks(source.execute(vector_query, (MODEL,)), batch_size):
                 items = []
                 for row in rows:
                     blob = row["vector"]

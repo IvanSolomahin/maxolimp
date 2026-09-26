@@ -18,6 +18,10 @@ SUBJECTS = {
     "math": ("https://math-olymp.sdamgia.ru", 12691),
     "physics": ("https://phys-olymp.sdamgia.ru", 8035),
 }
+EXCLUDED_PROBLEMS = {
+    ("math", problem_id): "Задание по праву, не по математике"
+    for problem_id in range(12627, 12634)
+}
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 OUT_DIR = PROJECT_DIR / "olimpiads_data_v2"
@@ -189,6 +193,21 @@ def open_database(db_file=DB_FILE):
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS excluded_ids (
+            subject TEXT NOT NULL,
+            problem_id INTEGER NOT NULL,
+            reason TEXT NOT NULL,
+            PRIMARY KEY (subject, problem_id)
+        )
+        """
+    )
+    connection.executemany(
+        "INSERT OR IGNORE INTO excluded_ids (subject, problem_id, reason) VALUES (?, ?, ?)",
+        [(subject, problem_id, reason)
+         for (subject, problem_id), reason in EXCLUDED_PROBLEMS.items()],
+    )
     connection.commit()
     return connection
 
@@ -260,10 +279,16 @@ def scan_subject(connection, pool, subject, base_url, last_id, error_file):
             "SELECT problem_id FROM unavailable_ids WHERE subject = ?", (subject,)
         )
     }
+    excluded = {
+        row[0] for row in connection.execute(
+            "SELECT problem_id FROM excluded_ids WHERE subject = ?", (subject,)
+        )
+    }
     pending = [
         (subject, base_url, problem_id)
         for problem_id in range(1, last_id + 1)
         if problem_id not in done and problem_id not in unavailable
+        and problem_id not in excluded
     ]
     saved = missing = failed = 0
     print(

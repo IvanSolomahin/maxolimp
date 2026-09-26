@@ -5,7 +5,8 @@ const list = $('#task-list');
 const count = $('#results-count');
 const empty = $('#empty-state');
 const dialog = $('#filter-dialog');
-const detailDialog = $('#task-detail');
+const taskPage = $('#task-page');
+const searchScreen = $('[data-od-id="task-search-screen"]');
 const query = $('#task-query');
 const favorites = new Set(JSON.parse(localStorage.getItem('task-favorites-v1') || '[]'));
 const favoriteItems = new Map(JSON.parse(localStorage.getItem('task-favorite-items-v1') || '[]'));
@@ -79,25 +80,48 @@ async function loadTasks(append = false) {
 }
 
 async function openTask(id) {
-  $('#detail-title').textContent = 'Загрузка…';
+  const taskUrl = `/tasks/${encodeURIComponent(id)}`;
+  if (location.pathname !== taskUrl) history.pushState({taskId: id}, '', taskUrl);
+  showTaskPage();
+  $('#detail-title').textContent = 'Загрузка задачи…';
   $('#detail-statement').textContent = '';
+  $('#detail-statement').classList.add('task-loading');
   $('#detail-meta').textContent = '';
   $('#detail-source').hidden = true;
-  detailDialog.showModal();
   try {
     const task = await getJson(`/tasks/${encodeURIComponent(id)}`);
-    if (!detailDialog.open) return;
+    if (location.pathname !== taskUrl) return;
     $('#detail-title').textContent = task.title;
     $('#detail-statement').textContent = task.statement || 'Условие не указано';
+    $('#detail-statement').classList.remove('task-loading');
     $('#detail-meta').textContent = [task.subject === 'math' ? 'Математика' : task.subject === 'physics' ? 'Физика' : '', task.grade ? `${task.grade} класс` : '', task.source?.year, task.source?.stage, task.source?.number].filter(Boolean).join(' · ');
     if (task.source?.url && /^https?:\/\//i.test(task.source.url)) {
       $('#detail-source').href = task.source.url;
       $('#detail-source').hidden = false;
     }
   } catch {
+    if (location.pathname !== taskUrl) return;
     $('#detail-title').textContent = 'Не удалось загрузить задачу';
     $('#detail-statement').textContent = 'Закройте окно и попробуйте снова.';
+    $('#detail-statement').classList.remove('task-loading');
   }
+}
+
+function showTaskPage() {
+  searchScreen.hidden = true;
+  taskPage.hidden = false;
+  window.scrollTo(0, 0);
+}
+
+function showSearchPage() {
+  taskPage.hidden = true;
+  searchScreen.hidden = false;
+}
+
+function routeFromLocation() {
+  const match = location.pathname.match(/^\/tasks\/([^/]+)\/?$/);
+  if (match) openTask(decodeURIComponent(match[1]));
+  else showSearchPage();
 }
 
 query.addEventListener('input', () => {
@@ -139,5 +163,10 @@ list.addEventListener('click', event => {
   const open = event.target.closest('[data-open]');
   if (open) openTask(open.dataset.open);
 });
-$('#detail-close').addEventListener('click', () => detailDialog.close());
-loadTasks();
+$('#task-back').addEventListener('click', () => {
+  if (history.state?.taskId) history.back();
+  else { history.pushState({}, '', '/'); showSearchPage(); }
+});
+window.addEventListener('popstate', routeFromLocation);
+routeFromLocation();
+if (!/^\/tasks\/[^/]+\/?$/.test(location.pathname)) loadTasks();

@@ -463,6 +463,16 @@
 
     .text-btn:hover { border-color: var(--fg-2); background: var(--surface); }
 
+    .task-page { min-height: calc(100dvh - 58px); padding-block: var(--space-6) var(--section-y-phone); }
+    .task-page-inner { width: min(100%, 900px); margin-inline: auto; padding-inline: var(--container-gutter-phone); }
+    .task-back { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; margin-bottom: var(--space-6); padding: 0; border: 0; background: none; color: var(--muted); font-size: var(--text-sm); font-weight: 600; }
+    .task-back:hover { color: var(--fg); }
+    .task-page-meta { margin-bottom: var(--space-4); color: var(--muted); font-size: var(--text-sm); }
+    .task-page-title { max-width: 24ch; margin-bottom: var(--space-8); font-size: clamp(30px, 5vw, 48px); line-height: 1.12; letter-spacing: var(--tracking-display); }
+    .task-statement { max-width: 72ch; white-space: pre-wrap; font-size: clamp(18px, 2vw, 21px); line-height: 1.7; }
+    .task-source { display: inline-flex; margin-top: var(--space-8); color: var(--fg); font-weight: 600; text-underline-offset: 4px; }
+    .task-loading { color: var(--muted); }
+
     dialog {
       width: min(100% - 20px, 520px);
       height: min(88dvh, 720px);
@@ -590,6 +600,7 @@
       .section { padding-block-start: var(--space-8); }
       .task-card { padding-block: var(--space-6); }
       dialog { margin: auto; }
+      .task-page-inner { padding-inline: var(--container-gutter-tablet); }
     }
 
     @media (max-width: 390px) {
@@ -698,10 +709,15 @@
     </div>
   </dialog>
 
-  <dialog id="task-detail" aria-labelledby="detail-title">
-    <div class="sheet-head"><h2 id="detail-title">Задача</h2><button class="icon-btn" type="button" id="detail-close" aria-label="Закрыть">×</button></div>
-    <div class="sheet-body"><p id="detail-meta"></p><p id="detail-statement" style="white-space:pre-wrap"></p><a id="detail-source" target="_blank" rel="noopener noreferrer" hidden>Открыть источник</a></div>
-  </dialog>
+  <main class="task-page" id="task-page" hidden>
+    <div class="task-page-inner">
+      <button class="task-back" type="button" id="task-back"><span aria-hidden="true">←</span> К результатам поиска</button>
+      <p class="task-page-meta" id="detail-meta"></p>
+      <h1 class="task-page-title" id="detail-title">Загрузка задачи…</h1>
+      <p class="task-statement task-loading" id="detail-statement" aria-live="polite"></p>
+      <a class="task-source" id="detail-source" target="_blank" rel="noopener noreferrer" hidden>Открыть источник</a>
+    </div>
+  </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden=""></div>
 
