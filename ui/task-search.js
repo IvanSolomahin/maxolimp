@@ -36,7 +36,7 @@ function render() {
       <div class="task-top"><span class="task-number">Задача</span><div class="task-actions">
         <button class="icon-btn" type="button" data-favorite="${escapeHtml(item.id)}" aria-label="${favorites.has(item.id) ? 'Убрать из избранного' : 'Добавить в избранное'}" aria-pressed="${favorites.has(item.id)}">♡</button>
       </div></div>
-      <h3 class="task-title"><button class="text-btn" type="button" data-open="${escapeHtml(item.id)}">${escapeHtml(item.title)}</button></h3>
+      <h3 class="task-title"><a class="task-link" href="/tasks/${encodeURIComponent(item.id)}" data-open="${escapeHtml(item.id)}">${escapeHtml(item.title)}</a></h3>
       <p class="task-fragment">${escapeHtml(item.snippet || '')}</p>
       <div class="task-meta"><span class="meta-item">${item.difficulty == null ? 'Сложность не указана' : `Сложность ${escapeHtml(item.difficulty)} из 10`}</span>
       ${item.solution_method ? `<span class="meta-item">${escapeHtml(item.solution_method.name)}</span>` : ''}</div>
@@ -161,7 +161,10 @@ list.addEventListener('click', event => {
     return;
   }
   const open = event.target.closest('[data-open]');
-  if (open) openTask(open.dataset.open);
+  if (open) {
+    event.preventDefault();
+    openTask(open.dataset.open);
+  }
 });
 $('#task-back').addEventListener('click', () => {
   if (history.state?.taskId) history.back();
