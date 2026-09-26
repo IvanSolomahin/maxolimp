@@ -8,7 +8,10 @@ const dialog = $('#filter-dialog');
 const taskPage = $('#task-page');
 const searchScreen = $('[data-od-id="task-search-screen"]');
 const query = $('#task-query');
-const state = {subject:'math', q:'', sort:'relevance', grade:'', olympiadId:'', difficultyMin:'', difficultyMax:'', page:1, total:0, items:[]};
+const state = {subject:'math', q:'', sort:'relevance', grade:'', olympiadId:'', olympiadName:'', difficultyMin:'', difficultyMax:'', page:1, total:0, items:[]};
+let olympiads = [];
+let filterOlympiadId = '';
+let filterOlympiadName = '';
 let requestId = 0;
 let debounce;
 
@@ -133,21 +136,22 @@ query.addEventListener('input', () => {
 $('[data-od-id="clear-search"]').addEventListener('click', () => { query.value = ''; state.q = ''; $('[data-od-id="clear-search"]').hidden = true; loadTasks(); });
 $('#subject-select').addEventListener('change', event => { state.subject = event.target.value; loadTasks(); });
 $('#sort-select').addEventListener('change', event => { state.sort = event.target.value; loadTasks(); });
-$('[data-od-id="open-filters"]').addEventListener('click', () => { $('#grade-filter').value = state.grade; $('#olympiad-filter').value = state.olympiadId; $('#difficulty-min').value = state.difficultyMin; $('#difficulty-max').value = state.difficultyMax; dialog.showModal(); });
+$('[data-od-id="open-filters"]').addEventListener('click', () => { $('#grade-filter').value = state.grade; filterOlympiadId = state.olympiadId; filterOlympiadName = state.olympiadName; $('#olympiad-search').value = ''; $('#olympiad-options').hidden = true; updateOlympiadSelection(); $('#difficulty-min').value = state.difficultyMin; $('#difficulty-max').value = state.difficultyMax; dialog.showModal(); });
 $('[data-od-id="close-filters"]').addEventListener('click', () => dialog.close());
-$('[data-od-id="reset-filters"]').addEventListener('click', () => { $('#grade-filter').value = ''; $('#olympiad-filter').value = ''; $('#difficulty-min').value = ''; $('#difficulty-max').value = ''; });
+$('[data-od-id="reset-filters"]').addEventListener('click', () => { $('#grade-filter').value = ''; filterOlympiadId = ''; filterOlympiadName = ''; $('#olympiad-search').value = ''; $('#olympiad-options').hidden = true; updateOlympiadSelection(); $('#difficulty-min').value = ''; $('#difficulty-max').value = ''; });
 $('[data-od-id="apply-filters"]').addEventListener('click', () => {
   const min = $('#difficulty-min').value, max = $('#difficulty-max').value;
   if (min && max && Number(min) > Number(max)) { $('#difficulty-min').setCustomValidity('Минимум больше максимума'); $('#difficulty-min').reportValidity(); return; }
   $('#difficulty-min').setCustomValidity('');
   state.grade = $('#grade-filter').value;
-  state.olympiadId = $('#olympiad-filter').value;
+  state.olympiadId = filterOlympiadId;
+  state.olympiadName = filterOlympiadName;
   state.difficultyMin = min;
   state.difficultyMax = max;
   dialog.close();
   loadTasks();
 });
-$('#empty-action').addEventListener('click', () => { state.q = ''; state.grade = ''; state.olympiadId = ''; state.difficultyMin = ''; state.difficultyMax = ''; query.value = ''; loadTasks(); });
+$('#empty-action').addEventListener('click', () => { state.q = ''; state.grade = ''; state.olympiadId = ''; state.olympiadName = ''; state.difficultyMin = ''; state.difficultyMax = ''; query.value = ''; loadTasks(); });
 $('#load-more').addEventListener('click', () => { state.page += 1; loadTasks(true); });
 list.addEventListener('click', event => {
   const open = event.target.closest('[data-open]');
@@ -163,12 +167,73 @@ $('#task-back').addEventListener('click', () => {
 window.addEventListener('popstate', routeFromLocation);
 routeFromLocation();
 if (!/^\/tasks\/[^/]+\/?$/.test(location.pathname)) loadTasks();
-getJson('/olympiads').then(data => {
-  const select = $('#olympiad-filter');
-  for (const olympiad of data.items || []) {
-    const option = document.createElement('option');
-    option.value = olympiad.id;
-    option.textContent = olympiad.name;
-    select.append(option);
+function updateOlympiadSelection() {
+  const selection = $('#olympiad-selection');
+  selection.hidden = !filterOlympiadId;
+  selection.textContent = filterOlympiadId ? `Выбрано: ${filterOlympiadName} ` : '';
+  if (!filterOlympiadId) return;
+  const clear = document.createElement('button');
+  clear.className = 'text-btn';
+  clear.type = 'button';
+  clear.textContent = 'Сбросить';
+  clear.addEventListener('click', () => {
+    filterOlympiadId = '';
+    filterOlympiadName = '';
+    updateOlympiadSelection();
+  });
+  selection.append(clear);
+}
+
+function renderOlympiadOptions(search = '') {
+  const options = $('#olympiad-options');
+  const needle = search.trim().toLocaleLowerCase('ru');
+  const matching = olympiads.filter(olympiad => !needle || olympiad.name.toLocaleLowerCase('ru').includes(needle));
+  options.replaceChildren();
+  const addOption = (label, id) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'olympiad-option';
+    button.setAttribute('role', 'option');
+    button.setAttribute('aria-selected', String(Boolean(id && id === filterOlympiadId)));
+    button.dataset.id = id;
+    button.dataset.name = label;
+    button.textContent = label;
+    options.append(button);
+  };
+  addOption('Все олимпиады', '');
+  for (const olympiad of matching) {
+    addOption(olympiad.name, olympiad.id);
   }
+  if (!matching.length) {
+    const message = document.createElement('p');
+    message.className = 'olympiad-empty';
+    message.textContent = 'Олимпиады не найдены';
+    options.append(message);
+  }
+  options.hidden = false;
+  $('#olympiad-search').setAttribute('aria-expanded', 'true');
+}
+
+const olympiadSearch = $('#olympiad-search');
+olympiadSearch.addEventListener('focus', () => renderOlympiadOptions(olympiadSearch.value));
+olympiadSearch.addEventListener('input', () => renderOlympiadOptions(olympiadSearch.value));
+$('#olympiad-options').addEventListener('click', event => {
+  const option = event.target.closest('.olympiad-option');
+  if (!option) return;
+  filterOlympiadId = option.dataset.id;
+  filterOlympiadName = option.dataset.name === 'Все олимпиады' ? '' : option.dataset.name;
+  olympiadSearch.value = '';
+  $('#olympiad-options').hidden = true;
+  olympiadSearch.setAttribute('aria-expanded', 'false');
+  updateOlympiadSelection();
+});
+document.addEventListener('click', event => {
+  if (!event.target.closest('.olympiad-picker')) {
+    $('#olympiad-options').hidden = true;
+    olympiadSearch.setAttribute('aria-expanded', 'false');
+  }
+});
+
+getJson('/olympiads').then(data => {
+  olympiads = data.items || [];
 }).catch(() => {});

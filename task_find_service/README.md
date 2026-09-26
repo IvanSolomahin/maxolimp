@@ -12,10 +12,14 @@ PostgreSQL хранит задачи, их источник и поисковы�
 Затем выполните `sql/migrate_v3.sql`: она переносит связь задания с олимпиадой
 в `tasks.olympiad_id`. Если у задания было несколько олимпиад, сохраняется одна
 (с наименьшим UUID).
+После `migrate_v3.sql` выполните `sql/migrate_v4.sql`, чтобы схлопнуть варианты
+названий олимпиад с классами и различающейся типографикой, переназначить задачи
+на одну запись и удалить дубли.
 
 ```bash
 docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v2.sql
 docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v3.sql
+docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v4.sql
 ```
 
 ## Импорт ETL

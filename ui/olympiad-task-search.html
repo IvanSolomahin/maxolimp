@@ -566,6 +566,32 @@
     #filter-dialog .filter-select:hover { border-color: var(--fg-2); }
     #filter-dialog .filter-select:focus-visible { border-color: var(--fg); outline: 0; box-shadow: var(--focus-ring); }
     #filter-dialog .filter-select:disabled { background: var(--surface-warm); color: var(--muted); cursor: not-allowed; }
+    .olympiad-picker { display: grid; gap: var(--space-2); }
+    .olympiad-options {
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      overscroll-behavior: contain;
+    }
+    .olympiad-option {
+      width: 100%;
+      display: grid;
+      gap: 2px;
+      padding: 10px 12px;
+      border: 0;
+      border-bottom: 1px solid var(--border-soft);
+      background: transparent;
+      color: var(--fg);
+      text-align: left;
+      font-size: var(--text-sm);
+      line-height: 1.35;
+    }
+    .olympiad-option:last-child { border-bottom: 0; }
+    .olympiad-option:hover, .olympiad-option:focus-visible { background: var(--surface); }
+    .olympiad-empty { margin: 0; padding: 12px; color: var(--muted); font-size: var(--text-sm); }
+    .olympiad-selection { margin: 0; color: var(--muted); font-size: var(--text-xs); }
 
     .sheet-actions {
       flex: 0 0 auto;
@@ -706,7 +732,11 @@
     <div class="sheet-body">
       <div class="filter-group">
         <h3>Олимпиада</h3>
-        <select class="filter-select" id="olympiad-filter"><option value="">Все олимпиады</option></select>
+        <div class="olympiad-picker">
+          <input class="filter-select" id="olympiad-search" type="search" autocomplete="off" placeholder="Поиск по названию" role="combobox" aria-autocomplete="list" aria-controls="olympiad-options" aria-expanded="false">
+          <div class="olympiad-options" id="olympiad-options" role="listbox" aria-label="Олимпиады" hidden></div>
+          <p class="olympiad-selection" id="olympiad-selection" hidden></p>
+        </div>
       </div>
       <div class="filter-group">
         <h3>Сложность</h3>

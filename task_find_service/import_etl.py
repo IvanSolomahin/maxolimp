@@ -14,6 +14,7 @@ import uuid
 from sqlalchemy import text
 
 from app.db import SessionLocal
+from app.olympiad_names import canonical_olympiad_name, has_grade_suffix, olympiad_name_key
 
 
 SOURCE = "sdamgia"
@@ -60,18 +61,60 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                          "external_id": str(row["problem_id"])}
                         for row in exclusions
                     ])
-            names = [row[0] for row in source.execute(
-                "SELECT DISTINCT olympiad FROM problems WHERE trim(olympiad) != ''"
-            )]
+            olympiad_rows = source.execute("""
+                SELECT trim(olympiad) AS name, COUNT(*) AS problem_count
+                FROM problems
+                WHERE trim(olympiad) != ''
+                GROUP BY trim(olympiad)
+            """).fetchall()
+            grouped_names: dict[str, list[tuple[str, int]]] = {}
+            for row in olympiad_rows:
+                grouped_names.setdefault(olympiad_name_key(row["name"]), []).append(
+                    (row["name"], row["problem_count"])
+                )
+
+            canonical_by_key = {
+                key: canonical_olympiad_name(min(
+                    variants,
+                    key=lambda item: (has_grade_suffix(item[0]), -item[1], item[0].casefold()),
+                )[0])
+                for key, variants in grouped_names.items()
+            }
+            source_name_to_key = {
+                row["name"]: olympiad_name_key(row["name"])
+                for row in olympiad_rows
+            }
+
+            existing_olympiads = (await session.execute(text("""
+                SELECT o.id, o.name, COUNT(t.id) AS task_count
+                FROM olympiads o
+                LEFT JOIN tasks t ON t.olympiad_id = o.id
+                GROUP BY o.id, o.name
+            """))).all()
+            existing_by_key: dict[str, tuple[bool, int, str, uuid.UUID]] = {}
+            for row in existing_olympiads:
+                key = olympiad_name_key(row.name)
+                preference = (has_grade_suffix(row.name), -row.task_count, row.name.casefold(), row.id)
+                if key not in existing_by_key or preference < existing_by_key[key]:
+                    existing_by_key[key] = preference
+
+            olympiad_ids_by_key = {
+                key: existing_by_key[key][3] if key in existing_by_key
+                else uuid.uuid5(NAMESPACE, "olympiad:" + name)
+                for key, name in canonical_by_key.items()
+            }
             await session.execute(text("""
                 INSERT INTO olympiads(id, name, short_name) VALUES (:id, :name, NULL)
-                ON CONFLICT(name) DO NOTHING
-            """), [{"id": uuid.uuid5(NAMESPACE, "olympiad:" + name), "name": name} for name in names])
+                ON CONFLICT(id) DO UPDATE SET name = EXCLUDED.name
+            """), [
+                {"id": olympiad_ids_by_key[key], "name": name}
+                for key, name in canonical_by_key.items()
+            ])
             await session.commit()
-            olympiads = dict((row.name, row.id) for row in (
-                await session.execute(text("SELECT id, name FROM olympiads WHERE name = ANY(:names)"), {"names": names})
-            ).all())
-            await session.commit()
+            olympiads = {
+                source_name: olympiad_ids_by_key[key]
+                for source_name, key in source_name_to_key.items()
+            }
 
             count = 0
             for rows in chunks(source.execute("""
