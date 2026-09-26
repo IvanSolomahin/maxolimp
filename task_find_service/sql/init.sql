@@ -64,6 +64,7 @@ CREATE TABLE tasks (
     classifier TEXT,
     difficulty SMALLINT CHECK (difficulty BETWEEN 1 AND 10),
     solution_method_id UUID REFERENCES solution_methods (id) ON DELETE SET NULL,
+    olympiad_id UUID REFERENCES olympiads (id) ON DELETE SET NULL,
     source_stage TEXT,
     source_year SMALLINT,
     source_problem_number TEXT,
@@ -83,6 +84,7 @@ CREATE INDEX tasks_difficulty_idx ON tasks (difficulty);
 CREATE INDEX tasks_status_idx ON tasks (status);
 CREATE INDEX tasks_subject_grade_year_idx ON tasks (subject, grade, source_year);
 CREATE INDEX tasks_solution_method_id_idx ON tasks (solution_method_id);
+CREATE INDEX tasks_olympiad_id_idx ON tasks (olympiad_id);
 
 CREATE TABLE task_sources (
     task_id UUID NOT NULL REFERENCES tasks (id) ON DELETE CASCADE,
@@ -118,12 +120,6 @@ CREATE TABLE task_topics (
     topic_id UUID NOT NULL REFERENCES topics (id) ON DELETE CASCADE,
     weight REAL NOT NULL DEFAULT 1.0,
     PRIMARY KEY (task_id, topic_id)
-);
-
-CREATE TABLE task_olympiads (
-    task_id UUID NOT NULL REFERENCES tasks (id) ON DELETE CASCADE,
-    olympiad_id UUID NOT NULL REFERENCES olympiads (id) ON DELETE CASCADE,
-    PRIMARY KEY (task_id, olympiad_id)
 );
 
 CREATE TABLE solutions (

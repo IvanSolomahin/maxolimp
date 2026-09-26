@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db import SessionLocal, get_db
-from app.models import Hint, Solution, Task, TaskOlympiad, TaskTopic, TaskEmbedding
+from app.models import Hint, Solution, Task, TaskTopic, TaskEmbedding
 from app.config import settings
 from app.schemas import (
     AssignOlympiadsRequest,
@@ -238,7 +238,7 @@ async def get_task(task_id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_d
         .options(
             selectinload(Task.solution_method),
             selectinload(Task.task_topics).selectinload(TaskTopic.topic),
-            selectinload(Task.task_olympiads).selectinload(TaskOlympiad.olympiad),
+            selectinload(Task.olympiad),
             selectinload(Task.solutions),
             selectinload(Task.hints),
             selectinload(Task.sources),
@@ -252,10 +252,8 @@ async def get_task(task_id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_d
         TopicRef(id=tt.topic.id, name=tt.topic.name, path=tt.topic.path)
         for tt in task.task_topics
     ]
-    olympiads = [
-        OlympiadRef(id=to.olympiad.id, name=to.olympiad.name, short_name=to.olympiad.short_name)
-        for to in task.task_olympiads
-    ]
+    olympiads = ([OlympiadRef(id=task.olympiad.id, name=task.olympiad.name,
+                              short_name=task.olympiad.short_name)] if task.olympiad else [])
     sm = task.solution_method
     return TaskDetail(
         id=task.id,
@@ -330,9 +328,9 @@ async def assign_olympiads(
     task = await db.get(Task, task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    await db.execute(delete(TaskOlympiad).where(TaskOlympiad.task_id == task_id))
-    for oid in body.olympiad_ids:
-        db.add(TaskOlympiad(task_id=task_id, olympiad_id=oid))
+    if len(body.olympiad_ids) > 1:
+        raise HTTPException(status_code=422, detail="A task can belong to only one olympiad")
+    task.olympiad_id = body.olympiad_ids[0] if body.olympiad_ids else None
     await db.commit()
     return StatusOk()
 

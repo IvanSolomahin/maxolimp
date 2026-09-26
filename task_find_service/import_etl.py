@@ -82,7 +82,7 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                 )
                 ORDER BY p.subject, p.problem_id
             """ if has_exclusions else "SELECT * FROM problems ORDER BY subject, problem_id"), batch_size):
-                tasks, refs, solutions, links, removed_solutions = [], [], [], [], []
+                tasks, refs, solutions, removed_solutions = [], [], [], []
                 for row in rows:
                     ident = task_id(row["subject"], row["problem_id"])
                     tasks.append({
@@ -93,6 +93,7 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                         "classifier": row["classifier"], "difficulty": row["difficulty"],
                         "stage": row["tour"] or None, "year": optional_int(row["year"]),
                         "number": str(row["problem_id"]),
+                        "olympiad_id": olympiads.get(row["olympiad"].strip()) if row["olympiad"].strip() else None,
                         "status": "published" if row["statement"].strip() else "draft",
                     })
                     refs.append({
@@ -105,20 +106,19 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                                           "task_id": ident, "content": row["solution"]})
                     else:
                         removed_solutions.append(solution_id(row["subject"], row["problem_id"]))
-                    if row["olympiad"].strip():
-                        links.append({"task_id": ident, "olympiad_id": olympiads[row["olympiad"]]})
                 async with session.begin():
                     await session.execute(text("""
                         INSERT INTO tasks(id, statement, answer, subject, grade, problem_type,
-                            classifier, difficulty, source_stage, source_year,
+                            classifier, difficulty, olympiad_id, source_stage, source_year,
                             source_problem_number, status)
                         VALUES (:id, :statement, :answer, :subject, :grade, :problem_type,
-                            :classifier, :difficulty, :stage, :year, :number, :status)
+                            :classifier, :difficulty, :olympiad_id, :stage, :year, :number, :status)
                         ON CONFLICT(id) DO UPDATE SET
                             statement = EXCLUDED.statement, answer = EXCLUDED.answer,
                             subject = EXCLUDED.subject, grade = EXCLUDED.grade,
                             problem_type = EXCLUDED.problem_type, classifier = EXCLUDED.classifier,
-                            difficulty = EXCLUDED.difficulty, source_stage = EXCLUDED.source_stage,
+                            difficulty = EXCLUDED.difficulty, olympiad_id = EXCLUDED.olympiad_id,
+                            source_stage = EXCLUDED.source_stage,
                             source_year = EXCLUDED.source_year, status = EXCLUDED.status
                     """), tasks)
                     await session.execute(text("""
@@ -135,11 +135,6 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                         """), solutions)
                     if removed_solutions:
                         await session.execute(text("DELETE FROM solutions WHERE id = ANY(:ids)"), {"ids": removed_solutions})
-                    if links:
-                        await session.execute(text("""
-                            INSERT INTO task_olympiads(task_id, olympiad_id)
-                            VALUES (:task_id, :olympiad_id) ON CONFLICT DO NOTHING
-                        """), links)
                 count += len(rows)
                 if count % 2000 < batch_size:
                     print(f"tasks: {count}", flush=True)

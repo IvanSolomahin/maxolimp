@@ -9,9 +9,13 @@ PostgreSQL хранит задачи, их источник и поисковы�
 из `sql/init.sql` при первом запуске `docker compose up --build`. Для уже
 существующей базы v1 сначала выполните `sql/migrate_v2.sql` через `psql`.
 Миграция сохраняет старые столбцы и данные; код v2 читает новые таблицы.
+Затем выполните `sql/migrate_v3.sql`: она переносит связь задания с олимпиадой
+в `tasks.olympiad_id`. Если у задания было несколько олимпиад, сохраняется одна
+(с наименьшим UUID).
 
 ```bash
 docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v2.sql
+docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v3.sql
 ```
 
 ## Импорт ETL

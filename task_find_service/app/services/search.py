@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
-from app.models import SolutionMethod, Task, TaskOlympiad, TaskTopic, Topic
+from app.models import SolutionMethod, Task, TaskTopic, Topic
 from app.services.embeddings import embed_text, vector_to_pg
 
 
@@ -342,8 +342,7 @@ async def tasks_by_olympiads(
     offset = (page - 1) * size
     q = (
         select(Task)
-        .join(TaskOlympiad, TaskOlympiad.task_id == Task.id)
-        .where(TaskOlympiad.olympiad_id.in_(olympiad_ids), Task.status == "published")
+        .where(Task.olympiad_id.in_(olympiad_ids), Task.status == "published")
         .options(selectinload(Task.solution_method))
     )
     if year_from is not None:

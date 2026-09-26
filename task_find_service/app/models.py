@@ -101,6 +101,7 @@ class Task(Base):
         Index("tasks_status_idx", "status"),
         Index("tasks_subject_grade_year_idx", "subject", "grade", "source_year"),
         Index("tasks_solution_method_id_idx", "solution_method_id"),
+        Index("tasks_olympiad_id_idx", "olympiad_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -114,6 +115,9 @@ class Task(Base):
     difficulty: Mapped[int | None] = mapped_column(SmallInteger)
     solution_method_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("solution_methods.id", ondelete="SET NULL")
+    )
+    olympiad_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("olympiads.id", ondelete="SET NULL")
     )
     source_stage: Mapped[str | None] = mapped_column(Text)
     source_year: Mapped[int | None] = mapped_column(SmallInteger)
@@ -132,8 +136,8 @@ class Task(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     solution_method: Mapped[SolutionMethod | None] = relationship("SolutionMethod")
+    olympiad: Mapped[Olympiad | None] = relationship("Olympiad")
     task_topics: Mapped[list["TaskTopic"]] = relationship("TaskTopic", back_populates="task")
-    task_olympiads: Mapped[list["TaskOlympiad"]] = relationship("TaskOlympiad", back_populates="task")
     solutions: Mapped[list["Solution"]] = relationship("Solution", back_populates="task")
     hints: Mapped[list["Hint"]] = relationship("Hint", back_populates="task")
     sources: Mapped[list["TaskSource"]] = relationship("TaskSource", back_populates="task")
@@ -180,20 +184,6 @@ class TaskTopic(Base):
 
     task: Mapped[Task] = relationship("Task", back_populates="task_topics")
     topic: Mapped[Topic] = relationship("Topic")
-
-
-class TaskOlympiad(Base):
-    __tablename__ = "task_olympiads"
-
-    task_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True
-    )
-    olympiad_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("olympiads.id", ondelete="CASCADE"), primary_key=True
-    )
-
-    task: Mapped[Task] = relationship("Task", back_populates="task_olympiads")
-    olympiad: Mapped[Olympiad] = relationship("Olympiad")
 
 
 class Solution(Base):
