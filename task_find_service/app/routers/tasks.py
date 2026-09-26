@@ -75,6 +75,7 @@ async def list_tasks(
     db: Annotated[AsyncSession, Depends(get_db)],
     q: str | None = None,
     subject: str | None = Query(None, pattern="^(math|physics)$"),
+    olympiad_id: uuid.UUID | None = None,
     grade: int | None = None,
     mode: str = Query("topic", pattern="^(topic|solution|both)$"),
     difficulty_min: int | None = None,
@@ -91,6 +92,7 @@ async def list_tasks(
         db,
         q=q,
         subject=subject,
+        olympiad_id=olympiad_id,
         grade=grade,
         mode=mode,
         difficulty_min=difficulty_min,
@@ -110,7 +112,7 @@ async def list_tasks(
     tasks_res = await db.execute(
         select(Task)
         .where(Task.id.in_(ids))
-        .options(selectinload(Task.solution_method))
+        .options(selectinload(Task.solution_method), selectinload(Task.olympiad))
     )
     by_id = {t.id: t for t in tasks_res.scalars().all()}
 
@@ -126,6 +128,8 @@ async def list_tasks(
                 difficulty=t.difficulty,
                 solution_method=_method_ref(t),
                 snippet=r.get("snippet") or _snippet(t.statement),
+                number=t.source_problem_number,
+                olympiad=t.olympiad.name if t.olympiad else None,
                 score=float(r["score"]) if r.get("score") is not None else None,
             )
         )

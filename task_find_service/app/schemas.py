@@ -44,6 +44,8 @@ class TaskListItem(BaseModel):
     difficulty: int | None
     solution_method: SolutionMethodRef | None = None
     snippet: str | None = None
+    number: str | None = None
+    olympiad: str | None = None
     score: float | None = None
     rank: float | None = None
 

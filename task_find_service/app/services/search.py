@@ -46,6 +46,8 @@ def _task_filters_sql(prefix: str = "t") -> str:
             OR {prefix}.source_stage = CAST(:stage AS TEXT))
         AND (CAST(:solution_method_id AS UUID) IS NULL
             OR {prefix}.solution_method_id = CAST(:solution_method_id AS UUID))
+        AND (CAST(:olympiad_id AS UUID) IS NULL
+            OR {prefix}.olympiad_id = CAST(:olympiad_id AS UUID))
         AND ({prefix}.status = 'published' OR CAST(:include_draft AS BOOLEAN) IS TRUE)
     """
 
@@ -61,10 +63,12 @@ def _filter_params(
     include_draft: bool = False,
     subject: str | None = None,
     grade: int | None = None,
+    olympiad_id: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     return {
         "subject": subject,
         "grade": grade,
+        "olympiad_id": olympiad_id,
         "difficulty_min": difficulty_min,
         "difficulty_max": difficulty_max,
         "year_from": year_from,
@@ -91,6 +95,7 @@ async def hybrid_search_tasks(
     subject: str | None = None,
     grade: int | None = None,
     mode: str = "topic",
+    olympiad_id: uuid.UUID | None = None,
 ) -> tuple[int, list[dict]]:
     offset = (page - 1) * size
     params = _filter_params(
@@ -102,6 +107,7 @@ async def hybrid_search_tasks(
         solution_method_id=solution_method_id,
         subject=subject,
         grade=grade,
+        olympiad_id=olympiad_id,
     )
     params["limit"] = size
     params["offset"] = offset
