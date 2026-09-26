@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Подбор заданий</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f7f7f7;
+      --surface-warm: #eeeeee;
+      --fg: #111111;
+      --fg-2: #3a3a3a;
+      --muted: #707070;
+      --meta: #111111;
+      --border: #d9d9d9;
+      --border-soft: #eeeeee;
+      --accent: #111111;
+      --accent-on: #ffffff;
+      --accent-hover: color-mix(in oklab, var(--accent), black 8%);
+      --accent-active: color-mix(in oklab, var(--accent), black 14%);
+      --success: #168a46;
+      --warn: #b7791f;
+      --danger: #c53030;
+      --font-display: Inter, system-ui, sans-serif;
+      --font-body: Inter, system-ui, sans-serif;
+      --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+      --text-xs: 12px;
+      --text-sm: 14px;
+      --text-base: 16px;
+      --text-lg: 18px;
+      --text-xl: 24px;
+      --text-2xl: 36px;
+      --leading-body: 1.52;
+      --leading-tight: 1.06;
+      --tracking-display: -0.025em;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-pill: 9999px;
+      --elev-ring: 0 0 0 1px var(--border);
+      --elev-raised: 0 16px 40px rgba(0, 0, 0, 0.10);
+      --focus-ring: 0 0 0 3px rgba(17, 17, 17, 0.18);
+      --motion-fast: 150ms;
+      --motion-base: 240ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+    body {
+      min-width: 320px;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background: var(--surface);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: var(--leading-body);
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    svg { display: block; flex: 0 0 auto; }
+    h1, h2, p { margin: 0; }
+    h1, h2 { font-family: var(--font-display); text-wrap: balance; }
+    p { text-wrap: pretty; }
+    [hidden] { display: none !important; }
+    :focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+
+    .stage { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+    .caption { color: var(--muted); font: var(--text-xs) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+    .caption strong { color: var(--fg); font-weight: 600; }
+    .device {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      padding: 10px;
+      border-radius: 54px;
+      background: linear-gradient(160deg, color-mix(in oklab, var(--fg), var(--bg) 18%), var(--fg));
+      box-shadow: var(--elev-raised);
+      isolation: isolate;
+    }
+    .device::before, .device::after { content: ''; position: absolute; top: 108px; bottom: 108px; width: 3px; background: color-mix(in oklab, var(--fg), var(--bg) 22%); }
+    .device::before { left: -2px; }
+    .device::after { right: -2px; }
+    .island { position: absolute; top: 20px; left: 50%; z-index: 30; width: 120px; height: 34px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg); }
+    .screen { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 44px; background: var(--bg); }
+    .statusbar { flex: 0 0 47px; display: flex; align-items: flex-start; justify-content: space-between; padding: 17px 24px 0; font-size: 15px; font-weight: 650; }
+    .statusbar-right { display: inline-flex; align-items: center; gap: 6px; }
+    .statusbar svg { width: 17px; height: 11px; fill: var(--fg); }
+    .statusbar .battery { width: 25px; }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    .appbar { flex: 0 0 56px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--border-soft); background: color-mix(in oklab, var(--bg) 94%, transparent); backdrop-filter: blur(16px); }
+    .appbar-title { text-align: center; font-size: var(--text-sm); font-weight: 650; }
+    .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: var(--radius-pill); background: transparent; }
+    .icon-btn:hover { background: var(--surface); }
+    .icon-btn:active { background: var(--surface-warm); }
+    .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .content { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: var(--space-5); -webkit-overflow-scrolling: touch; }
+    .content::-webkit-scrollbar { display: none; }
+
+    .intro { padding: var(--space-6) 0 var(--space-5); }
+    .intro h1 { font-size: 31px; line-height: 1.08; letter-spacing: var(--tracking-display); }
+    .intro p { max-width: 31ch; margin-top: var(--space-3); color: var(--muted); }
+
+    .totals { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--space-5); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border-soft); }
+    .totals-num { font-family: var(--font-mono); font-size: var(--text-xl); font-weight: 650; letter-spacing: var(--tracking-display); }
+    .totals-label { margin-top: 2px; color: var(--muted); font-size: var(--text-xs); }
+
+    .cards { display: grid; gap: var(--space-3); margin-bottom: var(--space-6); }
+    .topic-card { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg); }
+    .topic-head { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: var(--space-2); padding: var(--space-4) var(--space-4) var(--space-3); }
+    .topic-kicker { color: var(--muted); font: var(--text-xs) var(--font-mono); }
+    .topic-head h2 { margin-top: var(--space-1); font-size: var(--text-lg); line-height: 1.25; letter-spacing: -.01em; }
+    .count-badge { justify-self: end; display: inline-flex; padding: 3px 9px; border: 1px solid var(--fg); border-radius: var(--radius-pill); font: var(--text-xs) var(--font-mono); white-space: nowrap; }
+    .topic-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border-soft); background: var(--surface); }
+    .breakdown-btn { min-height: 44px; flex: 0 0 auto; border: 0; background: transparent; font-size: var(--text-sm); font-weight: 650; color: var(--fg-2); }
+    .breakdown-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .topic-hint { color: var(--muted); font-size: var(--text-xs); font-family: var(--font-mono); }
+    .start-btn { min-height: 40px; padding: 0 var(--space-4); display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--accent); border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-on); font-size: var(--text-sm); font-weight: 650; text-decoration: none; transition: background var(--motion-fast) var(--ease-standard); }
+    .start-btn:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+    .start-btn:active { border-color: var(--accent-active); background: var(--accent-active); }
+    .home-indicator { flex: 0 0 28px; position: relative; }
+    .home-indicator::after { content: ''; position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg); opacity: .88; }
+
+    dialog { width: min(calc(100% - 24px), 370px); max-height: 72%; margin: auto auto 0; padding: 0; overflow: auto; color: var(--fg); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--elev-raised); }
+    dialog::backdrop { background: color-mix(in oklab, var(--fg) 32%, transparent); backdrop-filter: blur(2px); }
+    .sheet { padding: var(--space-5); }
+    .sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+    .sheet-head h2 { font-size: var(--text-xl); }
+    .sheet-sub { margin-top: var(--space-2); color: var(--muted); font-size: var(--text-sm); }
+    .sub-list { padding: 0; margin: var(--space-5) 0 0; list-style: none; }
+    .sub-list li { padding: var(--space-3) 0; border-top: 1px solid var(--border-soft); font-size: var(--text-sm); }
+    .sheet-note { margin-top: var(--space-4); color: var(--muted); font-size: var(--text-xs); }
+
+    .task-list { padding: 0; margin: var(--space-5) 0 0; list-style: none; display: grid; gap: var(--space-2); }
+    .task-item { display: block; }
+    .task-item input { position: absolute; opacity: 0; pointer-events: none; }
+    .task-row { display: grid; grid-template-columns: 22px 1fr; align-items: start; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg); transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard); }
+    .task-item:hover .task-row { border-color: var(--fg-2); }
+    .task-item input:checked + .task-row { border-color: var(--border-soft); background: var(--surface); }
+    .task-item input:checked + .task-row .task-name { color: var(--muted); text-decoration: line-through; }
+    .task-check { width: 22px; height: 22px; display: grid; place-items: center; margin-top: 1px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .task-item input:checked + .task-row .task-check { border-color: var(--fg); background: var(--fg); color: var(--bg); }
+    .task-name { font-size: var(--text-sm); line-height: 1.4; }
+    .task-diff { display: block; margin-top: 2px; color: var(--muted); font-size: var(--text-xs); font-family: var(--font-mono); }
+
+    @media (max-width: 430px) {
+      body { display: block; padding: 0; background: var(--bg); }
+      .stage { display: block; }
+      .caption { display: none; }
+      .device { width: 100vw; height: 100dvh; padding: 0; border-radius: 0; background: var(--bg); box-shadow: none; }
+      .device::before, .device::after { display: none; }
+      .screen { border-radius: 0; }
+      dialog { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="caption"><strong>Олимпиады</strong> · подбор заданий</div>
+    <div class="device">
+      <span class="island" aria-hidden="true"></span>
+      <div class="screen">
+        <div class="statusbar">
+          <span class="num">9:41</span>
+          <span class="statusbar-right">
+            <svg viewBox="0 0 17 11" aria-hidden="true"><rect x="0" y="7" width="3" height="4" rx=".6"></rect><rect x="4" y="5" width="3" height="6" rx=".6"></rect><rect x="8" y="3" width="3" height="8" rx=".6"></rect><rect x="12" y="0" width="3" height="11" rx=".6"></rect></svg>
+            <svg viewBox="0 0 17 11" aria-hidden="true"><path d="M8.5 1.5c-3 0-5.8 1.1-8 3.1L2 6.1a9.8 9.8 0 0 1 13 0l1.5-1.5a11.8 11.8 0 0 0-8-3.1ZM3.5 7.6 5 9.1a5.2 5.2 0 0 1 7 0l1.5-1.5a7.4 7.4 0 0 0-10 0Zm3 3 2 2 2-2a2.8 2.8 0 0 0-4 0Z"></path></svg>
+            <svg class="battery" viewBox="0 0 25 11" aria-hidden="true"><rect x=".5" y=".5" width="21" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-opacity=".45"></rect><rect x="22" y="3.5" width="1.5" height="4" rx=".4"></rect><rect x="2" y="2" width="18" height="7" rx="1.4"></rect></svg>
+          </span>
+        </div>
+
+        <header class="appbar">
+          <button class="icon-btn" id="back-button" type="button" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button>
+          <div class="appbar-title">Подбор заданий</div>
+          <span></span>
+        </header>
+
+        <main class="content">
+          <div class="intro">
+            <h1>Высшая проба · Информатика</h1>
+            <p>Основные темы олимпиады и сколько заданий стоит прорешать по каждой, чтобы быть готовым.</p>
+          </div>
+
+          <div class="totals">
+            <div>
+              <div class="totals-num" id="totals-num">≈ 200</div>
+              <div class="totals-label">заданий по <span id="totals-topics">8</span> темам</div>
+            </div>
+          </div>
+
+          <div class="cards" id="topics-list"></div>
+
+          <p style="text-align:center">
+            <a href="http://77.91.88.20:8080/olympiad-onboarding.html" style="color:var(--muted);font-size:var(--text-sm)">← Изменить вуз и направление</a>
+          </p>
+        </main>
+
+        <div class="home-indicator" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="breakdown-dialog">
+    <div class="sheet">
+      <div class="sheet-head"><div><h2 id="sheet-title"></h2><p class="sheet-sub" id="sheet-sub"></p></div><button class="icon-btn" id="close-dialog" type="button" aria-label="Закрыть"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></div>
+      <ul class="task-list" id="task-list"></ul>
+      <p class="sheet-note">Это примеры заданий по теме — полная подборка ≈ <span id="sheet-total"></span> заданий будет доступна в тренажёре.</p>
+    </div>
+  </dialog>
+
+  <script>
+    const TOPICS = [
+      {
+        name: 'Динамическое программирование', count: 40,
+        subtopics: ['ДП по подотрезкам и профилю', 'ДП по деревьям', 'Оптимизация пересчёта: монотонный стек, СМО'],
+        tasks: [
+          { name: 'Наибольшая возрастающая подпоследовательность за O(n log n)', diff: 'Средняя' },
+          { name: 'Разбиение строки на палиндромы минимальным числом разрезов', diff: 'Средняя' },
+          { name: 'Рюкзак с ограничением по весу и количеству предметов', diff: 'Лёгкая' },
+          { name: 'ДП по маске: коммивояжёр на 18 городах', diff: 'Сложная' },
+          { name: 'Наибольшая общая подпоследовательность трёх строк', diff: 'Сложная' },
+        ],
+      },
+      {
+        name: 'Графы и алгоритмы на графах', count: 35,
+        subtopics: ['Кратчайшие пути: Дейкстра, Флойд — Уоршелл', 'Компоненты связности, мосты и точки сочленения', 'LCA и разреженные таблицы'],
+        tasks: [
+          { name: 'Кратчайший путь с ограничением на число пересадок', diff: 'Средняя' },
+          { name: 'Поиск мостов в графе дорог', diff: 'Средняя' },
+          { name: 'LCA в дереве с оффлайн-запросами', diff: 'Сложная' },
+          { name: 'Проверка графа на двудольность', diff: 'Лёгкая' },
+          { name: 'Минимальное остовное дерево с запрещёнными рёбрами', diff: 'Сложная' },
+        ],
+      },
+      {
+        name: 'Структуры данных', count: 30,
+        subtopics: ['Дерево отрезков и дерево Фенвика', 'Система непересекающихся множеств', 'Персистентные структуры'],
+        tasks: [
+          { name: 'Сумма на отрезке с точечными обновлениями', diff: 'Лёгкая' },
+          { name: 'Количество различных чисел на отрезке (офлайн)', diff: 'Средняя' },
+          { name: 'Динамическая связность через СНМ с откатами', diff: 'Сложная' },
+          { name: 'K-я порядковая статистика в персистентном дереве', diff: 'Сложная' },
+          { name: 'Массовое присваивание на отрезке с ленивыми обновлениями', diff: 'Средняя' },
+        ],
+      },
+      {
+        name: 'Строки', count: 25,
+        subtopics: ['Z-функция и префикс-функция', 'Алгоритм Ахо — Корасик', 'Суффиксный массив'],
+        tasks: [
+          { name: 'Поиск всех вхождений образца в текст (Z-функция)', diff: 'Лёгкая' },
+          { name: 'Поиск нескольких образцов сразу (Ахо — Корасик)', diff: 'Средняя' },
+          { name: 'Наибольшая общая подстрока через суффиксный массив', diff: 'Сложная' },
+          { name: 'Количество различных подстрок строки', diff: 'Средняя' },
+          { name: 'Минимальный период строки', diff: 'Лёгкая' },
+        ],
+      },
+      {
+        name: 'Жадные алгоритмы и потоки', count: 20,
+        subtopics: ['Максимальный поток', 'Паросочетания', 'Жадные доказательства через обмен'],
+        tasks: [
+          { name: 'Максимальное паросочетание в двудольном графе', diff: 'Средняя' },
+          { name: 'Расписание задач с дедлайнами и штрафами', diff: 'Лёгкая' },
+          { name: 'Максимальный поток минимальной стоимости', diff: 'Сложная' },
+          { name: 'Покрытие отрезков минимальным числом точек', diff: 'Лёгкая' },
+        ],
+      },
+      {
+        name: 'Комбинаторика и теория вероятностей', count: 20,
+        subtopics: ['Комбинаторика на путях и сетках', 'Математическое ожидание', 'Формула включений-исключений'],
+        tasks: [
+          { name: 'Число путей на сетке с препятствиями', diff: 'Лёгкая' },
+          { name: 'Ожидаемое число ходов в случайном блуждании', diff: 'Средняя' },
+          { name: 'Включения-исключения для чисел, не кратных набору простых', diff: 'Средняя' },
+          { name: 'Число способов раскрасить граф в k цветов', diff: 'Сложная' },
+        ],
+      },
+      {
+        name: 'Теория чисел', count: 15,
+        subtopics: ['Модулярная арифметика', 'Решето Эратосфена и его модификации', 'Китайская теорема об остатках'],
+        tasks: [
+          { name: 'Быстрое возведение в степень по модулю', diff: 'Лёгкая' },
+          { name: 'Решение системы сравнений по модулю (КТО)', diff: 'Средняя' },
+          { name: 'Подсчёт делителей на отрезке решетом', diff: 'Средняя' },
+          { name: 'Дискретный логарифм baby-step giant-step', diff: 'Сложная' },
+        ],
+      },
+      {
+        name: 'Геометрия', count: 15,
+        subtopics: ['Выпуклая оболочка', 'Пересечение отрезков', 'Работа с векторным произведением'],
+        tasks: [
+          { name: 'Построение выпуклой оболочки набора точек', diff: 'Средняя' },
+          { name: 'Проверка пересечения двух отрезков', diff: 'Лёгкая' },
+          { name: 'Площадь многоугольника по координатам вершин', diff: 'Лёгкая' },
+          { name: 'Ближайшая пара точек за O(n log n)', diff: 'Сложная' },
+        ],
+      },
+    ];
+
+    const topicsList = document.getElementById('topics-list');
+    const dialog = document.getElementById('breakdown-dialog');
+
+    function render() {
+      const totalCount = TOPICS.reduce((s, t) => s + t.count, 0);
+      document.getElementById('totals-num').textContent = '≈ ' + totalCount;
+      document.getElementById('totals-topics').textContent = TOPICS.length;
+
+      topicsList.innerHTML = '';
+      TOPICS.forEach((topic, i) => {
+        const card = document.createElement('article');
+        card.className = 'topic-card';
+        card.innerHTML = `
+          <div class="topic-head">
+            <div><p class="topic-kicker">Тема ${i + 1}</p><h2>${topic.name}</h2></div>
+            <span class="count-badge">≈ ${topic.count} заданий</span>
+          </div>
+          <div class="topic-foot">
+            <button class="breakdown-btn" type="button" data-breakdown="${i}">Примеры заданий</button>
+            <a class="start-btn" href="./olympiad-task-solve.html?topic=${i}">Начать решать</a>
+          </div>`;
+
+        card.querySelector('[data-breakdown]').addEventListener('click', () => openTasks(topic));
+
+        topicsList.appendChild(card);
+      });
+    }
+
+    function openTasks(topic) {
+      document.getElementById('sheet-title').textContent = topic.name;
+      document.getElementById('sheet-sub').textContent = topic.subtopics.join(' · ');
+      document.getElementById('sheet-total').textContent = topic.count;
+      const list = document.getElementById('task-list');
+      list.innerHTML = topic.tasks.map((t, i) => `
+        <li class="task-item">
+          <input type="checkbox" id="task-${i}">
+          <label class="task-row" for="task-${i}">
+            <span class="task-check">✓</span>
+            <span><span class="task-name">${t.name}</span><span class="task-diff">${t.diff}</span></span>
+          </label>
+        </li>`).join('');
+      dialog.showModal();
+    }
+
+    document.getElementById('close-dialog').addEventListener('click', () => dialog.close());
+    document.getElementById('back-button').addEventListener('click', () => history.back());
+
+    render();
+  </script>
+</body></html>

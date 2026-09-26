@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Тренажёр</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f7f7f7;
+      --surface-warm: #eeeeee;
+      --fg: #111111;
+      --fg-2: #3a3a3a;
+      --muted: #707070;
+      --border: #d9d9d9;
+      --border-soft: #eeeeee;
+      --accent: #111111;
+      --accent-on: #ffffff;
+      --accent-hover: color-mix(in oklab, var(--accent), black 8%);
+      --accent-active: color-mix(in oklab, var(--accent), black 14%);
+      --success: #168a46;
+      --success-bg: #eaf6ee;
+      --danger: #c53030;
+      --danger-bg: #fbeaea;
+      --font-display: Inter, system-ui, sans-serif;
+      --font-body: Inter, system-ui, sans-serif;
+      --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+      --text-xs: 12px;
+      --text-sm: 14px;
+      --text-base: 16px;
+      --text-lg: 18px;
+      --text-xl: 24px;
+      --leading-body: 1.52;
+      --tracking-display: -0.025em;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-pill: 9999px;
+      --elev-raised: 0 16px 40px rgba(0, 0, 0, 0.10);
+      --focus-ring: 0 0 0 3px rgba(17, 17, 17, 0.18);
+      --motion-fast: 150ms;
+      --motion-base: 240ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+    body {
+      min-width: 320px;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background: var(--surface);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: var(--leading-body);
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    svg { display: block; flex: 0 0 auto; }
+    h1, h2, p { margin: 0; }
+    h1, h2 { font-family: var(--font-display); text-wrap: balance; }
+    p { text-wrap: pretty; }
+    [hidden] { display: none !important; }
+    :focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+
+    .stage { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+    .caption { color: var(--muted); font: var(--text-xs) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+    .caption strong { color: var(--fg); font-weight: 600; }
+    .device {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      padding: 10px;
+      border-radius: 54px;
+      background: linear-gradient(160deg, color-mix(in oklab, var(--fg), var(--bg) 18%), var(--fg));
+      box-shadow: var(--elev-raised);
+      isolation: isolate;
+    }
+    .device::before, .device::after { content: ''; position: absolute; top: 108px; bottom: 108px; width: 3px; background: color-mix(in oklab, var(--fg), var(--bg) 22%); }
+    .device::before { left: -2px; }
+    .device::after { right: -2px; }
+    .island { position: absolute; top: 20px; left: 50%; z-index: 30; width: 120px; height: 34px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg); }
+    .screen { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 44px; background: var(--bg); }
+    .statusbar { flex: 0 0 47px; display: flex; align-items: flex-start; justify-content: space-between; padding: 17px 24px 0; font-size: 15px; font-weight: 650; }
+    .statusbar-right { display: inline-flex; align-items: center; gap: 6px; }
+    .statusbar svg { width: 17px; height: 11px; fill: var(--fg); }
+    .statusbar .battery { width: 25px; }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    .appbar { flex: 0 0 56px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--border-soft); background: color-mix(in oklab, var(--bg) 94%, transparent); backdrop-filter: blur(16px); }
+    .appbar-title { text-align: center; font-size: var(--text-sm); font-weight: 650; }
+    .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: var(--radius-pill); background: transparent; }
+    .icon-btn:hover { background: var(--surface); }
+    .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .content { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: var(--space-5); -webkit-overflow-scrolling: touch; }
+    .content::-webkit-scrollbar { display: none; }
+
+    .progress-meta { display: flex; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-2); color: var(--muted); font: var(--text-xs) var(--font-mono); }
+    .progress-track { height: 3px; overflow: hidden; border-radius: var(--radius-pill); background: var(--border-soft); }
+    .progress-value { height: 100%; background: var(--fg); transition: width var(--motion-base) var(--ease-standard); }
+
+    .task-card { margin-top: var(--space-5); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg); }
+    .task-kicker { display: flex; align-items: center; gap: 8px; color: var(--muted); font: var(--text-xs) var(--font-mono); }
+    .task-diff { padding: 2px 8px; border: 1px solid var(--fg-2); border-radius: var(--radius-pill); }
+    .task-card h1 { margin-top: var(--space-2); font-size: var(--text-xl); line-height: 1.2; letter-spacing: var(--tracking-display); }
+    .task-statement { margin-top: var(--space-3); color: var(--fg-2); font-size: var(--text-base); }
+
+    .answer-block { margin-top: var(--space-5); }
+    .field-label { display: block; margin-bottom: var(--space-2); color: var(--fg-2); font-size: var(--text-sm); font-weight: 650; }
+    .answer-row { display: flex; gap: var(--space-2); }
+    .answer-input { flex: 1 1 auto; min-height: 48px; padding: 12px 14px; color: var(--fg); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+    .answer-input:focus { border-color: var(--fg); }
+    .check-btn { flex: 0 0 auto; min-height: 48px; padding: 0 var(--space-5); border: 1px solid var(--accent); border-radius: var(--radius-lg); background: var(--accent); color: var(--accent-on); font-weight: 650; }
+    .check-btn:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+    .check-btn:active { border-color: var(--accent-active); background: var(--accent-active); }
+
+    .feedback { display: flex; align-items: center; gap: 8px; margin-top: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); font-size: var(--text-sm); font-weight: 650; }
+    .feedback.correct { background: var(--success-bg); color: var(--success); }
+    .feedback.incorrect { background: var(--danger-bg); color: var(--danger); }
+
+    .hint-block { margin-top: var(--space-4); }
+    .hint-toggle { min-height: 44px; padding: 0 var(--space-4); border: 1px dashed var(--border); border-radius: var(--radius-lg); background: transparent; color: var(--fg-2); font-size: var(--text-sm); font-weight: 650; }
+    .hint-toggle:hover { border-color: var(--fg-2); background: var(--surface); }
+    .hint-text { margin-top: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--surface); color: var(--fg-2); font-size: var(--text-sm); }
+
+    .bottom-action { flex: 0 0 auto; padding: var(--space-3) var(--space-5); border-top: 1px solid var(--border-soft); background: color-mix(in oklab, var(--bg) 94%, transparent); backdrop-filter: blur(18px); }
+    .btn-primary { width: 100%; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); border: 1px solid var(--accent); border-radius: var(--radius-lg); background: var(--accent); color: var(--accent-on); font-weight: 650; }
+    .btn-primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+    .btn-primary:active { border-color: var(--accent-active); background: var(--accent-active); }
+    .btn-primary svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .home-indicator { flex: 0 0 28px; position: relative; }
+    .home-indicator::after { content: ''; position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg); opacity: .88; }
+
+    @media (max-width: 430px) {
+      body { display: block; padding: 0; background: var(--bg); }
+      .stage { display: block; }
+      .caption { display: none; }
+      .device { width: 100vw; height: 100dvh; padding: 0; border-radius: 0; background: var(--bg); box-shadow: none; }
+      .device::before, .device::after { display: none; }
+      .screen { border-radius: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="caption"><strong>Олимпиады</strong> · тренажёр</div>
+    <div class="device">
+      <span class="island" aria-hidden="true"></span>
+      <div class="screen">
+        <div class="statusbar">
+          <span class="num">9:41</span>
+          <span class="statusbar-right">
+            <svg viewBox="0 0 17 11" aria-hidden="true"><rect x="0" y="7" width="3" height="4" rx=".6"></rect><rect x="4" y="5" width="3" height="6" rx=".6"></rect><rect x="8" y="3" width="3" height="8" rx=".6"></rect><rect x="12" y="0" width="3" height="11" rx=".6"></rect></svg>
+            <svg viewBox="0 0 17 11" aria-hidden="true"><path d="M8.5 1.5c-3 0-5.8 1.1-8 3.1L2 6.1a9.8 9.8 0 0 1 13 0l1.5-1.5a11.8 11.8 0 0 0-8-3.1ZM3.5 7.6 5 9.1a5.2 5.2 0 0 1 7 0l1.5-1.5a7.4 7.4 0 0 0-10 0Zm3 3 2 2 2-2a2.8 2.8 0 0 0-4 0Z"></path></svg>
+            <svg class="battery" viewBox="0 0 25 11" aria-hidden="true"><rect x=".5" y=".5" width="21" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-opacity=".45"></rect><rect x="22" y="3.5" width="1.5" height="4" rx=".4"></rect><rect x="2" y="2" width="18" height="7" rx="1.4"></rect></svg>
+          </span>
+        </div>
+
+        <header class="appbar">
+          <button class="icon-btn" id="back-button" type="button" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button>
+          <div class="appbar-title" id="appbar-title">Тренажёр</div>
+          <span></span>
+        </header>
+
+        <main class="content">
+          <div class="progress-meta"><span id="progress-label">Задание 1 из 2</span><span id="progress-topic">Тема</span></div>
+          <div class="progress-track"><div class="progress-value" id="progress-value" style="width:50%"></div></div>
+
+          <article class="task-card">
+            <div class="task-kicker"><span id="task-topic"></span><span class="task-diff" id="task-diff"></span></div>
+            <h1 id="task-title"></h1>
+            <p class="task-statement" id="task-statement"></p>
+          </article>
+
+          <div class="answer-block">
+            <label class="field-label" for="answer-input">Ваш ответ</label>
+            <div class="answer-row">
+              <input class="answer-input" id="answer-input" type="text" placeholder="Введите ответ" autocomplete="off">
+              <button class="check-btn" id="check-button" type="button">Проверить</button>
+            </div>
+            <div class="feedback" id="feedback" hidden></div>
+          </div>
+
+          <div class="hint-block">
+            <button class="hint-toggle" id="hint-toggle" type="button">Показать подсказку</button>
+            <p class="hint-text" id="hint-text" hidden></p>
+          </div>
+        </main>
+
+        <div class="bottom-action">
+          <button class="btn-primary" id="next-button" type="button">
+            Следующее задание
+            <svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"></path></svg>
+          </button>
+        </div>
+        <div class="home-indicator" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TASKS = [
+      { topic: 'Динамическое программирование', diff: 'Средняя',
+        title: 'Размен монет',
+        statement: 'Сколькими способами можно набрать сумму 6, используя монеты номиналом 1, 2 и 5 (порядок монет не важен)?',
+        answer: '5',
+        hint: 'Постройте ДП по достижимым суммам, добавляя монеты по одному номиналу за раз — так каждая комбинация посчитается ровно один раз.' },
+      { topic: 'Динамическое программирование', diff: 'Средняя',
+        title: 'Наибольшая возрастающая подпоследовательность',
+        statement: 'Найдите длину наибольшей возрастающей подпоследовательности в массиве: 5, 2, 8, 6, 3, 6, 9, 7.',
+        answer: '4',
+        hint: 'Заведите dp[i] — длину НВП, заканчивающейся в элементе i, и пересчитывайте её по всем j < i с меньшим значением.' },
+
+      { topic: 'Графы и алгоритмы на графах', diff: 'Лёгкая',
+        title: 'Остовное дерево',
+        statement: 'В связном графе 7 вершин и 9 рёбер. Сколько рёбер нужно удалить, чтобы получить остовное дерево?',
+        answer: '3',
+        hint: 'Остовное дерево на n вершинах содержит ровно n − 1 ребро.' },
+      { topic: 'Графы и алгоритмы на графах', diff: 'Средняя',
+        title: 'Раскраска цикла',
+        statement: 'Каково минимальное число цветов, необходимое для раскраски вершин цикла из 5 вершин так, чтобы соседние вершины были разного цвета?',
+        answer: '3',
+        hint: 'Циклы нечётной длины нельзя раскрасить в два цвета — понадобится третий.' },
+
+      { topic: 'Структуры данных', diff: 'Лёгкая',
+        title: 'Стек',
+        statement: 'В пустой стек добавили элементы 1, 2, 3, затем дважды выполнили pop. Какой элемент теперь на вершине?',
+        answer: '1',
+        hint: 'Стек работает по принципу LIFO — последний добавленный выходит первым.' },
+      { topic: 'Структуры данных', diff: 'Средняя',
+        title: 'Дерево отрезков',
+        statement: 'Массив состоит из 8 элементов. Сколько узлов обычно выделяют под дерево отрезков при стандартной реализации массивом размера 4n?',
+        answer: '32',
+        hint: 'Стандартная оценка размера массива под дерево отрезков — 4 · n.' },
+
+      { topic: 'Строки', diff: 'Лёгкая',
+        title: 'Различные биграммы',
+        statement: 'Сколько различных подстрок длины 2 встречается в строке "abab"?',
+        answer: '2',
+        hint: 'Переберите все позиции i от 0 до len−2 и соберите уникальные пары соседних символов.' },
+      { topic: 'Строки', diff: 'Лёгкая',
+        title: 'Общий префикс',
+        statement: 'Какова длина наибольшего общего префикса строк "flower" и "flow"?',
+        answer: '4',
+        hint: 'Сравнивайте символы посимвольно, пока они совпадают, и считайте количество совпадений.' },
+
+      { topic: 'Жадные алгоритмы и потоки', diff: 'Лёгкая',
+        title: 'Размен монет жадно',
+        statement: 'Монеты номиналом 1, 5 и 10. Какое минимальное число монет жадным алгоритмом нужно, чтобы набрать сумму 18?',
+        answer: '5',
+        hint: 'На каждом шаге берите монету наибольшего номинала, не превышающую остаток суммы.' },
+      { topic: 'Жадные алгоритмы и потоки', diff: 'Средняя',
+        title: 'Покрытие отрезков точками',
+        statement: 'Даны отрезки [1,3], [2,5], [4,6], [6,8]. Какое минимальное число точек нужно расставить, чтобы каждый отрезок содержал хотя бы одну точку?',
+        answer: '2',
+        hint: 'Отсортируйте отрезки по правому концу и жадно ставьте точку в конец текущего непокрытого отрезка.' },
+
+      { topic: 'Комбинаторика и теория вероятностей', diff: 'Лёгкая',
+        title: 'Рассадка за круглым столом',
+        statement: 'Сколькими способами можно рассадить 4 различных человек за круглым столом, если рассадки, отличающиеся поворотом, считаются одинаковыми?',
+        answer: '6',
+        hint: 'Число рассадок по кругу равно (n − 1)!.' },
+      { topic: 'Комбинаторика и теория вероятностей', diff: 'Средняя',
+        title: 'Сумма на двух кубиках',
+        statement: 'Бросают два игральных кубика. Сколько существует пар значений, дающих в сумме 7?',
+        answer: '6',
+        hint: 'Переберите все пары (a, b) от 1 до 6 и посчитайте те, где a + b = 7.' },
+
+      { topic: 'Теория чисел', diff: 'Лёгкая',
+        title: 'НОД',
+        statement: 'Чему равен НОД чисел 48 и 18?',
+        answer: '6',
+        hint: 'Используйте алгоритм Евклида: НОД(a, b) = НОД(b, a mod b).' },
+      { topic: 'Теория чисел', diff: 'Лёгкая',
+        title: 'Простые числа',
+        statement: 'Сколько простых чисел меньше 20?',
+        answer: '8',
+        hint: 'Переберите числа от 2 до 19 и проверьте каждое на делимость на числа меньше него.' },
+
+      { topic: 'Геометрия', diff: 'Лёгкая',
+        title: 'Площадь треугольника',
+        statement: 'Чему равна площадь треугольника с вершинами (0,0), (4,0) и (0,3)?',
+        answer: '6',
+        hint: 'Для прямоугольного треугольника площадь равна половине произведения катетов.' },
+      { topic: 'Геометрия', diff: 'Лёгкая',
+        title: 'Расстояние между точками',
+        statement: 'Чему равно расстояние между точками (1,1) и (4,5)?',
+        answer: '5',
+        hint: 'Используйте формулу расстояния: √((x₂−x₁)² + (y₂−y₁)²).' },
+    ];
+
+    const params = new URLSearchParams(location.search);
+    const topicParam = params.get('topic');
+    const topicNames = [...new Set(TASKS.map(t => t.topic))];
+    const selectedTopic = topicParam !== null && topicNames[Number(topicParam)] ? topicNames[Number(topicParam)] : null;
+    const queue = selectedTopic ? TASKS.filter(t => t.topic === selectedTopic) : TASKS;
+
+    let index = 0;
+    let hintShown = false;
+    let checked = false;
+
+    const els = {
+      progressLabel: document.getElementById('progress-label'),
+      progressTopic: document.getElementById('progress-topic'),
+      progressValue: document.getElementById('progress-value'),
+      taskTopic: document.getElementById('task-topic'),
+      taskDiff: document.getElementById('task-diff'),
+      taskTitle: document.getElementById('task-title'),
+      taskStatement: document.getElementById('task-statement'),
+      answerInput: document.getElementById('answer-input'),
+      checkButton: document.getElementById('check-button'),
+      feedback: document.getElementById('feedback'),
+      hintToggle: document.getElementById('hint-toggle'),
+      hintText: document.getElementById('hint-text'),
+      nextButton: document.getElementById('next-button'),
+    };
+
+    function render() {
+      const task = queue[index];
+      els.progressLabel.textContent = `Задание ${index + 1} из ${queue.length}`;
+      els.progressTopic.textContent = selectedTopic || 'Все темы';
+      els.progressValue.style.width = Math.round(((index + 1) / queue.length) * 100) + '%';
+
+      els.taskTopic.textContent = task.topic;
+      els.taskDiff.textContent = task.diff;
+      els.taskTitle.textContent = task.title;
+      els.taskStatement.textContent = task.statement;
+
+      els.answerInput.value = '';
+      els.answerInput.disabled = false;
+      els.feedback.hidden = true;
+      els.feedback.className = 'feedback';
+
+      hintShown = false;
+      checked = false;
+      els.hintText.hidden = true;
+      els.hintText.textContent = task.hint;
+      els.hintToggle.textContent = 'Показать подсказку';
+
+      els.answerInput.focus();
+    }
+
+    function checkAnswer() {
+      const task = queue[index];
+      const given = els.answerInput.value.trim().toLowerCase();
+      if (!given) return;
+      const correct = given === task.answer.trim().toLowerCase();
+      els.feedback.hidden = false;
+      els.feedback.className = 'feedback ' + (correct ? 'correct' : 'incorrect');
+      els.feedback.textContent = correct ? 'Верно!' : 'Пока не то — посмотрите подсказку и попробуйте ещё раз.';
+      checked = correct;
+    }
+
+    els.checkButton.addEventListener('click', checkAnswer);
+    els.answerInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
+
+    els.hintToggle.addEventListener('click', () => {
+      hintShown = !hintShown;
+      els.hintText.hidden = !hintShown;
+      els.hintToggle.textContent = hintShown ? 'Скрыть подсказку' : 'Показать подсказку';
+    });
+
+    els.nextButton.addEventListener('click', () => {
+      index = (index + 1) % queue.length;
+      render();
+    });
+
+    document.getElementById('back-button').addEventListener('click', () => history.back());
+
+    render();
+  </script>
+</body></html>
