@@ -1,0 +1,52 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Docker Compose on server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          : "${SSH_HOST:?SSH_HOST is required}"
+          : "${SSH_USER:?SSH_USER is required}"
+          : "${SSH_PRIVATE_KEY:?SSH_PRIVATE_KEY is required}"
+          : "${SSH_KNOWN_HOSTS:?SSH_KNOWN_HOSTS is required}"
+          : "${DEPLOY_PATH:?DEPLOY_PATH is required}"
+          ssh_port="${SSH_PORT:-22}"
+          ssh_dir="$(mktemp -d)"
+          trap 'rm -rf "$ssh_dir"' EXIT
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          chmod 600 "$ssh_dir/key" "$ssh_dir/known_hosts"
+          encoded_path="$(printf '%s' "$DEPLOY_PATH" | base64 -w 0)"
+          ssh -T -i "$ssh_dir/key" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$ssh_dir/known_hosts" \
+            -p "$ssh_port" \
+            -- "$SSH_USER@$SSH_HOST" bash -s -- "$encoded_path" <<'REMOTE'
+          set -euo pipefail
+          deploy_path="$(printf '%s' "$1" | base64 --decode)"
+          cd "$deploy_path"
+          test "$(git branch --show-current)" = main
+          previous_commit="$(git rev-parse HEAD)"
+          git fetch origin main
+          git merge --ff-only origin/main
+          current_commit="$(git rev-parse HEAD)"
+          bash scripts/deploy.sh "$previous_commit" "$current_commit"
+          REMOTE
