@@ -12,7 +12,21 @@ from app.services.embeddings import embed_text, vector_to_pg
 
 def _snippet(statement: str, max_len: int = 160) -> str:
     s = statement.strip().replace("\n", " ")
-    return s if len(s) <= max_len else s[: max_len - 1] + "…"
+    if len(s) <= max_len:
+        return s
+    cut = max_len - 1
+    # Do not leave a generated title or search snippet inside an inline formula.
+    if s[:cut].count("$") % 2:
+        opening = s.rfind("$", 0, cut)
+        if opening > 0:
+            cut = opening
+        else:
+            closing = s.find("$", cut)
+            if 0 <= closing < max_len * 3:
+                cut = closing + 1
+            else:
+                cut = 0
+    return s[:cut].rstrip() + "…"
 
 
 def _task_filters_sql(prefix: str = "t") -> str:

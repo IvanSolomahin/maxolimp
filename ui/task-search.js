@@ -41,6 +41,10 @@ function render() {
       <div class="task-meta"><span class="meta-item">${item.difficulty == null ? 'Сложность не указана' : `Сложность ${escapeHtml(item.difficulty)} из 10`}</span>
       ${item.solution_method ? `<span class="meta-item">${escapeHtml(item.solution_method.name)}</span>` : ''}</div>
     </article>`).join('');
+  list.querySelectorAll('.task-card').forEach((card, index) => {
+    taskMath.renderMathText(card.querySelector('.task-link'), items[index].title);
+    taskMath.renderMathText(card.querySelector('.task-fragment'), items[index].snippet || '');
+  });
   count.textContent = state.favoritesOnly ? `${items.length} в избранном` : `${state.total} задач`;
   list.hidden = items.length === 0;
   empty.hidden = items.length !== 0;
@@ -91,8 +95,8 @@ async function openTask(id) {
   try {
     const task = await getJson(`/tasks/${encodeURIComponent(id)}`);
     if (location.pathname !== taskUrl) return;
-    $('#detail-title').textContent = task.title;
-    $('#detail-statement').textContent = task.statement || 'Условие не указано';
+    taskMath.renderMathText($('#detail-title'), task.title);
+    taskMath.renderMathText($('#detail-statement'), task.statement || 'Условие не указано');
     $('#detail-statement').classList.remove('task-loading');
     $('#detail-meta').textContent = [task.subject === 'math' ? 'Математика' : task.subject === 'physics' ? 'Физика' : '', task.grade ? `${task.grade} класс` : '', task.source?.year, task.source?.stage, task.source?.number].filter(Boolean).join(' · ');
     if (task.source?.url && /^https?:\/\//i.test(task.source.url)) {
