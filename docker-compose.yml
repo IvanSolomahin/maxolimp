@@ -10,6 +10,7 @@ services:
       - "${FRONTEND_PORT:-8080}:80"
       - "443:443"
     volumes:
+      - ./ui/public:/usr/share/nginx/html:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/certbot:/var/www/certbot:ro
       - /root/.acme.sh/gazprompt.duckdns.org_ecc:/etc/nginx/ssl:ro
