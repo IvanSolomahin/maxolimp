@@ -52,10 +52,7 @@
     html { color-scheme: light; -webkit-text-size-adjust: 100%; }
     body {
       min-width: 320px;
-      display: grid;
-      place-items: center;
-      padding: 28px;
-      background: var(--surface);
+      background: #f7f7f4;
       color: var(--fg);
       font-family: var(--font-body);
       font-size: var(--text-base);
@@ -72,7 +69,7 @@
     a { color: inherit; }
     :focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 
-    .stage { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+    .stage { width: 100%; min-height: 100vh; }
     .caption { color: var(--muted); font: var(--text-xs) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
     .caption strong { color: var(--fg); font-weight: 600; }
     .device {
@@ -157,15 +154,62 @@
     .home-indicator::after { content: ''; position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg); opacity: .88; }
 
     @media (max-width: 430px) {
-      body { display: block; padding: 0; background: var(--bg); }
-      .stage { display: block; }
-      .caption { display: none; }
-      .device { width: 100vw; height: 100dvh; padding: 0; border-radius: 0; background: var(--bg); box-shadow: none; }
-      .device::before, .device::after { display: none; }
-      .screen { border-radius: 0; }
+      body { background: var(--bg); }
     }
     @media (max-width: 350px) { .hero-mark { right: 15px; opacity: .7; } .intro h1 { font-size: 31px; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+    /* A real page layout: the phone frame from the original mockup is removed. */
+    .caption, .statusbar, .island, .home-indicator { display: none; }
+    .device { width: 100%; height: auto; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .device::before, .device::after { display: none; }
+    .screen { min-height: 100vh; height: auto; overflow: visible; border-radius: 0; background: var(--bg); }
+    .appbar { position: sticky; top: 0; z-index: 20; flex: 0 0 auto; grid-template-columns: minmax(0, 1fr) auto; min-height: 68px; padding: 10px max(24px, calc((100vw - 1160px) / 2)); border-bottom-color: var(--border-soft); }
+    .appbar > span:first-child { display: none; }
+    .appbar-title { justify-self: start; font-size: 20px; letter-spacing: -.04em; }
+    .desktop-nav { display: flex; align-items: center; gap: 28px; }
+    .desktop-nav a { color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+    .desktop-nav a:hover, .desktop-nav a.active { color: var(--fg); }
+    .desktop-nav a.active { text-decoration: underline; text-decoration-color: var(--lime); text-decoration-thickness: 3px; text-underline-offset: 8px; }
+    .content { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-content: start; gap: 0 32px; width: min(1160px, 100%); margin: 0 auto; padding: 32px 24px 48px; overflow: visible; }
+    .intro { align-self: center; padding: 12px 0 30px; }
+    .intro h1 { font-size: clamp(38px, 5vw, 58px); }
+    .intro p { font-size: 16px; }
+    .hero { align-self: center; min-height: 280px; padding: 30px; }
+    .hero h2 { max-width: 330px; font-size: clamp(30px, 3.3vw, 42px); }
+    .hero p { max-width: 300px; font-size: 15px; }
+    .hero-cta { min-height: 48px; padding-inline: 18px; font-size: 14px; }
+    .content > section:not(.hero) { grid-column: 1 / -1; }
+    .section-label { margin-top: 36px; }
+    .section-label h2 { font-size: 22px; }
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .olympiad-card { padding: 22px; }
+    .quick-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .quick-card { min-height: 160px; padding: 20px; }
+    .tabbar { position: static; display: flex; justify-content: center; gap: 28px; padding: 12px 24px; border-top: 1px solid var(--border-soft); }
+    .tab-item { flex-direction: row; gap: 8px; padding: 8px; font-size: 13px; }
+    .tab-item.active::after { display: none; }
+    @media (max-width: 700px) {
+      .appbar { min-height: 58px; padding: 8px 20px; }
+      .appbar-title { font-size: 18px; }
+      .desktop-nav { display: none; }
+      .content { display: block; width: 100%; padding: 0 20px 28px; }
+      .intro { padding: 26px 0 18px; }
+      .intro h1 { font-size: clamp(32px, 9vw, 40px); }
+      .hero { min-height: 0; padding: 21px; }
+      .hero h2 { max-width: 245px; font-size: 27px; }
+      .hero p { max-width: 235px; font-size: 13px; }
+      .hero-cta { min-height: 42px; font-size: 13px; }
+      .section-label { margin: 27px 0 12px; }
+      .section-label h2 { font-size: 18px; }
+      .cards { grid-template-columns: 1fr; }
+      .olympiad-card { padding: 17px; }
+      .quick-actions { gap: 10px; }
+      .quick-card { min-height: 145px; padding: 15px; }
+      .tabbar { position: sticky; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 6px 8px max(6px, env(safe-area-inset-bottom)); background: color-mix(in oklab, var(--bg) 94%, transparent); backdrop-filter: blur(18px); }
+      .tab-item { flex-direction: column; gap: 4px; padding: 6px 0; font-size: 10px; }
+      .tab-item.active::after { display: block; }
+    }
   </style>
 </head>
 <body>
@@ -186,7 +230,12 @@
         <header class="appbar">
           <span></span>
           <div class="appbar-title">maxolimp<span aria-hidden="true" style="color:#95bc42">.</span></div>
-          <span></span>
+          <nav class="desktop-nav" aria-label="Основная навигация">
+            <a class="active" href="./olympiad-home.html">Главная</a>
+            <a href="./olympiad-onboarding.html">Олимпиады</a>
+            <a href="./olympiad-task-search.html">Задания</a>
+            <a href="./olympiad-community.html">Сообщества</a>
+          </nav>
         </header>
 
         <main class="content">
