@@ -687,21 +687,17 @@
       .sheet-actions { padding-inline: var(--space-4); }
     }
 
+    @media (max-width: 700px) {
+      body { padding-bottom: 72px; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
     }
   </style>
 </head>
 <body>
-  <header class="topnav" data-od-id="topnav">
-    <div class="container topnav-inner">
-      <a class="icon-btn" href="/olympiad-onboarding.html" aria-label="Подбор олимпиад" data-od-id="back-button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m15 18-6-6 6-6"></path><path d="M9 12h10"></path></svg>
-      </a>
-      <h1 class="brand" data-od-id="site-title">Олимпиадные задачи</h1>
-      <span aria-hidden="true"></span>
-    </div>
-  </header>
+  <olympiad-header active="tasks" title="Олимпиадные задачи"></olympiad-header>
 
   <main id="content">
     <section class="section" data-od-id="task-search-screen">
@@ -807,6 +803,8 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden=""></div>
 
+  <olympiad-nav active="tasks"></olympiad-nav>
+  <script src="/olympiad-shell.js"></script>
   <script src="/max-init.js"></script>
 
   <script src="/math-render.js" defer></script>

@@ -846,6 +846,10 @@
     }
 
     @media (max-width: 700px) {
+      body {
+        padding-bottom: 64px;
+      }
+
       .appbar {
         min-height: 58px;
         padding: 8px 20px;
@@ -974,16 +978,7 @@
           </span>
         </div>
 
-        <header class="appbar">
-          <span></span>
-          <div class="appbar-title">maxolimp<span aria-hidden="true" style="color:#95bc42">.</span></div>
-          <nav class="desktop-nav" aria-label="Основная навигация">
-            <a class="active" href="./olympiad-home.html">Главная</a>
-            <a href="./olympiad-onboarding.html">Олимпиады</a>
-            <a href="./olympiad-task-search.html">Задания</a>
-            <a href="./olympiad-community.html">Сообщества</a>
-          </nav>
-        </header>
+        <olympiad-header active="home"></olympiad-header>
 
         <main class="content">
           <div class="intro">
@@ -1029,37 +1024,13 @@
           </section>
         </main>
 
-        <nav class="tabbar" aria-label="Разделы">
-          <a class="tab-item active" href="./olympiad-home.html">
-            <svg viewBox="0 0 24 24">
-              <path d="m3 11 9-8 9 8"></path>
-              <path d="M5 10v10h14V10"></path>
-            </svg>
-            Главная
-          </a>
-
-          <a class="tab-item" href="./olympiad-task-search.html">
-            <svg viewBox="0 0 24 24">
-              <path d="M9 11l3 3 8-8"></path>
-              <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path>
-            </svg>
-            Задания
-          </a>
-          <a class="tab-item" href="./olympiad-community.html">
-            <svg viewBox="0 0 24 24">
-              <circle cx="8" cy="8" r="3"></circle>
-              <circle cx="17" cy="9" r="2.6"></circle>
-              <path d="M2.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"></path>
-              <path d="M14.5 14.3c2.1.2 3.9 1.8 4.4 4.7"></path>
-            </svg>
-            Сообщества
-          </a>
-        </nav>
+        <olympiad-nav active="home"></olympiad-nav>
         <div class="home-indicator" aria-hidden="true"></div>
       </div>
     </div>
   </div>
 
+  <script src="/olympiad-shell.js"></script>
   <script src="/max-init.js"></script>
 
   <script>
