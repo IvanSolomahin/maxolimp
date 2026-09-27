@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html lang="ru">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Главная — Maxolimp</title>
-    <script src="https://st.max.ru/js/max-web-app.js"></script>
+  <script src="https://st.max.ru/js/max-web-app.js"></script>
   <style>
     :root {
       --bg: #ffffff;
@@ -47,9 +50,23 @@
       --ease-standard: cubic-bezier(0.2, 0, 0, 1);
     }
 
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
-    html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    html {
+      color-scheme: light;
+      -webkit-text-size-adjust: 100%;
+    }
+
     body {
       min-width: 320px;
       background: #f7f7f4;
@@ -60,18 +77,64 @@
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
     }
-    button, input { font: inherit; }
-    button { color: inherit; cursor: pointer; }
-    svg { display: block; flex: 0 0 auto; }
-    h1, h2, p { margin: 0; }
-    h1, h2 { font-family: var(--font-display); text-wrap: balance; }
-    p { text-wrap: pretty; }
-    a { color: inherit; }
-    :focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 
-    .stage { width: 100%; min-height: 100vh; }
-    .caption { color: var(--muted); font: var(--text-xs) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
-    .caption strong { color: var(--fg); font-weight: 600; }
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+      cursor: pointer;
+    }
+
+    svg {
+      display: block;
+      flex: 0 0 auto;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2 {
+      font-family: var(--font-display);
+      text-wrap: balance;
+    }
+
+    p {
+      text-wrap: pretty;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    :focus-visible {
+      outline: 0;
+      box-shadow: var(--focus-ring);
+    }
+
+    .stage {
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    .caption {
+      color: var(--muted);
+      font: var(--text-xs) var(--font-mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .caption strong {
+      color: var(--fg);
+      font-weight: 600;
+    }
+
     .device {
       position: relative;
       width: 390px;
@@ -82,136 +145,806 @@
       box-shadow: var(--elev-raised);
       isolation: isolate;
     }
-    .device::before, .device::after { content: ''; position: absolute; top: 108px; bottom: 108px; width: 3px; background: color-mix(in oklab, var(--fg), var(--bg) 22%); }
-    .device::before { left: -2px; }
-    .device::after { right: -2px; }
-    .island { position: absolute; top: 20px; left: 50%; z-index: 30; width: 120px; height: 34px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg); }
-    .screen { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 44px; background: var(--bg); }
-    .statusbar { flex: 0 0 47px; display: flex; align-items: flex-start; justify-content: space-between; padding: 17px 24px 0; font-size: 15px; font-weight: 650; }
-    .statusbar-right { display: inline-flex; align-items: center; gap: 6px; }
-    .statusbar svg { width: 17px; height: 11px; fill: var(--fg); }
-    .statusbar .battery { width: 25px; }
-    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
-    .appbar { flex: 0 0 56px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--border-soft); background: color-mix(in oklab, var(--bg) 94%, transparent); backdrop-filter: blur(16px); }
-    .appbar-title { text-align: center; font-size: var(--text-sm); font-weight: 650; }
-    .content { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 0 var(--space-5) var(--space-6); -webkit-overflow-scrolling: touch; }
-    .content::-webkit-scrollbar { display: none; }
-    .eyebrow { font: 650 11px var(--font-mono); letter-spacing: .11em; text-transform: uppercase; }
-    .intro { padding: 25px 0 18px; }
-    .intro .eyebrow { color: var(--muted); }
-    .intro h1 { margin-top: 9px; font-size: 35px; line-height: 1.02; letter-spacing: -.045em; }
-    .intro p { max-width: 34ch; margin-top: 10px; color: var(--muted); font-size: var(--text-sm); }
+    .device::before,
+    .device::after {
+      content: '';
+      position: absolute;
+      top: 108px;
+      bottom: 108px;
+      width: 3px;
+      background: color-mix(in oklab, var(--fg), var(--bg) 22%);
+    }
 
-    .hero { position: relative; min-height: 234px; overflow: hidden; padding: 21px; border-radius: 22px; background: #171917; color: #fff; }
-    .hero::before, .hero::after { content: ''; position: absolute; border: 1px solid rgba(215,250,108,.24); border-radius: 50%; pointer-events: none; }
-    .hero::before { width: 270px; height: 270px; top: -128px; right: -92px; }
-    .hero::after { width: 205px; height: 205px; top: -96px; right: -57px; }
-    .hero-mark { position: absolute; top: 48px; right: 30px; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 18px; background: var(--lime); color: var(--fg); transform: rotate(-12deg); font-size: 31px; font-weight: 700; }
-    .hero .eyebrow { position: relative; z-index: 1; color: var(--lime); }
-    .hero h2 { position: relative; z-index: 1; max-width: 240px; margin-top: 18px; font-size: 27px; line-height: 1.08; letter-spacing: -.035em; }
-    .hero p { position: relative; z-index: 1; max-width: 235px; margin-top: 9px; color: #c6c9c2; font-size: 13px; line-height: 1.42; }
-    .hero-cta { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: space-between; gap: 19px; min-height: 42px; margin-top: 19px; padding: 0 14px 0 16px; border-radius: 11px; background: var(--lime); color: var(--fg); font-size: 13px; font-weight: 700; text-decoration: none; transition: transform var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard); }
-    .hero-cta:hover { transform: translateY(-2px); background: #e4ff99; }
-    .hero-cta svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .device::before {
+      left: -2px;
+    }
 
-    .section-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 27px 0 12px; }
-    .section-label h2 { font-size: 18px; line-height: 1.2; letter-spacing: -.02em; }
-    .section-label a { color: var(--muted); font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-    .section-label a:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
-    .cards { display: grid; gap: 10px; }
-    .olympiad-card { padding: 17px; border: 1px solid #e7e6e0; border-radius: 17px; background: var(--bg); }
-    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .subject-tag { display: inline-flex; align-items: center; gap: 7px; color: #484b42; font-size: 11px; font-weight: 700; }
-    .subject-tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #a8d34d; }
-    .benefit-tag { padding: 4px 8px; border-radius: 6px; background: #f2f5e8; color: #596c2d; font-size: 11px; font-weight: 700; }
-    .olympiad-card h3 { margin: 10px 0 13px; font-size: 18px; line-height: 1.2; letter-spacing: -.025em; }
-    .progress-meta { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 7px; color: var(--muted); font-size: 11px; }
-    .progress-meta strong { color: var(--fg); font-weight: 700; }
-    .progress-track { height: 6px; overflow: hidden; border-radius: var(--radius-pill); background: #edeee9; }
-    .progress-value { height: 100%; border-radius: inherit; background: #b7df62; }
-    .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 13px; }
-    .card-foot p { color: var(--muted); font-size: 11px; }
-    .go-btn { color: var(--fg); font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
-    .go-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
-    .empty-state { padding: 22px 16px; color: var(--muted); text-align: center; border: 1px dashed var(--border); border-radius: 17px; font-size: var(--text-sm); }
+    .device::after {
+      right: -2px;
+    }
 
-    .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .quick-card { min-height: 131px; display: flex; flex-direction: column; align-items: flex-start; padding: 15px; border: 1px solid #e7e6e0; border-radius: 17px; background: var(--bg); text-decoration: none; transition: transform var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard); }
-    .quick-card:hover { transform: translateY(-2px); border-color: #b6b8aa; }
-    .quick-icon { width: 34px; height: 34px; display: grid; place-items: center; margin-bottom: auto; border-radius: 10px; background: var(--surface); }
-    .quick-icon svg { width: 18px; height: 18px; stroke: var(--fg); fill: none; stroke-width: 1.8; }
-    .quick-card strong { margin-top: 12px; font-size: 13px; font-weight: 700; line-height: 1.2; }
-    .quick-card span:last-child { margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .island {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      z-index: 30;
+      width: 120px;
+      height: 34px;
+      transform: translateX(-50%);
+      border-radius: var(--radius-pill);
+      background: var(--fg);
+    }
 
-    .tabbar { flex: 0 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 8px 0; border-top: 1px solid var(--border-soft); background: color-mix(in oklab, var(--bg) 94%, transparent); backdrop-filter: blur(18px); }
-    .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0 8px; border: 0; background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; text-decoration: none; }
-    .tab-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; }
-    .tab-item.active { color: var(--fg); }
-    .tab-item.active svg { fill: color-mix(in oklab, var(--fg), transparent 85%); }
-    .tab-item.active::after { content: ''; width: 4px; height: 4px; margin-top: 1px; border-radius: 50%; background: var(--fg); }
-    .home-indicator { flex: 0 0 28px; position: relative; }
-    .home-indicator::after { content: ''; position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg); opacity: .88; }
+    .screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 44px;
+      background: var(--bg);
+    }
+
+    .statusbar {
+      flex: 0 0 47px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 17px 24px 0;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .statusbar-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .statusbar svg {
+      width: 17px;
+      height: 11px;
+      fill: var(--fg);
+    }
+
+    .statusbar .battery {
+      width: 25px;
+    }
+
+    .num {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .appbar {
+      flex: 0 0 56px;
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      align-items: center;
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--border-soft);
+      background: color-mix(in oklab, var(--bg) 94%, transparent);
+      backdrop-filter: blur(16px);
+    }
+
+    .appbar-title {
+      text-align: center;
+      font-size: var(--text-sm);
+      font-weight: 650;
+    }
+
+    .content {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0 var(--space-5) var(--space-6);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .content::-webkit-scrollbar {
+      display: none;
+    }
+
+    .eyebrow {
+      font: 650 11px var(--font-mono);
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .intro {
+      padding: 25px 0 18px;
+    }
+
+    .intro .eyebrow {
+      color: var(--muted);
+    }
+
+    .intro h1 {
+      margin-top: 9px;
+      font-size: 35px;
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+
+    .intro p {
+      max-width: 34ch;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: var(--text-sm);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 234px;
+      overflow: hidden;
+      padding: 21px;
+      border-radius: 22px;
+      background: #171917;
+      color: #fff;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: '';
+      position: absolute;
+      border: 1px solid rgba(215, 250, 108, .24);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero::before {
+      width: 270px;
+      height: 270px;
+      top: -128px;
+      right: -92px;
+    }
+
+    .hero::after {
+      width: 205px;
+      height: 205px;
+      top: -96px;
+      right: -57px;
+    }
+
+    .hero-mark {
+      position: absolute;
+      top: 48px;
+      right: 30px;
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: var(--lime);
+      color: var(--fg);
+      transform: rotate(-12deg);
+      font-size: 31px;
+      font-weight: 700;
+    }
+
+    .hero .eyebrow {
+      position: relative;
+      z-index: 1;
+      color: var(--lime);
+    }
+
+    .hero h2 {
+      position: relative;
+      z-index: 1;
+      max-width: 240px;
+      margin-top: 18px;
+      font-size: 27px;
+      line-height: 1.08;
+      letter-spacing: -.035em;
+    }
+
+    .hero p {
+      position: relative;
+      z-index: 1;
+      max-width: 235px;
+      margin-top: 9px;
+      color: #c6c9c2;
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .hero-cta {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 19px;
+      min-height: 42px;
+      margin-top: 19px;
+      padding: 0 14px 0 16px;
+      border-radius: 11px;
+      background: var(--lime);
+      color: var(--fg);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+    }
+
+    .hero-cta:hover {
+      transform: translateY(-2px);
+      background: #e4ff99;
+    }
+
+    .hero-cta svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 27px 0 12px;
+    }
+
+    .section-label h2 {
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: -.02em;
+    }
+
+    .section-label a {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .section-label a:hover {
+      color: var(--fg);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .cards {
+      display: grid;
+      gap: 10px;
+    }
+
+    .olympiad-card {
+      padding: 17px;
+      border: 1px solid #e7e6e0;
+      border-radius: 17px;
+      background: var(--bg);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .subject-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #484b42;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .subject-tag::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #a8d34d;
+    }
+
+    .benefit-tag {
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #f2f5e8;
+      color: #596c2d;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .olympiad-card h3 {
+      margin: 10px 0 13px;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: -.025em;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .progress-meta strong {
+      color: var(--fg);
+      font-weight: 700;
+    }
+
+    .progress-track {
+      height: 6px;
+      overflow: hidden;
+      border-radius: var(--radius-pill);
+      background: #edeee9;
+    }
+
+    .progress-value {
+      height: 100%;
+      border-radius: inherit;
+      background: #b7df62;
+    }
+
+    .card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 13px;
+    }
+
+    .card-foot p {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .go-btn {
+      color: var(--fg);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .go-btn:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .empty-state {
+      padding: 22px 16px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--border);
+      border-radius: 17px;
+      font-size: var(--text-sm);
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .quick-card {
+      min-height: 131px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 15px;
+      border: 1px solid #e7e6e0;
+      border-radius: 17px;
+      background: var(--bg);
+      text-decoration: none;
+      transition: transform var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+    }
+
+    .quick-card:hover {
+      transform: translateY(-2px);
+      border-color: #b6b8aa;
+    }
+
+    .quick-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      margin-bottom: auto;
+      border-radius: 10px;
+      background: var(--surface);
+    }
+
+    .quick-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--fg);
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .quick-card strong {
+      margin-top: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .quick-card span:last-child {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .tabbar {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 6px 8px 0;
+      border-top: 1px solid var(--border-soft);
+      background: color-mix(in oklab, var(--bg) 94%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 0 8px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .tab-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+    }
+
+    .tab-item.active {
+      color: var(--fg);
+    }
+
+    .tab-item.active svg {
+      fill: color-mix(in oklab, var(--fg), transparent 85%);
+    }
+
+    .tab-item.active::after {
+      content: '';
+      width: 4px;
+      height: 4px;
+      margin-top: 1px;
+      border-radius: 50%;
+      background: var(--fg);
+    }
+
+    .home-indicator {
+      flex: 0 0 28px;
+      position: relative;
+    }
+
+    .home-indicator::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 8px;
+      width: 134px;
+      height: 5px;
+      transform: translateX(-50%);
+      border-radius: var(--radius-pill);
+      background: var(--fg);
+      opacity: .88;
+    }
 
     @media (max-width: 430px) {
-      body { background: var(--bg); }
+      body {
+        background: var(--bg);
+      }
     }
-    @media (max-width: 350px) { .hero-mark { right: 15px; opacity: .7; } .intro h1 { font-size: 31px; } }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+    @media (max-width: 350px) {
+      .hero-mark {
+        right: 15px;
+        opacity: .7;
+      }
+
+      .intro h1 {
+        font-size: 31px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
 
     /* A real page layout: the phone frame from the original mockup is removed. */
-    .caption, .statusbar, .island, .home-indicator { display: none; }
-    .device { width: 100%; height: auto; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
-    .device::before, .device::after { display: none; }
-    .screen { min-height: 100vh; height: auto; overflow: visible; border-radius: 0; background: var(--bg); }
-    .appbar { position: sticky; top: 0; z-index: 20; flex: 0 0 auto; grid-template-columns: minmax(0, 1fr) auto; min-height: 68px; padding: 10px max(24px, calc((100vw - 1160px) / 2)); border-bottom-color: var(--border-soft); }
-    .appbar > span:first-child { display: none; }
-    .appbar-title { justify-self: start; font-size: 20px; letter-spacing: -.04em; }
-    .desktop-nav { display: flex; align-items: center; gap: 28px; }
-    .desktop-nav a { color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
-    .desktop-nav a:hover, .desktop-nav a.active { color: var(--fg); }
-    .desktop-nav a.active { text-decoration: underline; text-decoration-color: var(--lime); text-decoration-thickness: 3px; text-underline-offset: 8px; }
-    .content { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-content: start; gap: 0 32px; width: min(1160px, 100%); margin: 0 auto; padding: 32px 24px 48px; overflow: visible; }
-    .intro { align-self: center; padding: 12px 0 30px; }
-    .intro h1 { font-size: clamp(38px, 5vw, 58px); }
-    .intro p { font-size: 16px; }
-    .hero { align-self: center; min-height: 280px; padding: 30px; }
-    .hero h2 { max-width: 330px; font-size: clamp(30px, 3.3vw, 42px); }
-    .hero p { max-width: 300px; font-size: 15px; }
-    .hero-cta { min-height: 48px; padding-inline: 18px; font-size: 14px; }
-    .content > section:not(.hero) { grid-column: 1 / -1; }
-    .section-label { margin-top: 36px; }
-    .section-label h2 { font-size: 22px; }
-    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .olympiad-card { padding: 22px; }
-    .quick-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .quick-card { min-height: 160px; padding: 20px; }
-    .tabbar { position: static; display: flex; justify-content: center; gap: 28px; padding: 12px 24px; border-top: 1px solid var(--border-soft); }
-    .tab-item { flex-direction: row; gap: 8px; padding: 8px; font-size: 13px; }
-    .tab-item.active::after { display: none; }
+    .caption,
+    .statusbar,
+    .island,
+    .home-indicator {
+      display: none;
+    }
+
+    .device {
+      width: 100%;
+      height: auto;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .device::before,
+    .device::after {
+      display: none;
+    }
+
+    .screen {
+      min-height: 100vh;
+      height: auto;
+      overflow: visible;
+      border-radius: 0;
+      background: var(--bg);
+    }
+
+    .appbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      flex: 0 0 auto;
+      grid-template-columns: minmax(0, 1fr) auto;
+      min-height: 68px;
+      padding: 10px max(24px, calc((100vw - 1160px) / 2));
+      border-bottom-color: var(--border-soft);
+    }
+
+    .appbar>span:first-child {
+      display: none;
+    }
+
+    .appbar-title {
+      justify-self: start;
+      font-size: 20px;
+      letter-spacing: -.04em;
+    }
+
+    .desktop-nav {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .desktop-nav a {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .desktop-nav a:hover,
+    .desktop-nav a.active {
+      color: var(--fg);
+    }
+
+    .desktop-nav a.active {
+      text-decoration: underline;
+      text-decoration-color: var(--lime);
+      text-decoration-thickness: 3px;
+      text-underline-offset: 8px;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+      align-content: start;
+      gap: 0 32px;
+      width: min(1160px, 100%);
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+      overflow: visible;
+    }
+
+    .intro {
+      align-self: center;
+      padding: 12px 0 30px;
+    }
+
+    .intro h1 {
+      font-size: clamp(38px, 5vw, 58px);
+    }
+
+    .intro p {
+      font-size: 16px;
+    }
+
+    .hero {
+      align-self: center;
+      min-height: 280px;
+      padding: 30px;
+    }
+
+    .hero h2 {
+      max-width: 330px;
+      font-size: clamp(30px, 3.3vw, 42px);
+    }
+
+    .hero p {
+      max-width: 300px;
+      font-size: 15px;
+    }
+
+    .hero-cta {
+      min-height: 48px;
+      padding-inline: 18px;
+      font-size: 14px;
+    }
+
+    .content>section:not(.hero) {
+      grid-column: 1 / -1;
+    }
+
+    .section-label {
+      margin-top: 36px;
+    }
+
+    .section-label h2 {
+      font-size: 22px;
+    }
+
+    .cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .olympiad-card {
+      padding: 22px;
+    }
+
+    .quick-actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .quick-card {
+      min-height: 160px;
+      padding: 20px;
+    }
+
+    .tabbar {
+      position: static;
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      padding: 12px 24px;
+      border-top: 1px solid var(--border-soft);
+    }
+
+    .tab-item {
+      flex-direction: row;
+      gap: 8px;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .tab-item.active::after {
+      display: none;
+    }
+
     @media (max-width: 700px) {
-      .appbar { min-height: 58px; padding: 8px 20px; }
-      .appbar-title { font-size: 18px; }
-      .desktop-nav { display: none; }
-      .content { display: block; width: 100%; padding: 0 20px 28px; }
-      .intro { padding: 26px 0 18px; }
-      .intro h1 { font-size: clamp(32px, 9vw, 40px); }
-      .hero { min-height: 0; padding: 21px; }
-      .hero h2 { max-width: 245px; font-size: 27px; }
-      .hero p { max-width: 235px; font-size: 13px; }
-      .hero-cta { min-height: 42px; font-size: 13px; }
-      .section-label { margin: 27px 0 12px; }
-      .section-label h2 { font-size: 18px; }
-      .cards { grid-template-columns: 1fr; }
-      .olympiad-card { padding: 17px; }
-      .quick-actions { gap: 10px; }
-      .quick-card { min-height: 145px; padding: 15px; }
-      .tabbar { position: sticky; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 6px 8px max(6px, env(safe-area-inset-bottom)); background: color-mix(in oklab, var(--bg) 94%, transparent); backdrop-filter: blur(18px); }
-      .tab-item { flex-direction: column; gap: 4px; padding: 6px 0; font-size: 10px; }
-      .tab-item.active::after { display: block; }
+      .appbar {
+        min-height: 58px;
+        padding: 8px 20px;
+      }
+
+      .appbar-title {
+        font-size: 18px;
+      }
+
+      .desktop-nav {
+        display: none;
+      }
+
+      .content {
+        display: block;
+        width: 100%;
+        padding: 0 20px 28px;
+      }
+
+      .intro {
+        padding: 26px 0 18px;
+      }
+
+      .intro h1 {
+        font-size: clamp(32px, 9vw, 40px);
+      }
+
+      .hero {
+        min-height: 0;
+        padding: 21px;
+      }
+
+      .hero h2 {
+        max-width: 245px;
+        font-size: 27px;
+      }
+
+      .hero p {
+        max-width: 235px;
+        font-size: 13px;
+      }
+
+      .hero-cta {
+        min-height: 42px;
+        font-size: 13px;
+      }
+
+      .section-label {
+        margin: 27px 0 12px;
+      }
+
+      .section-label h2 {
+        font-size: 18px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .olympiad-card {
+        padding: 17px;
+      }
+
+      .quick-actions {
+        gap: 10px;
+      }
+
+      .quick-card {
+        min-height: 145px;
+        padding: 15px;
+      }
+
+      .tabbar {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        width: 100%;
+        display: flex;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: auto;
+        padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+        background: color-mix(in oklab, var(--bg) 94%, transparent);
+        backdrop-filter: blur(18px);
+      }
+
+      .tab-item {
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px 0;
+        font-size: 10px;
+      }
+
+      .tab-item.active::after {
+        display: block;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="stage">
     <div class="caption"><strong>Олимпиады</strong> · главная</div>
@@ -221,9 +954,23 @@
         <div class="statusbar">
           <span class="num">9:41</span>
           <span class="statusbar-right">
-            <svg viewBox="0 0 17 11" aria-hidden="true"><rect x="0" y="7" width="3" height="4" rx=".6"></rect><rect x="4" y="5" width="3" height="6" rx=".6"></rect><rect x="8" y="3" width="3" height="8" rx=".6"></rect><rect x="12" y="0" width="3" height="11" rx=".6"></rect></svg>
-            <svg viewBox="0 0 17 11" aria-hidden="true"><path d="M8.5 1.5c-3 0-5.8 1.1-8 3.1L2 6.1a9.8 9.8 0 0 1 13 0l1.5-1.5a11.8 11.8 0 0 0-8-3.1ZM3.5 7.6 5 9.1a5.2 5.2 0 0 1 7 0l1.5-1.5a7.4 7.4 0 0 0-10 0Zm3 3 2 2 2-2a2.8 2.8 0 0 0-4 0Z"></path></svg>
-            <svg class="battery" viewBox="0 0 25 11" aria-hidden="true"><rect x=".5" y=".5" width="21" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-opacity=".45"></rect><rect x="22" y="3.5" width="1.5" height="4" rx=".4"></rect><rect x="2" y="2" width="18" height="7" rx="1.4"></rect></svg>
+            <svg viewBox="0 0 17 11" aria-hidden="true">
+              <rect x="0" y="7" width="3" height="4" rx=".6"></rect>
+              <rect x="4" y="5" width="3" height="6" rx=".6"></rect>
+              <rect x="8" y="3" width="3" height="8" rx=".6"></rect>
+              <rect x="12" y="0" width="3" height="11" rx=".6"></rect>
+            </svg>
+            <svg viewBox="0 0 17 11" aria-hidden="true">
+              <path
+                d="M8.5 1.5c-3 0-5.8 1.1-8 3.1L2 6.1a9.8 9.8 0 0 1 13 0l1.5-1.5a11.8 11.8 0 0 0-8-3.1ZM3.5 7.6 5 9.1a5.2 5.2 0 0 1 7 0l1.5-1.5a7.4 7.4 0 0 0-10 0Zm3 3 2 2 2-2a2.8 2.8 0 0 0-4 0Z">
+              </path>
+            </svg>
+            <svg class="battery" viewBox="0 0 25 11" aria-hidden="true">
+              <rect x=".5" y=".5" width="21" height="10" rx="2.5" fill="none" stroke="currentColor"
+                stroke-opacity=".45"></rect>
+              <rect x="22" y="3.5" width="1.5" height="4" rx=".4"></rect>
+              <rect x="2" y="2" width="18" height="7" rx="1.4"></rect>
+            </svg>
           </span>
         </div>
 
@@ -240,37 +987,41 @@
 
         <main class="content">
           <div class="intro">
-            <span class="eyebrow">Твоя подготовка</span>
             <h1>Большие цели<br>начинаются здесь.</h1>
             <p>Найди свою олимпиаду, составь маршрут и двигайся к поступлению.</p>
           </div>
 
           <section class="hero" aria-labelledby="hero-title">
-            <span class="eyebrow">01 / Начни с цели</span>
             <span class="hero-mark" aria-hidden="true">↗</span>
             <h2 id="hero-title">Подберём олимпиады под твой вуз</h2>
             <p>Укажи вуз и направление — покажем подходящие варианты.</p>
-            <a class="hero-cta" href="./olympiad-onboarding.html">Подобрать олимпиаду <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+            <a class="hero-cta" href="./olympiad-onboarding.html">Подобрать олимпиаду <svg viewBox="0 0 24 24"
+                aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" />
+              </svg></a>
           </section>
 
-          <section aria-labelledby="tracked-heading">
-            <div class="section-label">
-              <h2 id="tracked-heading">Продолжить подготовку</h2>
-              <a href="./olympiad-onboarding.html">Все олимпиады ↗</a>
-            </div>
-            <div class="cards" id="tracked-list"></div>
-          </section>
+
 
           <section aria-labelledby="explore-heading">
-            <div class="section-label"><h2 id="explore-heading">Исследуй дальше</h2></div>
+            <div class="section-label">
+              <h2 id="explore-heading">Исследуй дальше</h2>
+            </div>
             <div class="quick-actions">
               <a class="quick-card" href="./olympiad-task-search.html">
-                <span class="quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg></span>
+                <span class="quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="10.5" cy="10.5" r="6.5" />
+                    <path d="m16 16 4 4" />
+                  </svg></span>
                 <strong>Банк задач ↗</strong>
                 <span>Находи задачи по предмету и сложности</span>
               </a>
               <a class="quick-card" href="./olympiad-community.html">
-                <span class="quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 19c.6-3 2.7-5 5.5-5s5 2 5.5 5M14.5 14.5c2.3.3 4 1.8 4.5 4.5"/></svg></span>
+                <span class="quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="8" cy="8" r="3" />
+                    <circle cx="17" cy="9" r="2.5" />
+                    <path d="M2.5 19c.6-3 2.7-5 5.5-5s5 2 5.5 5M14.5 14.5c2.3.3 4 1.8 4.5 4.5" />
+                  </svg></span>
                 <strong>Сообщества ↗</strong>
                 <span>Общайся с теми, кто идёт к той же цели</span>
               </a>
@@ -280,19 +1031,27 @@
 
         <nav class="tabbar" aria-label="Разделы">
           <a class="tab-item active" href="./olympiad-home.html">
-            <svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>
+            <svg viewBox="0 0 24 24">
+              <path d="m3 11 9-8 9 8"></path>
+              <path d="M5 10v10h14V10"></path>
+            </svg>
             Главная
           </a>
-          <a class="tab-item" href="./olympiad-onboarding.html">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-            Олимпиады
-          </a>
+
           <a class="tab-item" href="./olympiad-task-search.html">
-            <svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg>
+            <svg viewBox="0 0 24 24">
+              <path d="M9 11l3 3 8-8"></path>
+              <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path>
+            </svg>
             Задания
           </a>
           <a class="tab-item" href="./olympiad-community.html">
-            <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.6"></circle><path d="M2.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"></path><path d="M14.5 14.3c2.1.2 3.9 1.8 4.4 4.7"></path></svg>
+            <svg viewBox="0 0 24 24">
+              <circle cx="8" cy="8" r="3"></circle>
+              <circle cx="17" cy="9" r="2.6"></circle>
+              <path d="M2.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"></path>
+              <path d="M14.5 14.3c2.1.2 3.9 1.8 4.4 4.7"></path>
+            </svg>
             Сообщества
           </a>
         </nav>
@@ -327,4 +1086,6 @@
       }).join('');
     }
   </script>
-</body></html>
+</body>
+
+</html>
