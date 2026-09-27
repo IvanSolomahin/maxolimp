@@ -87,7 +87,25 @@ async def on_bot_started(event: BotStarted):
 @dp.message_created()
 async def on_message(event: MessageCreated):
     if event.message.body.text == "/start":
-        await event.message.answer("Привет! Кнопка для открытия приложения выше.")
+        await event.bot.send_message(
+            chat_id=event.message.recipient.chat_id,
+            text="Привет! Нажми кнопку ниже, чтобы открыть мини-приложение.",
+            attachments=[
+                {
+                    "type": "inline_keyboard",
+                    "payload": {
+                        "buttons": [
+                            [
+                                {
+                                    "type": "open_app",
+                                    "web_app": FRONTEND_URL
+                                }
+                            ]
+                        ]
+                    }
+                }
+            ]
+        )
 
 
 # ---------- Валидация initData от мини-приложения ----------
