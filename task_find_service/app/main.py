@@ -42,12 +42,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(
-    title="Gazprompt Tasks API",
-    version="1.0.0",
-    lifespan=lifespan,
-)
-
+app = FastAPI(title="Gazprompt Tasks API", version="1.0.0", lifespan=lifespan)
 webhook.setup(app, path="/webhook")
 
 app.include_router(tasks.router)
@@ -62,18 +57,18 @@ async def health():
     return {"status": "ok"}
 
 
-# ---------- Отправка через чистый API MAX ----------
+# ---------- Отправка через API MAX ----------
 
-async def send_open_app_button(chat_id: int, text: str = "Привет! Нажми кнопку ниже, чтобы открыть мини-приложение."):
-    """Отправляет сообщение с кнопкой open_app напрямую через API MAX."""
-    if not chat_id:
+async def send_open_app_button(user_id: int, text: str = "Привет! Нажми кнопку ниже, чтобы открыть мини-приложение."):
+    """Отправляет сообщение пользователю с кнопкой open_app."""
+    if not user_id:
         return
     async with httpx.AsyncClient(timeout=10) as client:
         await client.post(
             f"{MAX_API}/messages",
-            params={"access_token": BOT_TOKEN},
+            params={"user_id": user_id},
+            headers={"Authorization": BOT_TOKEN},
             json={
-                "chat_id": chat_id,
                 "text": text,
                 "attachments": [
                     {
@@ -99,11 +94,12 @@ async def send_open_app_button(chat_id: int, text: str = "Привет! Нажм
 
 @dp.message_created()
 async def on_message(event: MessageCreated):
-    """На любое сообщение /start отправляем приветствие с кнопкой."""
+    """На /start отправляем приветствие с кнопкой в личку отправителю."""
     text_value = (event.message.body.text or "").strip().lower()
     if text_value in ("/start", "start", "начать"):
-        chat_id = event.message.recipient.chat_id
-        await send_open_app_button(chat_id)
+        # В личных диалогах MAX адресует по user_id отправителя
+        user_id = event.message.sender.user_id
+        await send_open_app_button(user_id)
 
 
 # ---------- Валидация initData ----------
@@ -164,11 +160,7 @@ async def validate_init_data(
                 username   = EXCLUDED.username,
                 updated_at = NOW()
         """),
-        {
-            "max_id": max_id,
-            "first_name": user.get("first_name"),
-            "username": user.get("username"),
-        },
+        {"max_id": max_id, "first_name": user.get("first_name"), "username": user.get("username")},
     )
     await db.commit()
 
