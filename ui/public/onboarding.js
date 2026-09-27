@@ -4,7 +4,7 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&
 const storageKey = 'onboarding-live-v1';
 const favoritesKey = 'olympiad-favorites-local-v1';
 const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
-const state = {step:0, university:'', direction:'', subject:'', ...saved};
+const state = {step:0, university:'', direction:'', ...saved, subject:''};
 const names = {university:new Map(), direction:new Map(), subject:new Map()};
 const favorites = new Set(JSON.parse(localStorage.getItem(favoritesKey) || '[]'));
 let activeBenefit = 'all';
@@ -58,19 +58,18 @@ async function loadChoices(field, search = '') {
 }
 
 function showStep(step) {
-  state.step = Math.max(0, Math.min(3, step));
+  state.step = Math.max(0, Math.min(2, step));
   save();
   document.querySelectorAll('[data-step]').forEach(view => { const active = Number(view.dataset.step) === state.step; view.hidden = !active; view.setAttribute('aria-hidden', String(!active)); });
   $('#back-button').hidden = state.step === 0;
-  $('#appbar-title').textContent = state.step === 3 ? 'Результаты' : 'Подбор олимпиад';
-  $('#bottom-action').hidden = state.step === 3;
-  $('#skip-action').hidden = state.step !== 2;
-  $('#primary-action').textContent = state.step === 2 ? 'Показать олимпиады' : 'Продолжить';
+  $('#appbar-title').textContent = state.step === 2 ? 'Результаты' : 'Подбор олимпиад';
+  $('#bottom-action').hidden = state.step === 2;
+  $('#skip-action').hidden = true;
+  $('#primary-action').textContent = 'Продолжить';
   $('#primary-action').disabled = state.step === 0 ? !state.university : state.step === 1 ? !state.direction : false;
   if (state.step === 0) loadChoices('university', $('#university-search').value.trim());
   if (state.step === 1) loadChoices('direction', $('#direction-search').value.trim());
-  if (state.step === 2) loadChoices('subject');
-  if (state.step === 3) loadRecommendations();
+  if (state.step === 2) loadRecommendations();
   $('.content').scrollTop = 0;
 }
 
@@ -133,8 +132,8 @@ document.querySelectorAll('[data-search]').forEach(input => input.addEventListen
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => loadChoices(input.dataset.search, input.value.trim()), 300);
 }));
-$('#primary-action').addEventListener('click', () => { if (state.step === 0 && state.university) showStep(1); else if (state.step === 1 && state.direction) showStep(2); else if (state.step === 2) showStep(3); });
-$('#skip-action').addEventListener('click', () => { state.subject = ''; showStep(3); });
+$('#primary-action').addEventListener('click', () => { if (state.step === 0 && state.university) showStep(1); else if (state.step === 1 && state.direction) showStep(2); });
+$('#skip-action').addEventListener('click', () => {});
 $('#back-button').addEventListener('click', () => showStep(state.step - 1));
 $('#edit-criteria').addEventListener('click', () => showStep(0));
 document.querySelectorAll('[data-benefit]').forEach(button => button.addEventListener('click', () => {
