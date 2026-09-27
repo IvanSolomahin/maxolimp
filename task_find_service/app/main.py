@@ -1,31 +1,35 @@
 from contextlib import asynccontextmanager
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException
-from sqlalchemy import text
-from pydantic import BaseModel
-
-from .db import engine
-from app.routers import admin, olympiads, solution_methods, tasks, topics
-
-import os
-import hmac
 import hashlib
+import hmac
 import json
+import os
 import time
 from urllib.parse import parse_qsl
 
+import httpx
+from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from .db import engine, get_db
+from app.routers import admin, olympiads, solution_methods, tasks, topics
+
 from maxapi import Bot, Dispatcher
+from maxapi.types import MessageCreated
 from maxapi.webhook.fastapi import FastAPIMaxWebhook
-from maxapi.types import BotStarted, MessageCreated
 
 
 BOT_TOKEN = os.getenv("MAX_BOT_TOKEN")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://gazprompt.duckdns.org")
+MAX_API = "https://platform-api2.max.ru"
+
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
 
-# Webhook-объект нужен ДО FastAPI, чтобы передать его lifespan
 webhook = FastAPIMaxWebhook(dp=dp, bot=bot)
 
 
@@ -44,7 +48,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# MAX webhook-роут (/webhook)
 webhook.setup(app, path="/webhook")
 
 app.include_router(tasks.router)
@@ -59,63 +62,57 @@ async def health():
     return {"status": "ok"}
 
 
-# ---------- Хендлеры MAX-бота ----------
+# ---------- Отправка через чистый API MAX ----------
 
-@dp.bot_started()
-async def on_bot_started(event: BotStarted):
-    await event.bot.send_message(
-        chat_id=event.chat_id,
-        text="Привет! Нажми кнопку ниже, чтобы открыть мини-приложение.",
-        attachments=[
-            {
-                "type": "inline_keyboard",
-                "payload": {
-                    "buttons": [
-                        [
-                            {
-                                "type": "open_app",
-                                "web_app": FRONTEND_URL,
-                            }
-                        ]
-                    ]
-                },
-            }
-        ],
-    )
-
-
-@dp.message_created()
-async def on_message(event: MessageCreated):
-    if event.message.body.text == "/start":
-        await event.bot.send_message(
-            chat_id=event.message.recipient.chat_id,
-            text="Привет! Нажми кнопку ниже, чтобы открыть мини-приложение.",
-            attachments=[
-                {
-                    "type": "inline_keyboard",
-                    "payload": {
-                        "buttons": [
-                            [
-                                {
-                                    "type": "open_app",
-                                    "web_app": FRONTEND_URL
-                                }
+async def send_open_app_button(chat_id: int, text: str = "Привет! Нажми кнопку ниже, чтобы открыть мини-приложение."):
+    """Отправляет сообщение с кнопкой open_app напрямую через API MAX."""
+    if not chat_id:
+        return
+    async with httpx.AsyncClient(timeout=10) as client:
+        await client.post(
+            f"{MAX_API}/messages",
+            params={"access_token": BOT_TOKEN},
+            json={
+                "chat_id": chat_id,
+                "text": text,
+                "attachments": [
+                    {
+                        "type": "inline_keyboard",
+                        "payload": {
+                            "buttons": [
+                                [
+                                    {
+                                        "type": "open_app",
+                                        "text": "Открыть приложение",
+                                        "web_app": FRONTEND_URL,
+                                    }
+                                ]
                             ]
-                        ]
+                        },
                     }
-                }
-            ]
+                ],
+            },
         )
 
 
-# ---------- Валидация initData от мини-приложения ----------
+# ---------- Хендлеры ----------
+
+@dp.message_created()
+async def on_message(event: MessageCreated):
+    """На любое сообщение /start отправляем приветствие с кнопкой."""
+    text_value = (event.message.body.text or "").strip().lower()
+    if text_value in ("/start", "start", "начать"):
+        chat_id = event.message.recipient.chat_id
+        await send_open_app_button(chat_id)
+
+
+# ---------- Валидация initData ----------
 
 class InitDataPayload(BaseModel):
     initData: str
 
 
 def verify_init_data(init_data: str, bot_token: str) -> dict | None:
-    """Проверка подписи initData от MAX WebApp (HMAC-SHA256)."""
     if not init_data or not bot_token:
         return None
     try:
@@ -146,12 +143,6 @@ def verify_init_data(init_data: str, bot_token: str) -> dict | None:
     except json.JSONDecodeError:
         return None
 
-
-from .db import get_db
-from typing import Annotated
-from fastapi import Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
 
 @app.post("/api/max/validate")
 async def validate_init_data(
