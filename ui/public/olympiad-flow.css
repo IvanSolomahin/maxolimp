@@ -31,7 +31,7 @@ body.flow-shell {
   display: flex;
   flex-direction: column;
   overflow: visible;
-  padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  padding-bottom: calc(70px + env(safe-area-inset-bottom));
 }
 
 .flow-shell .appbar {
@@ -58,7 +58,7 @@ body.flow-shell {
 
 .flow-shell .bottom-action {
   position: sticky;
-  bottom: calc(70px + env(safe-area-inset-bottom));
+  bottom: calc(58px + env(safe-area-inset-bottom));
 }
 
-.flow-shell olympiad-nav { --app-nav-height: 70px; }
+.flow-shell olympiad-nav { --app-nav-height: 58px; }

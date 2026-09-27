@@ -35,12 +35,12 @@ class OlympiadNav extends HTMLElement {
       .footer { width:min(100%,760px); margin:auto; }
       .brand { display:block; width:max-content; margin:7px auto 0; color:var(--fg,#111); font:700 13px/1.2 var(--font-display,Inter,system-ui,sans-serif); letter-spacing:-.04em; text-decoration:none; }
       .brand span { color:#95bc42; }
-      nav { min-height:calc(var(--app-nav-height,70px) - 24px); padding:3px 16px 6px; display:flex; align-items:center; justify-content:center; gap:clamp(20px,5vw,56px); }
+      nav { min-height:var(--app-nav-height,58px); padding:3px 16px 6px; display:flex; align-items:center; justify-content:center; gap:clamp(20px,5vw,56px); }
       a { display:flex; align-items:center; gap:8px; padding:8px; color:var(--muted,#707070); font:600 13px/1.3 var(--font-body,Inter,system-ui,sans-serif); text-decoration:none; }
       a[aria-current="page"] { color:var(--fg,#111); }
       svg { width:20px; height:20px; flex:none; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
       @media(max-width:700px) { nav { justify-content:space-around; gap:0; padding:2px 12px 4px; } a { flex-direction:column; gap:2px; font-size:10px; } svg { width:22px; height:22px; } }
-    </style><div class="footer"><a class="brand" href="./olympiad-home.html" aria-label="maxolimp — главная">maxolimp<span>.</span></a><nav aria-label="Разделы">${tabs.map(t => `<a href="${t.href}" ${t.id === active ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>${t.label}</a>`).join('')}</nav></div>`;
+    </style><nav aria-label="Разделы">${tabs.map(t => `<a href="${t.href}" ${t.id === active ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>${t.label}</a>`).join('')}</nav>`;
   }
 }
 

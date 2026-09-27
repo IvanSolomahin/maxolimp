@@ -1,7 +1,7 @@
 /* Shared page structure for the three main sections. */
 body.app-shell {
   --app-header-height: 68px;
-  --app-nav-height: 70px;
+  --app-nav-height: 58px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
