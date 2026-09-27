@@ -41,7 +41,8 @@ services:
 
   task-app:
     build:
-      context: ./task_find_service
+      context: .
+      dockerfile: task_find_service/Dockerfile
     ports:
       - "127.0.0.1:8000:8000"
     env_file:
@@ -55,12 +56,9 @@ services:
       MAX_BOT_TOKEN: ${MAX_BOT_TOKEN}
       MAX_WEBHOOK_SECRET: ${MAX_WEBHOOK_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
-      SSL_CERT_FILE: /usr/local/share/ca-certificates/russian_trusted/russian_trusted_root_ca_pem.crt
-      REQUESTS_CA_BUNDLE: /usr/local/share/ca-certificates/russian_trusted/russian_trusted_root_ca_pem.crt
 
     volumes:
       - hf-cache:/root/.cache/huggingface
-      - ./certs:/usr/local/share/ca-certificates/russian_trusted:ro
     depends_on:
       task-db:
         condition: service_healthy

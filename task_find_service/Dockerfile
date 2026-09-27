@@ -3,14 +3,19 @@ FROM python:3.12-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# Add the regional trust roots without replacing Debian's public CA bundle.
+COPY certs/*.crt /usr/local/share/ca-certificates/russian_trusted/
+RUN update-ca-certificates
+
+COPY task_find_service/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
-COPY import_etl.py ./import_etl.py
+COPY task_find_service/app ./app
+COPY task_find_service/import_etl.py ./import_etl.py
 
 EXPOSE 8000
 
