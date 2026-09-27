@@ -1,0 +1,27 @@
+/* Shared page structure for the three main sections. */
+body.app-shell {
+  --app-header-height: 68px;
+  --app-nav-height: 58px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0 0 calc(var(--app-nav-height) + env(safe-area-inset-bottom));
+  background: var(--bg, #fff);
+}
+
+body.app-shell > .app-main {
+  flex: 1 0 auto;
+  min-width: 0;
+  overflow: visible;
+}
+
+body.app-shell > olympiad-header,
+body.app-shell > olympiad-nav {
+  flex: none;
+}
+
+@media (max-width: 700px) {
+  body.app-shell { --app-header-height: 58px; }
+}
