@@ -834,14 +834,16 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="./olympiad-flow.css">
 </head>
 
-<body>
+<body class="flow-shell">
   <div class="stage">
     <div class="caption"><strong>Олимпиады</strong> · единый интерактивный прототип</div>
     <div class="device" data-od-id="device">
       <span class="island" aria-hidden="true"></span>
       <div class="screen">
+        <olympiad-header active="home"></olympiad-header>
         <div class="statusbar" data-od-id="statusbar">
           <span class="num">9:41</span>
           <span class="statusbar-right">
@@ -935,6 +937,7 @@
           </div>
         </div>
         <div class="home-indicator" aria-hidden="true"></div>
+        <olympiad-nav active="home"></olympiad-nav>
       </div>
     </div>
   </div>
@@ -955,6 +958,7 @@
   </dialog>
 
   <script src="./max-init.js"></script>
+  <script src="./olympiad-shell.js"></script>
 
   <script src="./onboarding.js" defer></script>
 </body>

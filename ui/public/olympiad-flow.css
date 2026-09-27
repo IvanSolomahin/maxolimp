@@ -1,0 +1,64 @@
+/* The onboarding and practice screens share the same site chrome. */
+body.flow-shell {
+  display: block;
+  min-height: 100dvh;
+  padding: 0;
+  background: var(--bg);
+}
+
+.flow-shell .stage,
+.flow-shell .device,
+.flow-shell .screen {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.flow-shell .device::before,
+.flow-shell .device::after,
+.flow-shell .caption,
+.flow-shell .island,
+.flow-shell .statusbar,
+.flow-shell .home-indicator { display: none !important; }
+
+.flow-shell .screen {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  padding-bottom: calc(82px + env(safe-area-inset-bottom));
+}
+
+.flow-shell .appbar {
+  position: relative;
+  top: auto;
+  z-index: 1;
+  flex: 0 0 52px;
+  width: min(100%, 900px);
+  margin-inline: auto;
+  border-bottom: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.flow-shell .content {
+  flex: 1 0 auto;
+  overflow: visible;
+}
+
+.flow-shell .content:not([data-od-id="content"]) {
+  width: min(100%, 760px);
+  margin-inline: auto;
+}
+
+.flow-shell .bottom-action {
+  position: sticky;
+  bottom: calc(70px + env(safe-area-inset-bottom));
+}
+
+.flow-shell olympiad-nav { --app-nav-height: 70px; }

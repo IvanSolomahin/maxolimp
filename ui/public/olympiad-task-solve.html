@@ -153,13 +153,15 @@
     }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
+  <link rel="stylesheet" href="./olympiad-flow.css">
 </head>
-<body>
+<body class="flow-shell">
   <div class="stage">
     <div class="caption"><strong>Олимпиады</strong> · тренажёр</div>
     <div class="device">
       <span class="island" aria-hidden="true"></span>
       <div class="screen">
+        <olympiad-header active="tasks"></olympiad-header>
         <div class="statusbar">
           <span class="num">9:41</span>
           <span class="statusbar-right">
@@ -207,11 +209,13 @@
           </button>
         </div>
         <div class="home-indicator" aria-hidden="true"></div>
+        <olympiad-nav active="tasks"></olympiad-nav>
       </div>
     </div>
   </div>
 
   <script src="./max-init.js"></script>
+  <script src="./olympiad-shell.js"></script>
 
   <script>
     const TASKS = [
