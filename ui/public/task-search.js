@@ -13,6 +13,7 @@ let olympiads = [];
 let filterOlympiadId = '';
 let filterOlympiadName = '';
 let requestId = 0;
+let detailRequestId = 0;
 let debounce;
 
 async function getJson(path, signal) {
@@ -83,6 +84,7 @@ async function loadTasks(append = false) {
 }
 
 async function openTask(id) {
+  const current = ++detailRequestId;
   const taskUrl = `/tasks/${encodeURIComponent(id)}`;
   if (location.pathname !== taskUrl) history.pushState({taskId: id}, '', taskUrl);
   showTaskPage();
@@ -91,9 +93,11 @@ async function openTask(id) {
   $('#detail-statement').classList.add('task-loading');
   $('#detail-meta').textContent = '';
   $('#detail-source').hidden = true;
+  $('#detail-solution-section').hidden = true;
+  $('#detail-answer').hidden = true;
   try {
     const task = await getJson(`/tasks/${encodeURIComponent(id)}`);
-    if (location.pathname !== taskUrl) return;
+    if (current !== detailRequestId || location.pathname !== taskUrl) return;
     taskMath.renderMathText($('#detail-title'), task.title);
     taskMath.renderMathText($('#detail-statement'), task.statement || 'Условие не указано');
     $('#detail-statement').classList.remove('task-loading');
@@ -102,8 +106,26 @@ async function openTask(id) {
       $('#detail-source').href = task.source.url;
       $('#detail-source').hidden = false;
     }
+    const solutionSection = $('#detail-solution-section');
+    const solutionText = $('#detail-solution');
+    solutionSection.hidden = false;
+    if (task.answer?.trim()) {
+      $('#detail-answer').hidden = false;
+      taskMath.renderMathText($('#detail-answer-text'), task.answer);
+    }
+    solutionText.textContent = task.has_solution ? 'Загрузка решения…' : 'Решение пока не добавлено.';
+    if (task.has_solution) {
+      try {
+        const data = await getJson(`/tasks/${encodeURIComponent(id)}/solutions`);
+        if (current !== detailRequestId || location.pathname !== taskUrl) return;
+        const solution = data.items?.find(item => item.is_verified || !item.is_generated);
+        taskMath.renderMathText(solutionText, solution?.content?.trim() || 'Решение пока не добавлено.');
+      } catch {
+        if (current === detailRequestId && location.pathname === taskUrl) solutionText.textContent = 'Не удалось загрузить решение. Откройте задачу ещё раз.';
+      }
+    }
   } catch {
-    if (location.pathname !== taskUrl) return;
+    if (current !== detailRequestId || location.pathname !== taskUrl) return;
     $('#detail-title').textContent = 'Не удалось загрузить задачу';
     $('#detail-statement').textContent = 'Закройте окно и попробуйте снова.';
     $('#detail-statement').classList.remove('task-loading');
@@ -117,6 +139,7 @@ function showTaskPage() {
 }
 
 function showSearchPage() {
+  detailRequestId++;
   taskPage.hidden = true;
   searchScreen.hidden = false;
 }

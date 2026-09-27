@@ -451,14 +451,22 @@
 
     .text-btn:hover { border-color: var(--fg-2); background: var(--surface); }
 
-    .task-page { min-height: calc(100dvh - var(--app-header-height) - var(--app-nav-height) - env(safe-area-inset-bottom)); padding-block: var(--space-6) var(--section-y-phone); }
-    .task-page-inner { width: min(100%, 900px); margin-inline: auto; padding-inline: var(--container-gutter-phone); }
-    .task-back { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; margin-bottom: var(--space-6); padding: 0; border: 0; background: none; color: var(--muted); font-size: var(--text-sm); font-weight: 600; }
+    .task-page { min-height: calc(100dvh - var(--app-header-height) - var(--app-nav-height) - env(safe-area-inset-bottom)); padding-block: var(--space-5) var(--section-y-phone); background: var(--surface); }
+    .task-page-inner { width: min(100%, 820px); margin-inline: auto; padding-inline: var(--container-gutter-phone); }
+    .task-back { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; margin-bottom: var(--space-4); padding: 0; border: 0; background: none; color: var(--fg-2); font-size: var(--text-sm); font-weight: 600; }
     .task-back:hover { color: var(--fg); }
-    .task-page-meta { margin-bottom: var(--space-4); color: var(--muted); font-size: var(--text-sm); }
-    .task-page-title { max-width: 24ch; margin-bottom: var(--space-8); font-size: clamp(30px, 5vw, 48px); line-height: 1.12; letter-spacing: var(--tracking-display); }
-    .task-statement { max-width: 72ch; white-space: pre-wrap; font-size: clamp(18px, 2vw, 21px); line-height: 1.7; }
-    .task-source { display: inline-flex; margin-top: var(--space-8); color: var(--fg); font-weight: 600; text-underline-offset: 4px; }
+    .task-detail-card, .task-solution { padding: clamp(20px, 4vw, 40px); border: 1px solid var(--border-soft); border-radius: var(--radius-lg); background: var(--bg); }
+    .task-detail-card { border-top: 4px solid #d7fa6c; }
+    .task-page-meta { margin: 0 0 var(--space-4); color: var(--muted); font-size: var(--text-sm); line-height: 1.5; }
+    .task-page-title { max-width: 27ch; margin: 0 0 var(--space-6); overflow-wrap: anywhere; font-size: clamp(25px, 4vw, 38px); line-height: 1.18; letter-spacing: var(--tracking-display); }
+    .task-detail-label { margin: 0 0 var(--space-2); color: var(--muted); font-size: var(--text-xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .task-statement, .task-solution-text { max-width: 72ch; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: clamp(16px, 2vw, 18px); line-height: 1.65; }
+    .task-source { display: inline-flex; margin-top: var(--space-6); color: var(--fg); font-size: var(--text-sm); font-weight: 600; text-underline-offset: 4px; }
+    .task-solution { margin-top: var(--space-4); }
+    .task-solution h2 { margin-bottom: var(--space-4); font-size: var(--text-xl); }
+    .task-answer { margin: 0 0 var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface); overflow-wrap: anywhere; }
+    .task-answer span { display: block; margin-bottom: 4px; color: var(--muted); font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; }
+    @media (max-width: 700px) { .task-page { background: var(--bg); padding-top: var(--space-3); } .task-detail-card, .task-solution { padding: var(--space-5) 0; border: 0; border-radius: 0; } .task-detail-card { border-top: 0; } .task-solution { border-top: 1px solid var(--border-soft); } }
     .task-loading { color: var(--muted); }
 
     dialog {
@@ -763,10 +771,18 @@
   <main class="task-page app-main" id="task-page" hidden>
     <div class="task-page-inner">
       <button class="task-back" type="button" id="task-back"><span aria-hidden="true">←</span> К результатам поиска</button>
-      <p class="task-page-meta" id="detail-meta"></p>
-      <h1 class="task-page-title" id="detail-title">Загрузка задачи…</h1>
-      <p class="task-statement task-loading" id="detail-statement" aria-live="polite"></p>
-      <a class="task-source" id="detail-source" target="_blank" rel="noopener noreferrer" hidden>Открыть источник</a>
+      <article class="task-detail-card">
+        <p class="task-page-meta" id="detail-meta"></p>
+        <h1 class="task-page-title" id="detail-title">Загрузка задачи…</h1>
+        <p class="task-detail-label">Условие</p>
+        <p class="task-statement task-loading" id="detail-statement" aria-live="polite"></p>
+        <a class="task-source" id="detail-source" target="_blank" rel="noopener noreferrer" hidden>Открыть источник ↗</a>
+      </article>
+      <section class="task-solution" id="detail-solution-section" aria-labelledby="detail-solution-title" hidden>
+        <h2 id="detail-solution-title">Решение</h2>
+        <p class="task-answer" id="detail-answer" hidden><span>Ответ</span><b id="detail-answer-text"></b></p>
+        <p class="task-solution-text" id="detail-solution" aria-live="polite"></p>
+      </section>
     </div>
   </main>
 
