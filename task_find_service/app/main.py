@@ -5,7 +5,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 from .db import engine
-from routers import admin, olympiads, solution_methods, tasks, topics
+from app.routers import admin, olympiads, solution_methods, tasks, topics
 
 import os
 import hmac
