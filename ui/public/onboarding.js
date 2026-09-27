@@ -5,6 +5,8 @@ const storageKey = 'onboarding-live-v1';
 const favoritesKey = 'olympiad-favorites-local-v1';
 const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
 const state = {step:0, university:'', direction:'', ...saved, subject:''};
+// Step 2 used to be the subject picker; results now occupy that step.
+if (state.step === 3) state.step = 2;
 const names = {university:new Map(), direction:new Map(), subject:new Map()};
 const favorites = new Set(JSON.parse(localStorage.getItem(favoritesKey) || '[]'));
 let activeBenefit = 'all';
@@ -64,7 +66,6 @@ function showStep(step) {
   $('#back-button').hidden = state.step === 0;
   $('#appbar-title').textContent = state.step === 2 ? 'Результаты' : 'Подбор олимпиад';
   $('#bottom-action').hidden = state.step === 2;
-  $('#skip-action').hidden = true;
   $('#primary-action').textContent = 'Продолжить';
   $('#primary-action').disabled = state.step === 0 ? !state.university : state.step === 1 ? !state.direction : false;
   if (state.step === 0) loadChoices('university', $('#university-search').value.trim());
@@ -133,7 +134,6 @@ document.querySelectorAll('[data-search]').forEach(input => input.addEventListen
   searchTimer = setTimeout(() => loadChoices(input.dataset.search, input.value.trim()), 300);
 }));
 $('#primary-action').addEventListener('click', () => { if (state.step === 0 && state.university) showStep(1); else if (state.step === 1 && state.direction) showStep(2); });
-$('#skip-action').addEventListener('click', () => {});
 $('#back-button').addEventListener('click', () => showStep(state.step - 1));
 $('#edit-criteria').addEventListener('click', () => showStep(0));
 document.querySelectorAll('[data-benefit]').forEach(button => button.addEventListener('click', () => {
