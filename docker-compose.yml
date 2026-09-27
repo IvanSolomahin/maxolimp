@@ -8,6 +8,11 @@ services:
       context: ./ui
     ports:
       - "${FRONTEND_PORT:-8080}:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+      - /root/.acme.sh/gazprompt.duckdns.org_ecc:/etc/nginx/ssl:ro
     depends_on:
       - task-app
       - olymp-app
