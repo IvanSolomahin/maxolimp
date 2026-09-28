@@ -347,6 +347,9 @@ p {
   padding: var(--space-3) 0 2px;
   scrollbar-width: none;
 }
+.active-filters[hidden] {
+  display: none;
+}
 
 .active-filters::-webkit-scrollbar {
   display: none;
@@ -952,6 +955,42 @@ dialog::backdrop {
 .olympiad-selection-clear:hover {
   background: var(--surface-warm);
   color: var(--fg);
+}
+
+.classifier-options {
+  display: grid;
+  gap: 2px;
+  max-height: 220px;
+  margin-top: var(--space-2);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.classifier-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: 7px var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.classifier-option:hover {
+  background: var(--surface-warm);
+}
+.classifier-option input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--fg);
+}
+.classifier-status {
+  margin: 0;
+  padding: var(--space-3) var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
 }
 
 .sheet-actions {

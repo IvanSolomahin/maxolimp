@@ -48,6 +48,8 @@ def _task_filters_sql(prefix: str = "t") -> str:
             OR {prefix}.solution_method_id = CAST(:solution_method_id AS UUID))
         AND (CAST(:olympiad_id AS UUID) IS NULL
             OR {prefix}.olympiad_id = CAST(:olympiad_id AS UUID))
+        AND (CAST(:filter_classifiers AS BOOLEAN) IS FALSE
+            OR {prefix}.classifier = ANY(CAST(:classifiers AS TEXT[])))
         AND ({prefix}.status = 'published' OR CAST(:include_draft AS BOOLEAN) IS TRUE)
     """
 
@@ -64,11 +66,14 @@ def _filter_params(
     subject: str | None = None,
     grade: int | None = None,
     olympiad_id: uuid.UUID | None = None,
+    classifiers: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
         "subject": subject,
         "grade": grade,
         "olympiad_id": olympiad_id,
+        "filter_classifiers": bool(classifiers),
+        "classifiers": classifiers or [],
         "difficulty_min": difficulty_min,
         "difficulty_max": difficulty_max,
         "year_from": year_from,
@@ -96,6 +101,7 @@ async def hybrid_search_tasks(
     grade: int | None = None,
     mode: str = "topic",
     olympiad_id: uuid.UUID | None = None,
+    classifiers: list[str] | None = None,
 ) -> tuple[int, list[dict]]:
     offset = (page - 1) * size
     params = _filter_params(
@@ -108,6 +114,7 @@ async def hybrid_search_tasks(
         subject=subject,
         grade=grade,
         olympiad_id=olympiad_id,
+        classifiers=classifiers,
     )
     params["limit"] = size
     params["offset"] = offset

@@ -2,7 +2,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -76,6 +76,7 @@ async def list_tasks(
     q: str | None = None,
     subject: str | None = Query(None, pattern="^(math|physics)$"),
     olympiad_id: uuid.UUID | None = None,
+    classifiers: list[str] = Query(default=[]),
     grade: int | None = None,
     mode: str = Query("topic", pattern="^(topic|solution|both)$"),
     difficulty_min: int | None = None,
@@ -93,6 +94,7 @@ async def list_tasks(
         q=q,
         subject=subject,
         olympiad_id=olympiad_id,
+        classifiers=classifiers,
         grade=grade,
         mode=mode,
         difficulty_min=difficulty_min,
@@ -135,6 +137,25 @@ async def list_tasks(
             )
         )
     return PaginatedTasks(total=total, page=page, size=size, items=items)
+
+
+@router.get("/tasks/classifiers")
+async def list_classifiers(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    subject: str = Query(..., pattern="^(math|physics)$"),
+):
+    result = await db.execute(
+        select(Task.classifier)
+        .where(
+            Task.subject == subject,
+            Task.status == "published",
+            Task.classifier.is_not(None),
+            func.btrim(Task.classifier) != "",
+        )
+        .distinct()
+        .order_by(Task.classifier)
+    )
+    return {"items": list(result.scalars().all())}
 
 
 @router.get("/tasks/by-topics", response_model=PaginatedTasks)

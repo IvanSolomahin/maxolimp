@@ -8,8 +8,12 @@ const dialog = $('#filter-dialog');
 const taskPage = $('#task-page');
 const searchScreen = $('[data-od-id="task-search-screen"]');
 const query = $('#task-query');
-const state = {subject:'math', q:'', sort:'relevance', grade:'', olympiadId:'', olympiadName:'', difficultyMin:'', difficultyMax:'', page:1, total:0, items:[]};
+const state = {subject:'math', q:'', sort:'relevance', grade:'', olympiadId:'', olympiadName:'', difficultyMin:'', difficultyMax:'', classifiers:[], page:1, total:0, items:[]};
 let olympiads = [];
+let classifiers = [];
+let classifiersStatus = 'Загрузка тегов…';
+let filterClassifiers = new Set();
+let classifierRequestId = 0;
 let filterOlympiadId = '';
 let filterOlympiadName = '';
 let requestId = 0;
@@ -60,8 +64,24 @@ function render() {
     $('#empty-action').textContent = 'Сбросить поиск';
   }
   $('#load-more').hidden = state.items.length >= state.total || state.total === 0;
-  $('#filter-count').hidden = !(state.grade || state.olympiadId || state.difficultyMin || state.difficultyMax);
-  $('#filter-count').textContent = [state.grade, state.olympiadId, state.difficultyMin, state.difficultyMax].filter(Boolean).length;
+  const filterCount = [state.grade, state.olympiadId, state.difficultyMin, state.difficultyMax].filter(Boolean).length + state.classifiers.length;
+  $('#filter-count').hidden = !filterCount;
+  $('#filter-count').textContent = filterCount;
+  const activeFilters = $('#active-filters');
+  activeFilters.replaceChildren();
+  for (const classifier of state.classifiers) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'filter-chip';
+    chip.textContent = `${classifier} ×`;
+    chip.setAttribute('aria-label', `Убрать тег ${classifier}`);
+    chip.addEventListener('click', () => {
+      state.classifiers = state.classifiers.filter(value => value !== classifier);
+      loadTasks();
+    });
+    activeFilters.append(chip);
+  }
+  activeFilters.hidden = !state.classifiers.length;
 }
 
 async function loadTasks(append = false) {
@@ -73,6 +93,7 @@ async function loadTasks(append = false) {
   if (state.grade) params.set('grade', state.grade);
   if (state.difficultyMin) params.set('difficulty_min', state.difficultyMin);
   if (state.difficultyMax) params.set('difficulty_max', state.difficultyMax);
+  for (const classifier of state.classifiers) params.append('classifiers', classifier);
   count.textContent = 'Загрузка…';
   $('#load-more').disabled = true;
   try {
@@ -218,11 +239,11 @@ query.addEventListener('input', () => {
   debounce = setTimeout(() => loadTasks(), 300);
 });
 $('[data-od-id="clear-search"]').addEventListener('click', () => { query.value = ''; state.q = ''; $('[data-od-id="clear-search"]').hidden = true; loadTasks(); });
-$('#subject-select').addEventListener('change', event => { state.subject = event.target.value; loadTasks(); });
+$('#subject-select').addEventListener('change', event => { state.subject = event.target.value; state.classifiers = []; loadClassifiers(); loadTasks(); });
 $('#sort-select').addEventListener('change', event => { state.sort = event.target.value; loadTasks(); });
-$('[data-od-id="open-filters"]').addEventListener('click', () => { $('#grade-filter').value = state.grade; filterOlympiadId = state.olympiadId; filterOlympiadName = state.olympiadName; $('#olympiad-search').value = ''; $('#olympiad-options').hidden = true; updateOlympiadSelection(); $('#difficulty-min').value = state.difficultyMin; $('#difficulty-max').value = state.difficultyMax; dialog.showModal(); });
+$('[data-od-id="open-filters"]').addEventListener('click', () => { $('#grade-filter').value = state.grade; filterOlympiadId = state.olympiadId; filterOlympiadName = state.olympiadName; $('#olympiad-search').value = ''; $('#olympiad-options').hidden = true; updateOlympiadSelection(); $('#difficulty-min').value = state.difficultyMin; $('#difficulty-max').value = state.difficultyMax; filterClassifiers = new Set(state.classifiers); $('#classifier-search').value = ''; if (classifiersStatus === 'Не удалось загрузить теги.') loadClassifiers(); else renderClassifiers(); dialog.showModal(); });
 $('[data-od-id="close-filters"]').addEventListener('click', () => dialog.close());
-$('[data-od-id="reset-filters"]').addEventListener('click', () => { $('#grade-filter').value = ''; filterOlympiadId = ''; filterOlympiadName = ''; $('#olympiad-search').value = ''; $('#olympiad-options').hidden = true; updateOlympiadSelection(); $('#difficulty-min').value = ''; $('#difficulty-max').value = ''; });
+$('[data-od-id="reset-filters"]').addEventListener('click', () => { $('#grade-filter').value = ''; filterOlympiadId = ''; filterOlympiadName = ''; $('#olympiad-search').value = ''; $('#olympiad-options').hidden = true; updateOlympiadSelection(); $('#difficulty-min').value = ''; $('#difficulty-max').value = ''; filterClassifiers.clear(); renderClassifiers(); });
 $('[data-od-id="apply-filters"]').addEventListener('click', () => {
   const min = $('#difficulty-min').value, max = $('#difficulty-max').value;
   if (min && max && Number(min) > Number(max)) { $('#difficulty-min').setCustomValidity('Минимум больше максимума'); $('#difficulty-min').reportValidity(); return; }
@@ -232,10 +253,11 @@ $('[data-od-id="apply-filters"]').addEventListener('click', () => {
   state.olympiadName = filterOlympiadName;
   state.difficultyMin = min;
   state.difficultyMax = max;
+  state.classifiers = [...filterClassifiers];
   dialog.close();
   loadTasks();
 });
-$('#empty-action').addEventListener('click', () => { state.q = ''; state.grade = ''; state.olympiadId = ''; state.olympiadName = ''; state.difficultyMin = ''; state.difficultyMax = ''; query.value = ''; loadTasks(); });
+$('#empty-action').addEventListener('click', () => { state.q = ''; state.grade = ''; state.olympiadId = ''; state.olympiadName = ''; state.difficultyMin = ''; state.difficultyMax = ''; state.classifiers = []; query.value = ''; loadTasks(); });
 $('#load-more').addEventListener('click', () => { state.page += 1; loadTasks(true); });
 list.addEventListener('click', event => {
   const open = event.target.closest('[data-open]');
@@ -251,6 +273,66 @@ $('#task-back').addEventListener('click', () => {
 window.addEventListener('popstate', routeFromLocation);
 routeFromLocation();
 if (!/^\/tasks\/[^/]+\/?$/.test(location.pathname)) loadTasks();
+loadClassifiers();
+
+function renderClassifiers(message = classifiersStatus) {
+  const options = $('#classifier-options');
+  options.replaceChildren();
+  if (message) {
+    const status = document.createElement('p');
+    status.className = 'classifier-status';
+    status.textContent = message;
+    options.append(status);
+    return;
+  }
+  const needle = $('#classifier-search').value.trim().toLocaleLowerCase('ru');
+  const matching = classifiers.filter(value => value.toLocaleLowerCase('ru').includes(needle));
+  matching.sort((a, b) => Number(filterClassifiers.has(b)) - Number(filterClassifiers.has(a)));
+  for (const classifier of matching) {
+    const label = document.createElement('label');
+    label.className = 'classifier-option';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = classifier;
+    input.checked = filterClassifiers.has(classifier);
+    const name = document.createElement('span');
+    name.textContent = classifier;
+    label.append(input, name);
+    options.append(label);
+  }
+  if (!matching.length) {
+    const status = document.createElement('p');
+    status.className = 'classifier-status';
+    status.textContent = needle ? 'Теги не найдены' : 'Для этого предмета тегов пока нет';
+    options.append(status);
+  }
+}
+
+async function loadClassifiers() {
+  const current = ++classifierRequestId;
+  classifiersStatus = 'Загрузка тегов…';
+  renderClassifiers();
+  try {
+    const data = await getJson(`/tasks/classifiers?subject=${encodeURIComponent(state.subject)}`);
+    if (current !== classifierRequestId) return;
+    classifiers = data.items || [];
+    classifiersStatus = '';
+    renderClassifiers();
+  } catch {
+    if (current !== classifierRequestId) return;
+    classifiers = [];
+    classifiersStatus = 'Не удалось загрузить теги.';
+    renderClassifiers();
+  }
+}
+
+$('#classifier-search').addEventListener('input', () => renderClassifiers());
+$('#classifier-options').addEventListener('change', event => {
+  if (!event.target.matches('input[type="checkbox"]')) return;
+  if (event.target.checked) filterClassifiers.add(event.target.value);
+  else filterClassifiers.delete(event.target.value);
+});
+
 function updateOlympiadSelection() {
   const selection = $('#olympiad-selection');
   selection.hidden = !filterOlympiadId;
