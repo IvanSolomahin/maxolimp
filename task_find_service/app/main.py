@@ -89,6 +89,21 @@ async def send_open_app_button(user_id: int, text: str = "Привет! Нажм
         )
 
 
+async def send_user_ans(user_id: int, text: str = "Привет! Напиши /start или 'начать' чтобы получить кнопку запуска приложения еще раз"):
+    """Отправляет сообщение пользователю"""
+    if not user_id:
+        return
+    async with httpx.AsyncClient(timeout=10) as client:
+        await client.post(
+            f"{MAX_API}/messages",
+            params={"user_id": user_id},
+            headers={"Authorization": BOT_TOKEN},
+            json={
+                "text": text
+            },
+        )
+
+
 # ---------- Хендлеры ----------
 
 @dp.message_created()
@@ -99,6 +114,10 @@ async def on_message(event: MessageCreated):
         # В личных диалогах MAX адресует по user_id отправителя
         user_id = event.message.sender.user_id
         await send_open_app_button(user_id)
+    else:
+        user_id = event.message.sender.user_id
+        await send_user_ans(user_id)
+
 
 
 @app.post("/api/max/validate")
