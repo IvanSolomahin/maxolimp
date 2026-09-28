@@ -1,7 +1,5 @@
 (function () {
   const ENDPOINT = '/api/max/validate';
-  const STORAGE_KEY = 'max-user-v1';
-
   function getInitData() {
     return (window.WebApp && window.WebApp.initData) || '';
   }
@@ -10,10 +8,14 @@
     const initData = getInitData();
     if (!initData) return null;
 
-    const cached = sessionStorage.getItem(STORAGE_KEY);
-    if (cached) {
-      try { return JSON.parse(cached); } catch {}
-    }
+    try {
+      const existing = await fetch('/api/auth/me');
+      if (existing.ok) {
+        const account = await existing.json();
+        const hinted = JSON.parse(new URLSearchParams(initData).get('user') || '{}');
+        if (account.max_id === hinted.id) return { valid: true, user: account };
+      }
+    } catch {}
 
     try {
       const response = await fetch(ENDPOINT, {
@@ -23,10 +25,7 @@
       });
       if (!response.ok) return null;
       const data = await response.json();
-      if (data.valid) {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        return data;
-      }
+      if (data.valid) return data;
     } catch (error) {
       console.warn('MAX initData validation failed:', error);
     }

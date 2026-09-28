@@ -17,6 +17,15 @@ PostgreSQL хранит задачи, их источник и поисковы�
 на одну запись и удалить дубли.
 `sql/migrate_v5.sql` заполняет короткие названия для списка и карточек задач.
 
+Для действующей базы после `migrate_v6.sql` выполните `sql/migrate_v7.sql`:
+она добавляет вход по email, сессии и список решённых задач. На новой базе
+эти таблицы создаёт `sql/init.sql`. Перед запуском обновлённого приложения
+миграция должна быть применена к `task-db`.
+
+```bash
+docker compose exec -T task-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < task_find_service/sql/migrate_v7.sql
+```
+
 ```bash
 docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v2.sql
 docker compose exec -T db psql -U gazprompt -d gazprompt < sql/migrate_v3.sql

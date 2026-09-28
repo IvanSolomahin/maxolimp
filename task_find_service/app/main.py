@@ -1,21 +1,18 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-import hashlib
-import hmac
-import json
 import os
-import time
-from urllib.parse import parse_qsl
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException
-from pydantic import BaseModel
-from sqlalchemy import text
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from sqlalchemy import func, text
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import InitDataPayload, check_origin, issue_session, router as auth_router, verify_init_data
 from .db import engine, get_db
-from app.routers import admin, olympiads, solution_methods, tasks, topics
+from app.models import User
+from app.routers import admin, olympiads, progress, solution_methods, tasks, topics
 
 from maxapi import Bot, Dispatcher
 from maxapi.types import MessageCreated
@@ -50,6 +47,8 @@ app.include_router(topics.router)
 app.include_router(olympiads.router)
 app.include_router(solution_methods.router)
 app.include_router(admin.router)
+app.include_router(auth_router)
+app.include_router(progress.router)
 
 
 @app.get("/health")
@@ -102,66 +101,26 @@ async def on_message(event: MessageCreated):
         await send_open_app_button(user_id)
 
 
-# ---------- Валидация initData ----------
-
-class InitDataPayload(BaseModel):
-    initData: str
-
-
-def verify_init_data(init_data: str, bot_token: str) -> dict | None:
-    if not init_data or not bot_token:
-        return None
-    try:
-        parsed = dict(parse_qsl(init_data, keep_blank_values=True))
-    except Exception:
-        return None
-
-    received_hash = parsed.pop("hash", None)
-    if not received_hash:
-        return None
-
-    data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()))
-    secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
-    computed = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
-
-    if not hmac.compare_digest(computed, received_hash):
-        return None
-
-    try:
-        auth_date = int(parsed.get("auth_date", "0"))
-    except ValueError:
-        return None
-    if time.time() - auth_date > 3600:
-        return None
-
-    try:
-        return json.loads(parsed.get("user", "{}"))
-    except json.JSONDecodeError:
-        return None
-
-
 @app.post("/api/max/validate")
 async def validate_init_data(
     payload: InitDataPayload,
     db: Annotated[AsyncSession, Depends(get_db)],
+    request: Request,
+    response: Response,
 ):
+    check_origin(request)
     user = verify_init_data(payload.initData, BOT_TOKEN)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid initData")
 
-    max_id = user.get("id")
-
-    await db.execute(
-        text("""
-            INSERT INTO users (max_id, first_name, username)
-            VALUES (:max_id, :first_name, :username)
-            ON CONFLICT (max_id) DO UPDATE
-            SET first_name = EXCLUDED.first_name,
-                username   = EXCLUDED.username,
-                updated_at = NOW()
-        """),
-        {"max_id": max_id, "first_name": user.get("first_name"), "username": user.get("username")},
-    )
-    await db.commit()
-
-    return {"valid": True, "max_id": max_id, "user": user}
+    max_id = user["id"]
+    statement = insert(User).values(
+        max_id=max_id, first_name=user.get("first_name"), username=user.get("username")
+    ).on_conflict_do_update(
+        index_elements=["max_id"],
+        set_={"first_name": user.get("first_name"), "username": user.get("username"), "updated_at": func.now()},
+    ).returning(User.id)
+    account_id = (await db.execute(statement)).scalar_one()
+    account = await db.get(User, account_id)
+    view = await issue_session(db, response, account)
+    return {"valid": True, "max_id": max_id, "user": view}

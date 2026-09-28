@@ -15,6 +15,12 @@ let filterOlympiadName = '';
 let requestId = 0;
 let detailRequestId = 0;
 let debounce;
+let openedTask = null;
+let taskAlreadySolved = false;
+
+function loginUrl() {
+  return `./olympiad-auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+}
 
 async function getJson(path, signal) {
   const response = await fetch(`${api}${path}`, {signal});
@@ -85,6 +91,8 @@ async function loadTasks(append = false) {
 
 async function openTask(id) {
   const current = ++detailRequestId;
+  openedTask = null;
+  taskAlreadySolved = false;
   const taskUrl = `/tasks/${encodeURIComponent(id)}`;
   if (location.pathname !== taskUrl) history.pushState({taskId: id}, '', taskUrl);
   showTaskPage();
@@ -95,9 +103,17 @@ async function openTask(id) {
   $('#detail-source').hidden = true;
   $('#detail-solution-section').hidden = true;
   $('#detail-answer').hidden = true;
+  $('#detail-answer-form').hidden = false;
+  $('#detail-user-answer').value = '';
+  $('#detail-user-answer').disabled = false;
+  $('#detail-submit-answer').disabled = false;
+  $('#detail-feedback').hidden = true;
+  $('#detail-mark-solved').disabled = false;
+  $('#detail-mark-solved').textContent = 'Отметить решённой';
   try {
     const task = await getJson(`/tasks/${encodeURIComponent(id)}`);
     if (current !== detailRequestId || location.pathname !== taskUrl) return;
+    openedTask = task;
     taskMath.renderMathText($('#detail-title'), task.title);
     taskMath.renderMathText($('#detail-statement'), task.statement || 'Условие не указано');
     $('#detail-statement').classList.remove('task-loading');
@@ -106,23 +122,15 @@ async function openTask(id) {
       $('#detail-source').href = task.source.url;
       $('#detail-source').hidden = false;
     }
-    const solutionSection = $('#detail-solution-section');
-    const solutionText = $('#detail-solution');
-    solutionSection.hidden = false;
-    if (task.answer?.trim()) {
-      $('#detail-answer').hidden = false;
-      taskMath.renderMathText($('#detail-answer-text'), task.answer);
-    }
-    solutionText.textContent = task.has_solution ? 'Загрузка решения…' : 'Решение пока не добавлено.';
-    if (task.has_solution) {
-      try {
-        const data = await getJson(`/tasks/${encodeURIComponent(id)}/solutions`);
-        if (current !== detailRequestId || location.pathname !== taskUrl) return;
-        const solution = data.items?.find(item => item.is_verified || !item.is_generated);
-        taskMath.renderMathText(solutionText, solution?.content?.trim() || 'Решение пока не добавлено.');
-      } catch {
-        if (current === detailRequestId && location.pathname === taskUrl) solutionText.textContent = 'Не удалось загрузить решение. Откройте задачу ещё раз.';
+    try {
+      let progress = await fetch(`/api/progress/tasks/${encodeURIComponent(id)}`);
+      if (progress.status === 401) {
+        await window.maxUserReady;
+        progress = await fetch(`/api/progress/tasks/${encodeURIComponent(id)}`);
       }
+      if (current === detailRequestId && progress.ok) taskAlreadySolved = (await progress.json()).solved;
+    } catch {
+      // The task remains readable if the progress service is unavailable.
     }
   } catch {
     if (current !== detailRequestId || location.pathname !== taskUrl) return;
@@ -131,6 +139,58 @@ async function openTask(id) {
     $('#detail-statement').classList.remove('task-loading');
   }
 }
+
+async function revealOpenedTask() {
+  if (!openedTask || !$('#detail-user-answer').value.trim()) return;
+  const id = openedTask.id;
+  const current = detailRequestId;
+  $('#detail-user-answer').disabled = true;
+  $('#detail-submit-answer').disabled = true;
+  $('#detail-feedback').textContent = 'Ответ отправлен. Сверьте его с эталоном и решите, отмечать ли задачу.';
+  $('#detail-feedback').hidden = false;
+  $('#detail-solution-section').hidden = false;
+  $('#detail-solution-title').textContent = openedTask.answer?.trim() || openedTask.has_solution ? 'Эталонные материалы' : 'Отметка о решении';
+  $('#detail-answer').hidden = !openedTask.answer?.trim();
+  if (openedTask.answer?.trim()) taskMath.renderMathText($('#detail-answer-text'), openedTask.answer);
+  $('#detail-mark-solved').disabled = taskAlreadySolved;
+  $('#detail-mark-solved').textContent = taskAlreadySolved ? 'Задача решена' : 'Отметить решённой';
+  const solutionText = $('#detail-solution');
+  if (!openedTask.has_solution) {
+    solutionText.textContent = '';
+    solutionText.hidden = true;
+    return;
+  }
+  solutionText.hidden = false;
+  solutionText.textContent = 'Загрузка решения…';
+  try {
+    const data = await getJson(`/tasks/${encodeURIComponent(id)}/solutions`);
+    if (current !== detailRequestId) return;
+    const solution = data.items?.find(item => item.is_verified || !item.is_generated);
+    taskMath.renderMathText(solutionText, solution?.content?.trim() || 'Решение пока не добавлено.');
+  } catch {
+    if (current === detailRequestId) solutionText.textContent = 'Не удалось загрузить решение.';
+  }
+}
+
+$('#detail-submit-answer').addEventListener('click', revealOpenedTask);
+$('#detail-user-answer').addEventListener('keydown', event => {
+  if (event.key === 'Enter') revealOpenedTask();
+});
+$('#detail-mark-solved').addEventListener('click', async () => {
+  if (!openedTask || $('#detail-solution-section').hidden) return;
+  const button = $('#detail-mark-solved');
+  button.disabled = true;
+  try {
+    const response = await fetch(`/api/progress/tasks/${encodeURIComponent(openedTask.id)}/solved`, {method:'POST'});
+    if (response.status === 401) { location.href = loginUrl(); return; }
+    if (!response.ok) throw new Error();
+    taskAlreadySolved = true;
+    button.textContent = 'Задача решена';
+  } catch {
+    button.disabled = false;
+    $('#detail-feedback').textContent = 'Не удалось сохранить решение. Попробуйте ещё раз.';
+  }
+});
 
 function showTaskPage() {
   searchScreen.hidden = true;

@@ -19,7 +19,9 @@ const TRACKED = [
 
 const list = document.getElementById("tracked-list");
 
-if (TRACKED.length === 0) {
+if (!list) {
+  // This page currently has no tracked olympiads section.
+} else if (TRACKED.length === 0) {
   list.innerHTML =
     '<p class="empty-state">Пока нет плана подготовки. Начните с подбора олимпиады.</p>';
 } else {
@@ -34,4 +36,10 @@ if (TRACKED.length === 0) {
           <div class="card-foot"><p>${pct}% пути пройдено</p><a class="go-btn" href="${o.href}">Продолжить →</a></div>
         </article>`;
   }).join("");
+}
+
+if (!window.WebApp?.initData) {
+  fetch('/api/auth/me').then(response => {
+    if (response.status === 401) document.getElementById('browser-signup').hidden = false;
+  }).catch(() => {});
 }

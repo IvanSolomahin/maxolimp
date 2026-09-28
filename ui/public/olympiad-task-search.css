@@ -1026,6 +1026,12 @@ dialog::backdrop {
   text-align: center;
 }
 
+.detail-answer-row { display:flex; gap:10px; margin-top:10px; }
+.detail-answer-row input { flex:1; min-width:0; padding:10px; border:1px solid var(--border,#ccc); border-radius:8px; }
+.detail-answer-row button, #detail-mark-solved { padding:10px 14px; border:0; border-radius:8px; background:var(--accent,#d7fa6c); cursor:pointer; }
+#detail-mark-solved { margin-top:16px; }
+.detail-answer-row button:disabled, #detail-mark-solved:disabled { opacity:.6; cursor:default; }
+
 @media (min-width: 600px) {
   .container {
     padding-inline: var(--container-gutter-tablet);

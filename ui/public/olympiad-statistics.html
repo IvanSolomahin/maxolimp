@@ -27,17 +27,17 @@
       <section class="stats-grid" aria-label="Сводка">
         <article class="metric primary">
           <p class="metric-label">Решено за период</p>
-          <p class="metric-value" id="period-count">12</p>
+          <p class="metric-value" id="period-count">—</p>
           <p class="metric-foot" id="period-caption">за последние 7 дней</p>
         </article>
         <article class="metric">
           <p class="metric-label">Всего решено</p>
-          <p class="metric-value" id="all-count">28</p>
+          <p class="metric-value" id="all-count">—</p>
           <p class="metric-foot">за всё время</p>
         </article>
         <article class="metric">
           <p class="metric-label">Активные дни</p>
-          <p class="metric-value" id="active-days">5</p>
+          <p class="metric-value" id="active-days">—</p>
           <p class="metric-foot">из последних 7</p>
         </article>
       </section>
@@ -48,7 +48,7 @@
             <h2>Решения по дням</h2>
           </div>
           <span class="chart-total">
-            <strong id="chart-count">12</strong>
+            <strong id="chart-count">—</strong>
             за неделю
           </span>
         </div>
@@ -72,79 +72,21 @@
           </div>
           <div class="selects">
             <select id="olympiad-filter" aria-label="Олимпиада">
-              <option>Все олимпиады</option>
-              <option>Всероссийская олимпиада</option>
-              <option>Олимпиада «Физтех»</option>
-              <option>Турнир городов</option>
+              <option value="">Все олимпиады</option>
             </select>
             <select id="tag-filter" aria-label="Тег задачи">
-              <option>Все теги</option>
-              <option>Алгоритмы</option>
-              <option>Графы</option>
-              <option>Комбинаторика</option>
+              <option value="">Все теги</option>
             </select>
           </div>
         </div>
         <div class="breakdown">
           <div>
             <h2 class="solved-title">По олимпиадам</h2>
-            <div class="list-card">
-              <div class="row">
-                <span class="rank">01</span>
-                <div class="row-copy">
-                  <p class="row-title">Всероссийская олимпиада</p>
-                  <p class="row-sub">Информатика · 2025</p>
-                </div>
-                <b class="count">12</b>
-              </div>
-              <div class="row">
-                <span class="rank">02</span>
-                <div class="row-copy">
-                  <p class="row-title">Олимпиада «Физтех»</p>
-                  <p class="row-sub">Отборочный этап</p>
-                </div>
-                <b class="count">9</b>
-              </div>
-              <div class="row">
-                <span class="rank">03</span>
-                <div class="row-copy">
-                  <p class="row-title">Турнир городов</p>
-                  <p class="row-sub">Весенний тур</p>
-                </div>
-                <b class="count">7</b>
-              </div>
-            </div>
+            <div class="list-card"></div>
           </div>
           <div>
             <h2 class="solved-title">По темам и тегам</h2>
-            <div class="list-card tags-card">
-              <div class="tags">
-                <span class="tag">
-                  Динамика
-                  <b>8</b>
-                </span>
-                <span class="tag">
-                  Графы
-                  <b>6</b>
-                </span>
-                <span class="tag">
-                  Комбинаторика
-                  <b>5</b>
-                </span>
-                <span class="tag">
-                  Структуры данных
-                  <b>4</b>
-                </span>
-                <span class="tag">
-                  Теория чисел
-                  <b>3</b>
-                </span>
-                <span class="tag">
-                  Строки
-                  <b>2</b>
-                </span>
-              </div>
-            </div>
+            <div class="list-card tags-card"></div>
           </div>
         </div>
         <p class="bottom-note">
@@ -159,30 +101,9 @@
           </div>
           <a href="./olympiad-task-search.html">Найти ещё →</a>
         </div>
-        <div class="list-card" id="solved-list">
-          <div class="row">
-            <span class="rank">✓</span>
-            <div class="row-copy">
-              <p class="row-title">Размен монет</p>
-              <p class="row-sub">Динамическое программирование · сегодня</p>
-            </div>
-          </div>
-          <div class="row">
-            <span class="rank">✓</span>
-            <div class="row-copy">
-              <p class="row-title">Остовное дерево</p>
-              <p class="row-sub">Графы и алгоритмы · вчера</p>
-            </div>
-          </div>
-          <div class="row">
-            <span class="rank">✓</span>
-            <div class="row-copy">
-              <p class="row-title">Сумма на двух кубиках</p>
-              <p class="row-sub">Комбинаторика · 24 сентября</p>
-            </div>
-          </div>
-        </div>
-        <div class="empty" id="empty">
+        <div class="list-card" id="solved-list"></div>
+        <button id="solved-more" type="button" hidden>Показать ещё</button>
+        <div class="empty" id="empty" hidden>
           <strong>Пока нет решённых задач</strong>
           Отметьте задачу решённой после просмотра ответа и решения.
         </div>
@@ -190,6 +111,7 @@
     </main>
     <olympiad-nav active="statistics"></olympiad-nav>
     <script src="./olympiad-shell.js"></script>
+    <script src="./max-init.js"></script>
     <script src="./olympiad-statistics.js"></script>
   </body>
 </html>

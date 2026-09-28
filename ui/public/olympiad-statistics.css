@@ -158,6 +158,7 @@ h1 {
   height: 174px;
   display: flex;
   align-items: end;
+  overflow-x: auto;
   gap: clamp(8px, 2vw, 20px);
   padding: 0 4px 24px;
   border-bottom: 1px solid var(--border);
@@ -171,7 +172,7 @@ h1 {
 }
 .bar-wrap {
   height: 100%;
-  flex: 1;
+  flex: 1 0 22px;
   display: flex;
   align-items: end;
   justify-content: center;
@@ -197,6 +198,8 @@ h1 {
   font: 10px var(--font-mono);
   color: var(--muted);
 }
+.row-title[href] { color: inherit; text-decoration: none; }
+.row-title[href]:hover { text-decoration: underline; }
 .chart-foot {
   display: flex;
   justify-content: space-between;
@@ -277,13 +280,14 @@ h1 {
   letter-spacing: -0.03em;
 }
 .empty {
-  display: none;
+  display: block;
   padding: 28px;
   text-align: center;
   color: var(--muted);
   border: 1px dashed var(--border);
   border-radius: 14px;
 }
+[hidden] { display: none !important; }
 .empty strong {
   display: block;
   color: #111;

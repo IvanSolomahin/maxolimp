@@ -316,6 +316,14 @@
             >Открыть источник ↗</a
           >
         </article>
+        <section class="task-solution" id="detail-answer-form">
+          <label for="detail-user-answer">Ваш ответ</label>
+          <div class="detail-answer-row">
+            <input id="detail-user-answer" type="text" autocomplete="off" placeholder="Введите ответ" />
+            <button id="detail-submit-answer" type="button">Отправить</button>
+          </div>
+          <p id="detail-feedback" role="status" hidden></p>
+        </section>
         <section
           class="task-solution"
           id="detail-solution-section"
@@ -331,6 +339,7 @@
             id="detail-solution"
             aria-live="polite"
           ></p>
+          <button id="detail-mark-solved" type="button">Отметить решённой</button>
         </section>
       </div>
     </main>
