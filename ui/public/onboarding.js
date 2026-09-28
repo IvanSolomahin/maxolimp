@@ -4,10 +4,10 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&
 const storageKey = 'onboarding-live-v1';
 const favoritesKey = 'olympiad-favorites-local-v1';
 const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
-const state = {step:0, university:'', direction:'', ...saved, subject:''};
-// Step 2 used to be the subject picker; results now occupy that step.
+const state = {step:0, university:'', direction:'', ...saved};
+delete state.subject;
 if (state.step === 3) state.step = 2;
-const names = {university:new Map(), direction:new Map(), subject:new Map()};
+const names = {university:new Map(), direction:new Map()};
 const favorites = new Set(JSON.parse(localStorage.getItem(favoritesKey) || '[]'));
 let activeBenefit = 'all';
 let recommendations = [];
@@ -37,18 +37,17 @@ async function loadChoices(field, search = '') {
   try {
     let path;
     if (field === 'university') path = `/universities?q=${encodeURIComponent(search)}&size=100`;
-    else if (field === 'direction') path = `/universities/${encodeURIComponent(state.university)}/programs?q=${encodeURIComponent(search)}&size=100`;
-    else path = '/subjects?size=100';
+    else path = `/universities/${encodeURIComponent(state.university)}/programs?q=${encodeURIComponent(search)}&size=100`;
     const data = await getJson(path);
     if (current !== requestId) return;
     data.items.forEach(item => names[field].set(String(item.id), item.name || item.code));
     container.innerHTML = data.items.map(item => choice(item, field)).join('');
-    empty.textContent = field === 'university' ? 'Вузы не найдены' : field === 'direction' ? 'Направления не найдены' : 'Предметы не найдены';
+    empty.textContent = field === 'university' ? 'Вузы не найдены' : 'Направления не найдены';
     empty.hidden = data.items.length !== 0;
     if (data.total > data.items.length) {
       const note = document.createElement('p');
       note.className = 'choice-note';
-      note.textContent = field === 'subject' ? 'Показаны первые 100 предметов' : 'Уточните поиск, чтобы увидеть другие варианты';
+      note.textContent = 'Уточните поиск, чтобы увидеть другие варианты';
       container.append(note);
     }
   } catch {
@@ -83,7 +82,7 @@ function benefitLabel(type) {
 
 function renderResults(total) {
   $('#criteria-main').textContent = `${names.university.get(state.university) || 'Вуз'} — ${names.direction.get(state.direction) || 'Направление'}`;
-  $('#criteria-sub').textContent = state.subject ? `Предмет: ${names.subject.get(state.subject) || 'выбранный'}` : 'Любой профиль олимпиады';
+  $('#criteria-sub').textContent = 'Олимпиады с льготами для выбранного направления';
   $('#result-count').textContent = `${total} вариантов`;
   $('#results-count-label').textContent = `Найдено ${total} ${total === 1 ? 'олимпиада' : total > 1 && total < 5 ? 'олимпиады' : 'олимпиад'}`;
   $('#results-list').innerHTML = recommendations.map(item => `
@@ -102,7 +101,6 @@ async function loadRecommendations(append = false) {
   if (!append) { recommendations = []; $('#results-list').textContent = 'Загрузка…'; }
   $('#more-results').disabled = true;
   const params = new URLSearchParams({university_id:state.university, program_id:state.direction, size:'100', page:String(page)});
-  if (state.subject) params.set('subject_id', state.subject);
   if (activeBenefit === 'bvi') params.set('benefit_type', 'bvi');
   if (activeBenefit === '100') params.set('benefit_type', '100 points');
   try {
@@ -125,8 +123,7 @@ document.querySelectorAll('[data-options]').forEach(container => container.addEv
   const input = event.target.closest('input[type="radio"]');
   if (!input) return;
   state[input.name] = input.value;
-  if (input.name === 'university') { state.direction = ''; state.subject = ''; $('#direction-search').value = ''; }
-  if (input.name === 'direction') state.subject = '';
+  if (input.name === 'university') { state.direction = ''; $('#direction-search').value = ''; }
   save();
   $('#primary-action').disabled = state.step === 0 ? !state.university : state.step === 1 ? !state.direction : false;
 }));

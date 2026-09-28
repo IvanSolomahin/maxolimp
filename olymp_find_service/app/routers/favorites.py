@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_db
 from app.deps import current_user_id
-from app.models import Favorite, Olympiad, SubjectOlympiad
+from app.models import Favorite, Olympiad
 from app.schemas import (
     AddFavoriteRequest,
     FavoriteItem,
@@ -51,7 +51,6 @@ async def list_favorites(
             FavoriteItem(
                 olympiad_id=link.id,
                 name=olympiad.name,
-                subject=subject_name,
                 complexity=olympiad.complexity,
                 benefit_type=benefit_type,
             )

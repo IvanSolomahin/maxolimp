@@ -29,7 +29,6 @@ async def recommend_olympiads(
     db: Annotated[AsyncSession, Depends(get_db)],
     university_id: int | None = None,
     program_id: int | None = None,
-    subject_id: int | None = None,
     benefit_type: str | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
@@ -49,8 +48,6 @@ async def recommend_olympiads(
         stmt = stmt.where(Benefit.university_id == university_id)
     if program_id is not None:
         stmt = stmt.where(Benefit.program_id == program_id)
-    if subject_id is not None:
-        stmt = stmt.where(SubjectOlympiad.subject_id == subject_id)
     if stored_benefit is not None:
         stmt = stmt.where(Benefit.benefit_type == stored_benefit)
 
