@@ -1065,6 +1065,45 @@ dialog::backdrop {
   text-align: center;
 }
 
+.max-share-wrap {
+    margin-top: 12px;
+}
+
+#task-share-max {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #334bb7 100%);
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+#task-share-max svg {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+}
+
+#task-share-max:hover {
+    background: linear-gradient(135deg, #667eea 0%, #334bb7 100%);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.45);
+}
+
+#task-share-max:active {
+    transform: translateY(0);
+}
+
 .detail-answer-row { display:flex; gap:10px; margin-top:10px; }
 .detail-answer-row input { flex:1; min-width:0; min-height:48px; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--fg); }
 .detail-answer-row input::placeholder { color:var(--muted); }

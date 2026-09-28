@@ -198,6 +198,12 @@ $('#detail-submit-answer').addEventListener('click', revealOpenedTask);
 $('#detail-user-answer').addEventListener('keydown', event => {
   if (event.key === 'Enter') revealOpenedTask();
 });
+$('#task-share-max').addEventListener('click', () => {
+    if (!openedTask) return;
+    const text = `Попробуй решить эту задачу:\n${location.href}`;
+    const maxShareUrl = `https://max.ru/:share?text=${encodeURIComponent(text)}`;
+    window.open(maxShareUrl, '_blank');
+});
 $('#detail-mark-solved').addEventListener('click', async () => {
   if (!openedTask || $('#detail-solution-section').hidden) return;
   const button = $('#detail-mark-solved');
