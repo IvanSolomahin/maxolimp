@@ -40,7 +40,6 @@ async def recommend_olympiads(
         .join(Olympiad, Olympiad.id == SubjectOlympiad.olympiad_id)
         .join(Benefit, Benefit.olympiad_id == Olympiad.id)
         .options(
-            selectinload(SubjectOlympiad.subject),
             selectinload(SubjectOlympiad.olympiad).selectinload(Olympiad.benefits),
         )
     )
@@ -53,9 +52,11 @@ async def recommend_olympiads(
 
     links = list((await db.execute(stmt.distinct())).scalars().unique().all())
 
-    items_raw: list[RecommendationItem] = []
-    for subj_link in links:
+    grouped: dict[int, RecommendationItem] = {}
+    for subj_link in sorted(links, key=lambda link: link.id):
         olympiad = subj_link.olympiad
+        if olympiad.id in grouped:
+            continue
         matched_benefits = olympiad.benefits
         if university_id is not None:
             matched_benefits = [b for b in matched_benefits if b.university_id == university_id]
@@ -71,16 +72,14 @@ async def recommend_olympiads(
             if benefit_type and benefit_type.strip().lower() == "bvi"
             else benefit.benefit_type
         )
-        items_raw.append(
-            RecommendationItem(
-                id=subj_link.id,
-                name=olympiad.name,
-                subject=SubjectRef(id=subj_link.subject.id, name=subj_link.subject.name),
-                complexity=olympiad.complexity,
-                benefit=BenefitTypeRef(type=shown_type),
-            )
+        grouped[olympiad.id] = RecommendationItem(
+            id=subj_link.id,
+            name=olympiad.name,
+            complexity=olympiad.complexity,
+            benefit=BenefitTypeRef(type=shown_type),
         )
 
+    items_raw = list(grouped.values())
     if sort == "name":
         items_raw.sort(key=lambda x: x.name)
     else:

@@ -67,7 +67,6 @@ class BenefitTypeRef(BaseModel):
 class RecommendationItem(BaseModel):
     id: int
     name: str
-    subject: SubjectRef
     complexity: int | None
     benefit: BenefitTypeRef
 

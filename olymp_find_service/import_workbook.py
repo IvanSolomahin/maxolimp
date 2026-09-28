@@ -122,7 +122,15 @@ def literal(value):
 
 
 def build_sql(sheets):
-    statements = ["BEGIN;", "TRUNCATE favorite, benefit, stage, subject_olympiad, olympiad, subject, programs_universities, program, universities_cities, city, university RESTART IDENTITY CASCADE;"]
+    statements = [
+        "BEGIN;",
+        "ALTER TABLE program ALTER COLUMN name DROP NOT NULL;",
+        "ALTER TABLE program ALTER COLUMN code DROP NOT NULL;",
+        "ALTER TABLE olympiad ALTER COLUMN host_university_id DROP NOT NULL;",
+        "ALTER TABLE olympiad ALTER COLUMN complexity DROP NOT NULL;",
+        "ALTER TABLE olympiad ALTER COLUMN description DROP NOT NULL;",
+        "TRUNCATE favorite, benefit, stage, subject_olympiad, olympiad, subject, programs_universities, program, universities_cities, city, university RESTART IDENTITY CASCADE;",
+    ]
     for sheet_no in ORDER:
         table, columns = COLUMNS[sheet_no]
         rows = sheets[sheet_no]
