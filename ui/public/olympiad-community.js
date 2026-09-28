@@ -6,7 +6,9 @@ const clubSubject = document.getElementById("club-subject");
 const clubCity = document.getElementById("club-city");
 const message = document.getElementById("community-message");
 const dialog = document.getElementById("club-dialog");
-const map = L.map("community-map").setView([59.9386, 30.3141], 11);
+const map = L.map("community-map", {
+    attributionControl: false // Полностью скрывает нижнюю панель с копирайтом
+}).setView([59.9386, 30.3141], 11);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',

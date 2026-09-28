@@ -325,6 +325,10 @@ a {
   color: var(--muted);
 }
 
+.leaflet-control-attribution {
+    display: none !important;
+}
+
 .section-label {
   margin: 0 0 var(--space-3);
   font-size: var(--text-sm);
