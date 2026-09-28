@@ -35,9 +35,13 @@ async def recommend_olympiads(
 ):
     stored_benefit = normalize_benefit_type(benefit_type)
     stmt = (
-        select(Olympiad)
+        select(SubjectOlympiad)
+        .join(Olympiad, Olympiad.id == SubjectOlympiad.olympiad_id)
         .join(Benefit, Benefit.olympiad_id == Olympiad.id)
-        .options(selectinload(Olympiad.benefits))
+        .options(
+            selectinload(SubjectOlympiad.subject),
+            selectinload(SubjectOlympiad.olympiad).selectinload(Olympiad.benefits),
+        )
     )
     if university_id is not None:
         stmt = stmt.where(Benefit.university_id == university_id)
@@ -46,10 +50,11 @@ async def recommend_olympiads(
     if stored_benefit is not None:
         stmt = stmt.where(Benefit.benefit_type == stored_benefit)
 
-    olympiads = list((await db.execute(stmt.distinct())).scalars().unique().all())
+    links = list((await db.execute(stmt.distinct())).scalars().unique().all())
 
     items_raw: list[RecommendationItem] = []
-    for olympiad in olympiads:
+    for subj_link in links:
+        olympiad = subj_link.olympiad
         matched_benefits = olympiad.benefits
         if university_id is not None:
             matched_benefits = [b for b in matched_benefits if b.university_id == university_id]
@@ -67,7 +72,7 @@ async def recommend_olympiads(
         )
         items_raw.append(
             RecommendationItem(
-                id=olympiad.id,
+                id=subj_link.id,
                 name=olympiad.name,
                 complexity=olympiad.complexity,
                 benefit=BenefitTypeRef(type=shown_type),
@@ -77,7 +82,7 @@ async def recommend_olympiads(
     if sort == "name":
         items_raw.sort(key=lambda x: x.name)
     else:
-        items_raw.sort(key=lambda x: (-x.complexity, x.name))
+        items_raw.sort(key=lambda x: (-(x.complexity or 0), x.name))
 
     total = len(items_raw)
     offset = (page - 1) * size
@@ -92,24 +97,27 @@ async def recommend_olympiads(
 @router.get("/olympiads/{olympiad_id}", response_model=OlympiadDetail)
 async def get_olympiad(olympiad_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
     result = await db.execute(
-        select(Olympiad)
-        .where(Olympiad.id == olympiad_id)
+        select(SubjectOlympiad)
+        .where(SubjectOlympiad.id == olympiad_id)
         .options(
-            selectinload(Olympiad.host_university),
+            selectinload(SubjectOlympiad.subject),
+            selectinload(SubjectOlympiad.olympiad).selectinload(Olympiad.host_university),
         )
     )
-    olympiad = result.scalar_one_or_none()
-    if olympiad is None:
+    link = result.scalar_one_or_none()
+    if link is None:
         raise HTTPException(status_code=404, detail="Olympiad not found")
+    olympiad = link.olympiad
     return OlympiadDetail(
-        id=olympiad.id,
+        id=link.id,
         name=olympiad.name,
         complexity=olympiad.complexity,
         description=olympiad.description,
         host_university=HostUniversityRef(
             id=olympiad.host_university.id,
             name=olympiad.host_university.name,
-        ),
+        ) if olympiad.host_university else None,
+        subjects=[SubjectRef(id=link.subject.id, name=link.subject.name)],
     )
 
 
@@ -118,11 +126,11 @@ async def get_olympiad_stages(
     olympiad_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    olympiad = await db.get(Olympiad, olympiad_id)
-    if olympiad is None:
+    link = await db.get(SubjectOlympiad, olympiad_id)
+    if link is None:
         raise HTTPException(status_code=404, detail="Olympiad not found")
     result = await db.execute(
-        select(Stage).where(Stage.olymp_id == olympiad_id).order_by(Stage.start_date)
+        select(Stage).where(Stage.olymp_id == link.olympiad_id).order_by(Stage.start_date)
     )
     items = [
         StageItem(
@@ -145,10 +153,10 @@ async def get_olympiad_benefits(
     university_id: int | None = None,
     program_id: int | None = None,
 ):
-    olympiad = await db.get(Olympiad, olympiad_id)
-    if olympiad is None:
+    link = await db.get(SubjectOlympiad, olympiad_id)
+    if link is None:
         raise HTTPException(status_code=404, detail="Olympiad not found")
-    stmt = select(Benefit).where(Benefit.olympiad_id == olympiad_id)
+    stmt = select(Benefit).where(Benefit.olympiad_id == link.olympiad_id)
     if university_id is not None:
         stmt = stmt.where(Benefit.university_id == university_id)
     if program_id is not None:

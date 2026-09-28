@@ -29,7 +29,8 @@ async def list_favorites(
         select(Favorite)
         .where(Favorite.user_id == user_id)
         .options(
-            selectinload(Favorite.olympiad).selectinload(Olympiad.benefits),
+            selectinload(Favorite.olympiad).selectinload(SubjectOlympiad.subject),
+            selectinload(Favorite.olympiad).selectinload(SubjectOlympiad.olympiad).selectinload(Olympiad.benefits),
         )
         .order_by(Favorite.created_at.desc())
     )
@@ -42,11 +43,13 @@ async def list_favorites(
     )
     items = []
     for fav in rows:
-        olympiad = fav.olympiad
+        link = fav.olympiad
+        olympiad = link.olympiad
+        subject_name = link.subject.name
         benefit_type = olympiad.benefits[0].benefit_type if olympiad.benefits else None
         items.append(
             FavoriteItem(
-                olympiad_id=olympiad.id,
+                olympiad_id=link.id,
                 name=olympiad.name,
                 complexity=olympiad.complexity,
                 benefit_type=benefit_type,
@@ -61,7 +64,7 @@ async def add_favorite(
     db: Annotated[AsyncSession, Depends(get_db)],
     user_id: Annotated[int, Depends(current_user_id)],
 ):
-    olympiad = await db.get(Olympiad, body.olympiad_id)
+    olympiad = await db.get(SubjectOlympiad, body.olympiad_id)
     if olympiad is None:
         raise HTTPException(status_code=404, detail="Olympiad not found")
     existing = await db.get(Favorite, (user_id, body.olympiad_id))

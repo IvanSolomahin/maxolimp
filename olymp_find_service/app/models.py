@@ -42,8 +42,8 @@ class Program(Base):
     __tablename__ = "program"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(Text, nullable=False)
-    code: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    name: Mapped[str | None] = mapped_column(Text)
+    code: Mapped[str | None] = mapped_column(Text, unique=True)
 
     universities: Mapped[list["ProgramUniversity"]] = relationship("ProgramUniversity", back_populates="program")
 
@@ -73,12 +73,12 @@ class Olympiad(Base):
     __tablename__ = "olympiad"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    host_university_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("university.id", ondelete="RESTRICT"), nullable=False
+    host_university_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("university.id", ondelete="RESTRICT")
     )
     name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    complexity: Mapped[int] = mapped_column(Integer, nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=False)
+    complexity: Mapped[int | None] = mapped_column(Integer)
+    description: Mapped[str | None] = mapped_column(Text)
 
     host_university: Mapped[University] = relationship("University", back_populates="hosted_olympiads")
     subjects: Mapped[list["SubjectOlympiad"]] = relationship("SubjectOlympiad", back_populates="olympiad")
@@ -88,9 +88,11 @@ class Olympiad(Base):
 
 class SubjectOlympiad(Base):
     __tablename__ = "subject_olympiad"
+    __table_args__ = (UniqueConstraint("subject_id", "olympiad_id"),)
 
-    subject_id: Mapped[int] = mapped_column(Integer, ForeignKey("subject.id", ondelete="CASCADE"), primary_key=True)
-    olympiad_id: Mapped[int] = mapped_column(Integer, ForeignKey("olympiad.id", ondelete="CASCADE"), primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    subject_id: Mapped[int] = mapped_column(Integer, ForeignKey("subject.id", ondelete="CASCADE"), nullable=False)
+    olympiad_id: Mapped[int] = mapped_column(Integer, ForeignKey("olympiad.id", ondelete="CASCADE"), nullable=False)
 
     subject: Mapped[Subject] = relationship("Subject", back_populates="olympiad_links")
     olympiad: Mapped[Olympiad] = relationship("Olympiad", back_populates="subjects")
@@ -132,8 +134,8 @@ class Favorite(Base):
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     olympiad_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("olympiad.id", ondelete="CASCADE"), primary_key=True
+        Integer, ForeignKey("subject_olympiad.id", ondelete="CASCADE"), primary_key=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    olympiad: Mapped[Olympiad] = relationship("Olympiad")
+    olympiad: Mapped[SubjectOlympiad] = relationship("SubjectOlympiad")

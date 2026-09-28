@@ -44,9 +44,16 @@ jobs:
           deploy_path="$(printf '%s' "$1" | base64 --decode)"
           cd "$deploy_path"
           test "$(git branch --show-current)" = main
+          if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+            git merge --abort
+          fi
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "Deployment checkout has uncommitted changes; refusing to overwrite them" >&2
+            exit 1
+          fi
           previous_commit="$(git rev-parse HEAD)"
           git fetch origin main
-          git merge --ff-only origin/main
+          git merge --no-edit -X theirs origin/main
           current_commit="$(git rev-parse HEAD)"
           bash scripts/deploy.sh "$previous_commit" "$current_commit"
           REMOTE
