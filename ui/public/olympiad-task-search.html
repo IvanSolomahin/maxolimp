@@ -7,10 +7,13 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>Поиск олимпиадных задач</title>
+
     <script src="https://st.max.ru/js/max-web-app.js"></script>
+
     <link rel="stylesheet" href="./olympiad-task-search.css" />
     <link rel="stylesheet" href="./olympiad-layout.css" />
   </head>
+
   <body class="app-shell">
     <olympiad-header
       active="tasks"
@@ -26,6 +29,7 @@
             data-od-id="subject-switch"
           >
             <span class="subject-label">Предмет</span>
+
             <select
               class="subject-select"
               id="subject-select"
@@ -48,9 +52,11 @@
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m20 20-4-4"></path>
             </svg>
-            <label class="visually-hidden" for="task-query"
-              >Поиск по задачам</label
-            >
+
+            <label class="visually-hidden" for="task-query">
+              Поиск по задачам
+            </label>
+
             <input
               class="search-input"
               id="task-query"
@@ -59,12 +65,13 @@
               placeholder="Например, инвариант или закон Ома"
               data-od-id="search-input"
             />
+
             <button
               class="icon-btn clear-search"
               type="button"
               aria-label="Очистить поиск"
               data-od-id="clear-search"
-              hidden=""
+              hidden
             >
               <svg
                 viewBox="0 0 24 24"
@@ -95,9 +102,18 @@
               >
                 <path d="M4 7h16M7 12h10M10 17h4"></path>
               </svg>
+
               <span>Фильтры</span>
-              <span class="count-badge" id="filter-count" hidden="">0</span>
+
+              <span
+                class="count-badge"
+                id="filter-count"
+                hidden
+              >
+                0
+              </span>
             </button>
+
             <div class="sort-wrap">
               <svg
                 viewBox="0 0 24 24"
@@ -108,9 +124,11 @@
               >
                 <path d="M8 6h12M8 12h8M8 18h4M4 5v14"></path>
               </svg>
-              <label class="visually-hidden" for="sort-select"
-                >Сортировка</label
-              >
+
+              <label class="visually-hidden" for="sort-select">
+                Сортировка
+              </label>
+
               <select
                 class="sort-select"
                 id="sort-select"
@@ -128,7 +146,7 @@
             id="active-filters"
             data-od-id="active-filters"
             aria-label="Активные фильтры"
-            hidden=""
+            hidden
           ></div>
 
           <div class="results-head">
@@ -139,9 +157,14 @@
             >
               Результаты
             </h2>
-            <span class="results-count" id="results-count" aria-live="polite"
-              >0 заданий</span
+
+            <span
+              class="results-count"
+              id="results-count"
+              aria-live="polite"
             >
+              0 заданий
+            </span>
           </div>
 
           <div
@@ -150,20 +173,29 @@
             data-od-id="task-list"
             aria-labelledby="results-heading"
           ></div>
-          <button class="btn btn-secondary" id="load-more" type="button" hidden>
+
+          <button
+            class="btn btn-secondary"
+            id="load-more"
+            type="button"
+            hidden
+          >
             Показать ещё
           </button>
+
           <div
             class="empty-state"
             id="empty-state"
             data-od-id="empty-state"
             role="status"
-            hidden=""
+            hidden
           >
             <h3 id="empty-title">Ничего не найдено</h3>
+
             <p id="empty-copy">
               Попробуйте другой запрос или уберите часть фильтров.
             </p>
+
             <button
               class="text-btn"
               id="empty-action"
@@ -184,6 +216,7 @@
     >
       <div class="sheet-head">
         <h2 id="filter-title">Фильтры</h2>
+
         <button
           class="icon-btn"
           type="button"
@@ -201,9 +234,11 @@
           </svg>
         </button>
       </div>
+
       <div class="sheet-body">
         <div class="filter-group">
           <h3 id="classifier-title">Теги классификатора</h3>
+
           <input
             class="filter-select"
             id="classifier-search"
@@ -212,10 +247,18 @@
             placeholder="Найти тег"
             aria-label="Поиск по тегам классификатора"
           />
-          <div class="classifier-options" id="classifier-options" role="group" aria-labelledby="classifier-title"></div>
+
+          <div
+            class="classifier-options"
+            id="classifier-options"
+            role="group"
+            aria-labelledby="classifier-title"
+          ></div>
         </div>
+
         <div class="filter-group">
           <h3>Олимпиада</h3>
+
           <div class="olympiad-picker">
             <input
               class="filter-select"
@@ -228,6 +271,7 @@
               aria-controls="olympiad-options"
               aria-expanded="false"
             />
+
             <div
               class="olympiad-options"
               id="olympiad-options"
@@ -235,11 +279,17 @@
               aria-label="Олимпиады"
               hidden
             ></div>
-            <div class="olympiad-selection" id="olympiad-selection" hidden>
+
+            <div
+              class="olympiad-selection"
+              id="olympiad-selection"
+              hidden
+            >
               <span
                 class="olympiad-selection-name"
                 id="olympiad-selection-name"
               ></span>
+
               <button
                 class="olympiad-selection-clear"
                 id="clear-olympiad"
@@ -251,33 +301,42 @@
             </div>
           </div>
         </div>
+
         <div class="filter-group">
           <h3>Сложность</h3>
+
           <div class="filter-selects">
-            <label class="select-field" for="difficulty-min"
-              ><span>От</span
-              ><input
+            <label class="select-field" for="difficulty-min">
+              <span>От</span>
+
+              <input
                 class="filter-select"
                 id="difficulty-min"
                 type="number"
                 min="1"
                 max="10"
                 placeholder="1"
-            /></label>
-            <label class="select-field" for="difficulty-max"
-              ><span>До</span
-              ><input
+              />
+            </label>
+
+            <label class="select-field" for="difficulty-max">
+              <span>До</span>
+
+              <input
                 class="filter-select"
                 id="difficulty-max"
                 type="number"
                 min="1"
                 max="10"
                 placeholder="10"
-            /></label>
+              />
+            </label>
           </div>
         </div>
+
         <div class="filter-group">
           <h3>Класс</h3>
+
           <select class="filter-select" id="grade-filter">
             <option value="">Все классы</option>
             <option value="8">8 класс</option>
@@ -287,6 +346,7 @@
           </select>
         </div>
       </div>
+
       <div class="sheet-actions">
         <button
           class="btn btn-secondary"
@@ -295,6 +355,7 @@
         >
           Сбросить
         </button>
+
         <button
           class="btn btn-primary"
           type="button"
@@ -307,51 +368,187 @@
 
     <main class="task-page app-main" id="task-page" hidden>
       <div class="task-page-inner">
-        <button class="task-back" type="button" id="task-back">
-          <span aria-hidden="true">←</span> К результатам поиска
+
+        <button
+          class="task-back"
+          type="button"
+          id="task-back"
+        >
+          <span aria-hidden="true">←</span>
+          К результатам поиска
         </button>
+
         <article class="task-detail-card">
-          <p class="task-page-meta" id="detail-meta"></p>
-          <h1 class="task-page-title" id="detail-title">Загрузка задачи…</h1>
-          <p class="task-detail-label">Условие</p>
+          <p
+            class="task-page-meta"
+            id="detail-meta"
+          ></p>
+
+          <h1
+            class="task-page-title"
+            id="detail-title"
+          >
+            Загрузка задачи…
+          </h1>
+
+          <p class="task-detail-label">
+            Условие
+          </p>
+
           <p
             class="task-statement task-loading"
             id="detail-statement"
             aria-live="polite"
           ></p>
+
           <a
             class="task-source"
             id="detail-source"
             target="_blank"
             rel="noopener noreferrer"
             hidden
-            >Открыть источник ↗</a
           >
-        </article>
-        <section class="task-solution" id="detail-answer-form">
-          <label for="detail-user-answer">Ваш ответ</label>
-          <div class="detail-answer-row">
-            <input id="detail-user-answer" type="text" autocomplete="off" placeholder="Введите ответ" />
-            <button id="detail-submit-answer" type="button">Отправить</button>
+            Открыть источник ↗
+          </a>
+
+          <div class="max-share-wrap">
+            <a
+              id="task-share-max"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 1000 1000"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="max-gradient-1">
+                    <stop offset="0" stop-color="#00f" />
+                    <stop offset="1" stop-opacity="0" />
+                  </linearGradient>
+
+                  <linearGradient id="max-gradient-2">
+                    <stop offset="0" stop-color="#4cf" />
+                    <stop offset=".662" stop-color="#53e" />
+                    <stop offset="1" stop-color="#93d" />
+                  </linearGradient>
+
+                  <linearGradient
+                    id="max-gradient-3"
+                    x1="117.847"
+                    x2="1000"
+                    y1="760.536"
+                    y2="500"
+                    gradientUnits="userSpaceOnUse"
+                    href="#max-gradient-2"
+                  />
+
+                  <radialGradient
+                    id="max-gradient-4"
+                    cx="-87.392"
+                    cy="1166.116"
+                    r="500"
+                    fx="-87.392"
+                    fy="1166.116"
+                    gradientTransform="rotate(51.356 1551.478 559.3) scale(2.42703433 1)"
+                    gradientUnits="userSpaceOnUse"
+                    href="#max-gradient-1"
+                  />
+                </defs>
+
+                <rect
+                  width="1000"
+                  height="1000"
+                  fill="url(#max-gradient-3)"
+                  ry="249.681"
+                />
+
+                <rect
+                  width="1000"
+                  height="1000"
+                  fill="url(#max-gradient-4)"
+                  ry="249.681"
+                />
+
+                <path
+                  fill="#fff"
+                  fill-rule="evenodd"
+                  d="M508.211 878.328c-75.007 0-109.864-10.95-170.453-54.75-38.325 49.275-159.686 87.783-164.979 21.9 0-49.456-10.95-91.248-23.36-136.873-14.782-56.21-31.572-118.807-31.572-209.508 0-216.626 177.754-379.597 388.357-379.597 210.785 0 375.947 171.001 375.947 381.604.707 207.346-166.595 376.118-373.94 377.224m3.103-571.585c-102.564-5.292-182.499 65.7-200.201 177.024-14.6 92.162 11.315 204.398 33.397 210.238 10.585 2.555 37.23-18.98 53.837-35.587a189.8 189.8 0 0 0 92.71 33.032c106.273 5.112 197.08-75.794 204.215-181.95 4.154-106.382-77.67-196.486-183.958-202.574Z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+
+              <span>
+                Поделиться в MAX
+              </span>
+            </a>
           </div>
-          <p id="detail-feedback" role="status" hidden></p>
+        </article>
+
+        <section
+          class="task-solution"
+          id="detail-answer-form"
+        >
+          <label for="detail-user-answer">
+            Ваш ответ
+          </label>
+
+          <div class="detail-answer-row">
+            <input
+              id="detail-user-answer"
+              type="text"
+              autocomplete="off"
+              placeholder="Введите ответ"
+            />
+
+            <button
+              id="detail-submit-answer"
+              type="button"
+            >
+              Отправить
+            </button>
+          </div>
+
+          <p
+            id="detail-feedback"
+            role="status"
+            hidden
+          ></p>
         </section>
+
         <section
           class="task-solution"
           id="detail-solution-section"
           aria-labelledby="detail-solution-title"
           hidden
         >
-          <h2 id="detail-solution-title">Решение</h2>
-          <p class="task-answer" id="detail-answer" hidden>
-            <span>Ответ</span><b id="detail-answer-text"></b>
+          <h2 id="detail-solution-title">
+            Решение
+          </h2>
+
+          <p
+            class="task-answer"
+            id="detail-answer"
+            hidden
+          >
+            <span>Ответ</span>
+            <b id="detail-answer-text"></b>
           </p>
+
           <p
             class="task-solution-text"
             id="detail-solution"
             aria-live="polite"
           ></p>
-          <button id="detail-mark-solved" type="button">Отметить решённой</button>
+
+          <button
+            id="detail-mark-solved"
+            type="button"
+          >
+            Отметить решённой
+          </button>
         </section>
       </div>
     </main>
@@ -361,10 +558,11 @@
       id="toast"
       role="status"
       aria-live="polite"
-      hidden=""
+      hidden
     ></div>
 
     <olympiad-nav active="tasks"></olympiad-nav>
+
     <script src="./olympiad-shell.js"></script>
     <script src="./max-init.js"></script>
 
