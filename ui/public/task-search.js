@@ -45,15 +45,12 @@ function render() {
   const items = state.items;
   list.innerHTML = items.map(item => `
     <article class="task-card" data-id="${escapeHtml(item.id)}">
-      <div class="task-top"><span class="task-number">${item.number ? `№ ${escapeHtml(item.number)}` : ''}</span></div>
-      <h3 class="task-title"><a class="task-link" href="/tasks/${encodeURIComponent(item.id)}" data-open="${escapeHtml(item.id)}">${escapeHtml(item.title)}</a></h3>
-      <p class="task-fragment">${escapeHtml(item.snippet || '')}</p>
-      <div class="task-meta">${item.olympiad ? `<span class="meta-item" title="${escapeHtml(item.olympiad)}">${escapeHtml(item.olympiad_short_name || item.olympiad)}</span>` : ''}${item.difficulty == null ? '' : `<span class="difficulty-badge">Сложность ${escapeHtml(item.difficulty)} / 10</span>`}
-      ${item.solution_method ? `<span class="meta-item">${escapeHtml(item.solution_method.name)}</span>` : ''}</div>
+      <div class="task-top"><span class="task-number">${item.number ? `№ ${escapeHtml(item.number)}` : ''}</span>${item.difficulty == null ? '' : `<span class="difficulty-badge difficulty-${Number(item.difficulty) <= 3 ? 'easy' : Number(item.difficulty) <= 5 ? 'medium' : 'hard'}">Сложность ${escapeHtml(item.difficulty)}/10</span>`}</div>
+      <a class="task-fragment task-link" href="/tasks/${encodeURIComponent(item.id)}" data-open="${escapeHtml(item.id)}">${escapeHtml(item.snippet || item.title || '')}</a>
+      <div class="task-meta">${item.olympiad ? `<span class="meta-item" title="${escapeHtml(item.olympiad)}">${escapeHtml(item.olympiad_short_name || item.olympiad)}</span>` : ''}${item.solution_method ? `<span class="meta-item">${escapeHtml(item.solution_method.name)}</span>` : ''}</div>
     </article>`).join('');
   list.querySelectorAll('.task-card').forEach((card, index) => {
-    taskMath.renderMathText(card.querySelector('.task-link'), items[index].title);
-    taskMath.renderMathText(card.querySelector('.task-fragment'), items[index].snippet || '');
+    taskMath.renderMathText(card.querySelector('.task-fragment'), items[index].snippet || items[index].title || '');
   });
   count.textContent = `${state.total} задач`;
   list.hidden = items.length === 0;

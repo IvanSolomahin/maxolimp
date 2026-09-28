@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from app.db import engine
-from app.routers import catalog, favorites, olympiads
+from app.routers import catalog, communities, favorites, olympiads
 
 
 @asynccontextmanager
@@ -20,6 +20,7 @@ app = FastAPI(title="Gazprompt Olympiads API", version="1.0.0", lifespan=lifespa
 app.include_router(catalog.router)
 app.include_router(olympiads.router)
 app.include_router(favorites.router)
+app.include_router(communities.router)
 
 
 @app.get("/health")
