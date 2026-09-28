@@ -95,6 +95,17 @@ def user_view(user: User) -> dict:
     return {"id": user.id, "max_id": user.max_id, "email": user.email, "first_name": user.first_name}
 
 
+def mark_cookie_partitioned(response: Response) -> None:
+    """Add CHIPS' Partitioned attribute to our session cookie."""
+    cookie_prefix = f"{COOKIE_NAME}=".encode()
+    for index in range(len(response.raw_headers) - 1, -1, -1):
+        name, value = response.raw_headers[index]
+        if name.lower() == b"set-cookie" and value.startswith(cookie_prefix):
+            if b"; partitioned" not in value.lower():
+                response.raw_headers[index] = (name, value + b"; Partitioned")
+            return
+
+
 async def issue_session(db: AsyncSession, response: Response, user: User) -> dict:
     token = secrets.token_urlsafe(32)
     await db.execute(delete(UserSession).where(UserSession.expires_at <= func.now()))
@@ -105,6 +116,7 @@ async def issue_session(db: AsyncSession, response: Response, user: User) -> dic
     ))
     await db.commit()
     response.set_cookie(COOKIE_NAME, token, max_age=SESSION_SECONDS, httponly=True, secure=True, samesite="none", path="/")
+    mark_cookie_partitioned(response)
     return user_view(user)
 
 
@@ -173,4 +185,5 @@ async def logout(request: Request, response: Response, db: Annotated[AsyncSessio
             await db.delete(session)
             await db.commit()
     response.delete_cookie(COOKIE_NAME, path="/", secure=True, httponly=True, samesite="none")
+    mark_cookie_partitioned(response)
     return {"status": "ok"}
