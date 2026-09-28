@@ -67,7 +67,6 @@ class BenefitTypeRef(BaseModel):
 class RecommendationItem(BaseModel):
     id: int
     name: str
-    subject: SubjectRef
     complexity: int
     benefit: BenefitTypeRef
 
@@ -85,7 +84,6 @@ class OlympiadDetail(BaseModel):
     complexity: int
     description: str
     host_university: HostUniversityRef
-    subjects: list[SubjectRef]
 
 
 class StageItem(BaseModel):
@@ -115,7 +113,6 @@ class BenefitsResponse(BaseModel):
 class FavoriteItem(BaseModel):
     olympiad_id: int
     name: str
-    subject: str | None
     complexity: int
     benefit_type: str | None
 

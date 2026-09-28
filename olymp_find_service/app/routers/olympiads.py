@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_db
 from app.deps import normalize_benefit_type, public_benefit_type
-from app.models import Benefit, Olympiad, Stage, SubjectOlympiad
+from app.models import Benefit, Olympiad, Stage
 from app.schemas import (
     BenefitItem,
     BenefitsResponse,
@@ -18,7 +18,6 @@ from app.schemas import (
     RecommendationItem,
     StageItem,
     StagesResponse,
-    SubjectRef,
 )
 
 router = APIRouter(tags=["olympiads"])
@@ -29,7 +28,6 @@ async def recommend_olympiads(
     db: Annotated[AsyncSession, Depends(get_db)],
     university_id: int | None = None,
     program_id: int | None = None,
-    subject_id: int | None = None,
     benefit_type: str | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
@@ -39,18 +37,12 @@ async def recommend_olympiads(
     stmt = (
         select(Olympiad)
         .join(Benefit, Benefit.olympiad_id == Olympiad.id)
-        .join(SubjectOlympiad, SubjectOlympiad.olympiad_id == Olympiad.id)
-        .options(
-            selectinload(Olympiad.subjects).selectinload(SubjectOlympiad.subject),
-            selectinload(Olympiad.benefits),
-        )
+        .options(selectinload(Olympiad.benefits))
     )
     if university_id is not None:
         stmt = stmt.where(Benefit.university_id == university_id)
     if program_id is not None:
         stmt = stmt.where(Benefit.program_id == program_id)
-    if subject_id is not None:
-        stmt = stmt.where(SubjectOlympiad.subject_id == subject_id)
     if stored_benefit is not None:
         stmt = stmt.where(Benefit.benefit_type == stored_benefit)
 
@@ -58,12 +50,6 @@ async def recommend_olympiads(
 
     items_raw: list[RecommendationItem] = []
     for olympiad in olympiads:
-        if subject_id is not None:
-            subj_link = next((s for s in olympiad.subjects if s.subject_id == subject_id), None)
-        else:
-            subj_link = olympiad.subjects[0] if olympiad.subjects else None
-        if subj_link is None:
-            continue
         matched_benefits = olympiad.benefits
         if university_id is not None:
             matched_benefits = [b for b in matched_benefits if b.university_id == university_id]
@@ -83,7 +69,6 @@ async def recommend_olympiads(
             RecommendationItem(
                 id=olympiad.id,
                 name=olympiad.name,
-                subject=SubjectRef(id=subj_link.subject.id, name=subj_link.subject.name),
                 complexity=olympiad.complexity,
                 benefit=BenefitTypeRef(type=shown_type),
             )
@@ -111,7 +96,6 @@ async def get_olympiad(olympiad_id: int, db: Annotated[AsyncSession, Depends(get
         .where(Olympiad.id == olympiad_id)
         .options(
             selectinload(Olympiad.host_university),
-            selectinload(Olympiad.subjects).selectinload(SubjectOlympiad.subject),
         )
     )
     olympiad = result.scalar_one_or_none()
@@ -126,10 +110,6 @@ async def get_olympiad(olympiad_id: int, db: Annotated[AsyncSession, Depends(get
             id=olympiad.host_university.id,
             name=olympiad.host_university.name,
         ),
-        subjects=[
-            SubjectRef(id=link.subject.id, name=link.subject.name)
-            for link in olympiad.subjects
-        ],
     )
 
 
