@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_db
 from app.deps import normalize_benefit_type, public_benefit_type
-from app.models import Benefit, Olympiad, Stage
+from app.models import Benefit, Olympiad, Stage, SubjectOlympiad
 from app.schemas import (
     BenefitItem,
     BenefitsResponse,
@@ -18,6 +18,7 @@ from app.schemas import (
     RecommendationItem,
     StageItem,
     StagesResponse,
+    SubjectRef,
 )
 
 router = APIRouter(tags=["olympiads"])
@@ -74,6 +75,7 @@ async def recommend_olympiads(
             RecommendationItem(
                 id=subj_link.id,
                 name=olympiad.name,
+                subject=SubjectRef(id=subj_link.subject.id, name=subj_link.subject.name),
                 complexity=olympiad.complexity,
                 benefit=BenefitTypeRef(type=shown_type),
             )
