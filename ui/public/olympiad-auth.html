@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Вход — Maxolimp</title>
+    <title>Аккаунт — Maxolimp</title>
   <script src="https://st.max.ru/js/max-web-app.js"></script>
   <link rel="stylesheet" href="./olympiad-layout.css" />
   <style>
@@ -16,15 +16,16 @@
   </style>
 </head>
 <body>
-  <olympiad-header title="Вход"></olympiad-header>
+  <olympiad-header title="Аккаунт"></olympiad-header>
   <main>
-    <h1>Вход в Maxolimp</h1>
-    <p>В приложении MAX вход выполняется автоматически. В браузере используйте email и пароль.</p>
+    <h1 id="auth-title">Вход в Maxolimp</h1>
+    <p id="auth-description">В приложении MAX вход выполняется автоматически. В браузере используйте email и пароль.</p>
     <form id="auth-form">
       <label>Email <input id="auth-email" type="email" autocomplete="email" required /></label>
       <label>Пароль <input id="auth-password" type="password" minlength="8" autocomplete="current-password" required /></label>
       <button id="login-button" type="submit">Войти</button>
-      <button id="register-button" type="button">Зарегистрироваться</button>
+      <button id="register-button" type="button">Создать аккаунт</button>
+      <p id="auth-switch">Нет аккаунта? <a href="./olympiad-auth.html?mode=register">Зарегистрируйтесь</a></p>
     </form>
     <p id="auth-error" role="alert" hidden></p>
   </main>

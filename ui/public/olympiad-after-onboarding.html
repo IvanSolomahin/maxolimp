@@ -65,19 +65,16 @@
 
           <main class="content">
             <div class="intro">
-              <h1>Высшая проба · Информатика</h1>
+              <h1>Задачи из банка</h1>
               <p>
-                Основные темы олимпиады и сколько заданий стоит прорешать по
-                каждой, чтобы быть готовым.
+                Откройте задачу, отправьте свой ответ и отметьте её решённой после сверки с эталоном.
               </p>
             </div>
 
             <div class="totals">
               <div>
-                <div class="totals-num" id="totals-num">≈ 200</div>
-                <div class="totals-label">
-                  заданий по <span id="totals-topics">8</span> темам
-                </div>
+                <div class="totals-num" id="totals-num">—</div>
+                <div class="totals-label">опубликованных задач</div>
               </div>
             </div>
 
@@ -85,7 +82,7 @@
 
             <p style="text-align: center">
               <a
-                href="http://77.91.88.20:8080/olympiad-onboarding.html"
+                href="./olympiad-onboarding.html"
                 style="color: var(--muted); font-size: var(--text-sm)"
                 >← Изменить вуз и направление</a
               >
@@ -97,32 +94,6 @@
         </div>
       </div>
     </div>
-
-    <dialog id="breakdown-dialog">
-      <div class="sheet">
-        <div class="sheet-head">
-          <div>
-            <h2 id="sheet-title"></h2>
-            <p class="sheet-sub" id="sheet-sub"></p>
-          </div>
-          <button
-            class="icon-btn"
-            id="close-dialog"
-            type="button"
-            aria-label="Закрыть"
-          >
-            <svg viewBox="0 0 24 24">
-              <path d="m6 6 12 12M18 6 6 18"></path>
-            </svg>
-          </button>
-        </div>
-        <ul class="task-list" id="task-list"></ul>
-        <p class="sheet-note">
-          Это примеры заданий по теме — полная подборка ≈
-          <span id="sheet-total"></span> заданий будет доступна в тренажёре.
-        </p>
-      </div>
-    </dialog>
 
     <script src="./max-init.js"></script>
     <script src="./olympiad-shell.js"></script>

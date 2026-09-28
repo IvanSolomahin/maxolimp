@@ -1,6 +1,18 @@
 const next = new URLSearchParams(location.search).get('next');
 const destination = next && next.startsWith('/') && !next.startsWith('//') ? next : './olympiad-statistics.html';
 const errorBox = document.getElementById('auth-error');
+const registerMode = new URLSearchParams(location.search).get('mode') === 'register';
+const loginButton = document.getElementById('login-button');
+const registerButton = document.getElementById('register-button');
+
+if (registerMode) {
+  document.title = 'Регистрация — Maxolimp';
+  document.getElementById('auth-title').textContent = 'Создать аккаунт';
+  document.getElementById('auth-description').textContent = 'Зарегистрируйтесь по email, чтобы сохранять решённые задачи и видеть свою статистику.';
+  loginButton.hidden = true;
+  registerButton.textContent = 'Зарегистрироваться';
+  document.getElementById('auth-switch').innerHTML = 'Уже есть аккаунт? <a href="./olympiad-auth.html">Войти</a>';
+}
 
 async function submitAuth(action) {
   errorBox.hidden = true;
@@ -14,8 +26,8 @@ async function submitAuth(action) {
       body: JSON.stringify({email, password}),
     });
     if (!response.ok) {
-      errorBox.textContent = action === 'register' && response.status === 409
-        ? 'Этот email уже зарегистрирован.'
+      errorBox.textContent = action === 'register'
+        ? response.status === 409 ? 'Этот email уже зарегистрирован. Войдите или укажите другой адрес.' : 'Не удалось создать аккаунт. Проверьте email и пароль.'
         : 'Не удалось войти. Проверьте email и пароль.';
       errorBox.hidden = false;
       return;
@@ -29,7 +41,13 @@ async function submitAuth(action) {
 
 document.getElementById('auth-form').addEventListener('submit', event => {
   event.preventDefault();
-  submitAuth('login');
+  submitAuth(registerMode ? 'register' : 'login');
 });
-document.getElementById('register-button').addEventListener('click', () => submitAuth('register'));
-window.maxUserReady.then(user => { if (user) location.replace(destination); });
+registerButton.addEventListener('click', () => submitAuth('register'));
+window.maxUserReady.then(async user => {
+  if (user) { location.replace(destination); return; }
+  try {
+    const response = await fetch('/api/auth/me');
+    if (response.ok) location.replace(destination);
+  } catch {}
+});
