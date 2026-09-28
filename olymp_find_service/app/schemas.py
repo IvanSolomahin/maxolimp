@@ -28,8 +28,8 @@ class PaginatedUniversities(BaseModel):
 
 class ProgramItem(BaseModel):
     id: int
-    name: str
-    code: str
+    name: str | None
+    code: str | None
 
 
 class PaginatedPrograms(BaseModel):
@@ -41,8 +41,8 @@ class PaginatedPrograms(BaseModel):
 
 class ProgramWithUniversityItem(BaseModel):
     id: int
-    name: str
-    code: str
+    name: str | None
+    code: str | None
     university_id: int
 
 
@@ -68,7 +68,7 @@ class RecommendationItem(BaseModel):
     id: int
     name: str
     subject: SubjectRef
-    complexity: int
+    complexity: int | None
     benefit: BenefitTypeRef
 
 
@@ -82,9 +82,9 @@ class PaginatedRecommendations(BaseModel):
 class OlympiadDetail(BaseModel):
     id: int
     name: str
-    complexity: int
-    description: str
-    host_university: HostUniversityRef
+    complexity: int | None
+    description: str | None
+    host_university: HostUniversityRef | None
     subjects: list[SubjectRef]
 
 
@@ -116,7 +116,7 @@ class FavoriteItem(BaseModel):
     olympiad_id: int
     name: str
     subject: str | None
-    complexity: int
+    complexity: int | None
     benefit_type: str | None
 
 

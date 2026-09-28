@@ -25,7 +25,7 @@ function save() { localStorage.setItem(storageKey, JSON.stringify(state)); }
 function choice(item, field) {
   const id = String(item.id);
   const note = field === 'university' ? (item.cities || []).join(' · ') : field === 'direction' ? item.code : '';
-  return `<label class="choice-card"><input type="radio" name="${field}" value="${escapeHtml(id)}" ${state[field] === id ? 'checked' : ''}><span class="choice-body"><span><span class="choice-title">${escapeHtml(item.name)}</span>${note ? `<span class="choice-note">${escapeHtml(note)}</span>` : ''}</span><span class="radio-dot"></span></span></label>`;
+  return `<label class="choice-card"><input type="radio" name="${field}" value="${escapeHtml(id)}" ${state[field] === id ? 'checked' : ''}><span class="choice-body"><span><span class="choice-title">${escapeHtml(item.name || item.code)}</span>${note ? `<span class="choice-note">${escapeHtml(note)}</span>` : ''}</span><span class="radio-dot"></span></span></label>`;
 }
 
 async function loadChoices(field, search = '') {
@@ -41,7 +41,7 @@ async function loadChoices(field, search = '') {
     else path = '/subjects?size=100';
     const data = await getJson(path);
     if (current !== requestId) return;
-    data.items.forEach(item => names[field].set(String(item.id), item.name));
+    data.items.forEach(item => names[field].set(String(item.id), item.name || item.code));
     container.innerHTML = data.items.map(item => choice(item, field)).join('');
     empty.textContent = field === 'university' ? 'Вузы не найдены' : field === 'direction' ? 'Направления не найдены' : 'Предметы не найдены';
     empty.hidden = data.items.length !== 0;
@@ -89,7 +89,7 @@ function renderResults(total) {
   $('#results-list').innerHTML = recommendations.map(item => `
     <article class="olympiad-card">
       <div class="card-head"><div><p class="card-kicker">${escapeHtml(item.subject.name)}</p><h2>${escapeHtml(item.name)}</h2></div><button class="icon-btn favorite" type="button" data-favorite="${item.id}" aria-label="${favorites.has(item.id) ? 'Убрать из избранного' : 'Добавить в избранное'}" aria-pressed="${favorites.has(item.id)}">♡</button></div>
-      <div class="card-facts"><div class="fact-row"><span class="fact-label">Сложность</span><span class="fact-value">${escapeHtml(item.complexity)}/5</span></div><div class="fact-row"><span class="fact-value">${escapeHtml(benefitLabel(item.benefit.type))}</span> по ${escapeHtml(item.subject.name.toLowerCase())}</div></div>
+      <div class="card-facts"><div class="fact-row"><span class="fact-label">Сложность</span><span class="fact-value">${item.complexity == null ? 'Не указана' : `${escapeHtml(item.complexity)}/5`}</span></div><div class="fact-row"><span class="fact-value">${escapeHtml(benefitLabel(item.benefit.type))}</span></div></div>
       <div class="card-foot"><p>Условия льготы уточняйте в правилах приёма вуза.</p><button class="places-btn" type="button" data-places="${item.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C9.5 4.5 6.5 4 3 5v14c3.5-1 6.5-.5 9 1.5m0-14C14.5 4.5 17.5 4 21 5v14c-3.5-1-6.5-.5-9 1.5m0-14v14"/></svg><span>Подходит для вашей программы</span></button></div>
     </article>`).join('');
   $('#empty-results').hidden = recommendations.length !== 0;
