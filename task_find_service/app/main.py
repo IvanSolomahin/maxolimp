@@ -9,9 +9,9 @@ from sqlalchemy import func, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import InitDataPayload, check_origin, issue_session, router as auth_router, verify_init_data
+from .auth import InitDataPayload, check_origin, issue_session, router as auth_router, verify_init_data
 from .db import engine, get_db
-from app.models import User
+from .models import User
 from app.routers import admin, olympiads, progress, solution_methods, tasks, topics
 
 from maxapi import Bot, Dispatcher
@@ -78,7 +78,7 @@ async def send_open_app_button(user_id: int, text: str = "Привет! Нажм
                                     {
                                         "type": "open_app",
                                         "text": "Открыть приложение",
-                                        "web_app": FRONTEND_URL,
+                                        "web_app": "t92_hakaton_max_bot",
                                     }
                                 ]
                             ]
