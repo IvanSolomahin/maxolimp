@@ -36,6 +36,16 @@ def verify_init_data(init_data: str, bot_token: str | None) -> dict | None:
     if not init_data or not bot_token:
         return None
     try:
+        # MAX Bridge exposes the signed WebAppData value as initData. Some
+        # launch contexts expose the complete URL fragment instead, where the
+        # same value is wrapped in WebAppData alongside platform metadata.
+        outer_pairs = parse_qsl(init_data.lstrip("#"), keep_blank_values=True, strict_parsing=True)
+        outer = dict(outer_pairs)
+        if len(outer) != len(outer_pairs):
+            return None
+        if "WebAppData" in outer:
+            init_data = outer["WebAppData"]
+
         parsed_pairs = parse_qsl(init_data, keep_blank_values=True, strict_parsing=True)
         parsed = dict(parsed_pairs)
         if len(parsed) != len(parsed_pairs):
