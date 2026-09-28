@@ -730,6 +730,62 @@
       text-underline-offset: 3px;
     }
 
+    /* Results screen: program summary and compact, scannable olympiad cards. */
+    [data-step="2"] .results-head { margin-bottom: 20px; }
+    [data-step="2"] .results-head h1 { font-size: clamp(28px, 4vw, 40px); }
+    [data-step="2"] .result-count { display: none; }
+    [data-step="2"] .criteria-summary {
+      min-height: 112px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+    }
+    [data-step="2"] .criteria-copy { flex: 1; }
+    [data-step="2"] .criteria-copy::before {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      content: "ПРОГРАММА";
+      font-size: 12px;
+      letter-spacing: .04em;
+    }
+    [data-step="2"] .criteria-copy strong { font-size: 18px; white-space: normal; }
+    [data-step="2"] .criteria-copy span { margin-top: 5px; font-size: 15px; }
+    [data-step="2"] .edit-link { padding: 0 16px; background: var(--surface); }
+    [data-step="2"] .segment { margin-bottom: 14px; border: 0; border-radius: 16px; }
+    [data-step="2"] .segment button { min-height: 52px; font-size: 16px; }
+    [data-step="2"] .notice,
+    [data-step="2"] > p:last-child { display: none; }
+    .card-head { padding: 18px 20px 12px; }
+    .card-kicker { font: inherit; font-size: 13px; text-transform: uppercase; }
+    .card-head h2 { margin-top: 8px; font-size: 23px; line-height: 1.28; }
+    .olympiad-card .favorite { display: none; }
+    .card-facts { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 20px 16px; }
+    .fact-row { display: block; width: auto; padding: 10px 14px; border: 0; border-radius: 12px; background: var(--surface); font-size: 14px; }
+    .fact-row:first-child { order: 2; color: var(--muted); }
+    .fact-row:last-child { order: 1; background: #eef7ed; color: #26732d; }
+    .fact-row::before { content: ""; }
+    .fact-label { color: inherit; }
+    .fact-value { margin-left: 4px; }
+    .card-foot { min-height: 62px; padding: 12px 20px; border-top: 1px solid var(--border-soft); background: transparent; }
+    .card-foot p { display: none; }
+    .places-btn { display: flex; align-items: center; justify-content: flex-start; width: 100%; min-height: 38px; padding: 0; color: var(--fg-2); text-align: left; font-size: 15px; font-weight: 500; }
+    .places-btn svg { width: 25px; height: 25px; flex: none; margin-right: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .places-btn::after { content: "›"; margin-left: auto; color: var(--fg); font-size: 28px; }
+    .results-count-label { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+    @media (max-width: 600px) {
+      [data-step="2"] .results-head h1 { font-size: 28px; }
+      [data-step="2"] .criteria-summary { padding: 14px; }
+      [data-step="2"] .criteria-copy strong { font-size: 15px; }
+      [data-step="2"] .edit-link { padding-inline: 10px; }
+      .card-head h2 { font-size: 18px; }
+      .card-facts { gap: 8px; padding-inline: 14px; }
+      .fact-row { padding: 8px 10px; font-size: 12px; }
+      .card-head { padding-inline: 14px; }
+      .card-foot { padding-inline: 14px; }
+    }
+
     .notice {
       margin-top: var(--space-4);
       padding: var(--space-3) var(--space-4);
@@ -921,6 +977,7 @@
                 aria-pressed="true" data-benefit="all">Все</button><button type="button" aria-pressed="false"
                 data-benefit="bvi">БВИ</button><button type="button" aria-pressed="false" data-benefit="100">100
                 баллов</button></div>
+            <p class="results-count-label" id="results-count-label"></p>
             <div class="cards" id="results-list" data-od-id="olympiad-results"></div>
             <button class="btn-secondary" id="more-results" type="button" hidden>Показать ещё</button>
             <p class="empty-state" id="empty-results" hidden>По этому фильтру вариантов нет</p>
