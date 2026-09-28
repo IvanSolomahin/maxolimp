@@ -104,7 +104,7 @@ async def issue_session(db: AsyncSession, response: Response, user: User) -> dic
         expires_at=datetime.now(timezone.utc) + timedelta(seconds=SESSION_SECONDS),
     ))
     await db.commit()
-    response.set_cookie(COOKIE_NAME, token, max_age=SESSION_SECONDS, httponly=True, secure=True, samesite="lax", path="/")
+    response.set_cookie(COOKIE_NAME, token, max_age=SESSION_SECONDS, httponly=True, secure=True, samesite="none", path="/")
     return user_view(user)
 
 
@@ -172,5 +172,5 @@ async def logout(request: Request, response: Response, db: Annotated[AsyncSessio
         if session:
             await db.delete(session)
             await db.commit()
-    response.delete_cookie(COOKIE_NAME, path="/")
+    response.delete_cookie(COOKIE_NAME, path="/", secure=True, httponly=True, samesite="none")
     return {"status": "ok"}
