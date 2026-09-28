@@ -142,6 +142,7 @@ async function openTask(id) {
 
 async function revealOpenedTask() {
   if (!openedTask || !$('#detail-user-answer').value.trim()) return;
+  $('#detail-user-answer').blur();
   const id = openedTask.id;
   const current = detailRequestId;
   $('#detail-user-answer').disabled = true;

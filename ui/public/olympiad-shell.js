@@ -1,8 +1,8 @@
 const tabs = [
-  { id: 'home', label: 'Главная', href: './olympiad-home.html', icon: '<path d="m3 11 9-8 9 8M5 10v10h14V10"/>' },
-  { id: 'tasks', label: 'Задачи', href: './olympiad-task-search.html', icon: '<path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>' },
-  { id: 'statistics', label: 'Статистика', href: './olympiad-statistics.html', icon: '<path d="M4 19V9m8 10V5m8 14v-7"/>' },
-  { id: 'communities', label: 'Сообщества', href: './olympiad-community.html', icon: '<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.6"/><path d="M2.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5M14.5 14.3c2.1.2 3.9 1.8 4.4 4.7"/>' },
+  { id: 'home', label: 'Главная', href: '/olympiad-home.html', icon: '<path d="m3 11 9-8 9 8M5 10v10h14V10"/>' },
+  { id: 'tasks', label: 'Задачи', href: '/olympiad-task-search.html', icon: '<path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>' },
+  { id: 'statistics', label: 'Статистика', href: '/olympiad-statistics.html', icon: '<path d="M4 19V9m8 10V5m8 14v-7"/>' },
+  { id: 'communities', label: 'Сообщества', href: '/olympiad-community.html', icon: '<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.6"/><path d="M2.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5M14.5 14.3c2.1.2 3.9 1.8 4.4 4.7"/>' },
 ];
 
 const headerStyle = `
@@ -23,7 +23,7 @@ class OlympiadHeader extends HTMLElement {
   connectedCallback() {
     const active = this.getAttribute('active') || 'home';
     const title = this.getAttribute('title') || 'maxolimp';
-    this.attachShadow({ mode: 'open' }).innerHTML = `<style>${headerStyle}</style><header><a class="brand" href="./olympiad-home.html">maxolimp<span>.</span></a>${title === 'maxolimp' ? '' : `<span class="page-title">${title}</span>`}<nav aria-label="Основные разделы">${tabs.map(t => `<a href="${t.href}" ${t.id === active ? 'aria-current="page"' : ''}>${t.label}</a>`).join('')}</nav></header>`;
+    this.attachShadow({ mode: 'open' }).innerHTML = `<style>${headerStyle}</style><header><a class="brand" href="/olympiad-home.html">maxolimp<span>.</span></a>${title === 'maxolimp' ? '' : `<span class="page-title">${title}</span>`}<nav aria-label="Основные разделы">${tabs.map(t => `<a href="${t.href}" ${t.id === active ? 'aria-current="page"' : ''}>${t.label}</a>`).join('')}</nav></header>`;
   }
 }
 

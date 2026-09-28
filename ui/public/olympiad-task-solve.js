@@ -59,7 +59,6 @@ async function render() {
     taskMath.renderMathText(els.taskStatement, detail.statement);
     els.answerInput.disabled = false;
     els.checkButton.disabled = false;
-    els.answerInput.focus();
     let response = await fetch(`/api/progress/tasks/${encodeURIComponent(detail.id)}`);
     if (response.status === 401) {
       await window.maxUserReady;
@@ -73,6 +72,7 @@ async function render() {
 
 async function submitAnswer() {
   if (!task || !els.answerInput.value.trim() || els.checkButton.disabled) return;
+  els.answerInput.blur();
   const submitted = task;
   els.answerInput.disabled = true;
   els.checkButton.disabled = true;
