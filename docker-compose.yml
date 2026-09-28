@@ -57,6 +57,9 @@ services:
       MAX_WEBHOOK_SECRET: ${MAX_WEBHOOK_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
 
+      SSL_CERT_FILE: /usr/local/share/ca-certificates/russian_trusted/russian_trusted_root_ca_pem.crt
+      REQUESTS_CA_BUNDLE: /usr/local/share/ca-certificates/russian_trusted/russian_trusted_root_ca_pem.crt
+
     volumes:
       - hf-cache:/root/.cache/huggingface
     depends_on:
@@ -96,6 +99,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://${OLYMP_DB_USER}:${OLYMP_DB_PASSWORD}@olymp-db:5432/${OLYMP_DB_NAME}
       TASK_FIND_SERVICE_URL: http://task-app:8000
       DEFAULT_USER_ID: ${DEFAULT_USER_ID}
+      SSL_CERT_FILE: /usr/local/share/ca-certificates/russian_trusted/russian_trusted_root_ca_pem.crt
+      REQUESTS_CA_BUNDLE: /usr/local/share/ca-certificates/russian_trusted/russian_trusted_root_ca_pem.crt
     depends_on:
       olymp-db:
         condition: service_healthy
