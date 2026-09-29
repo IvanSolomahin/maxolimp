@@ -163,17 +163,12 @@ CREATE TRIGGER tasks_updated_at
 
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
-    max_id BIGINT UNIQUE,
+    max_id BIGINT NOT NULL UNIQUE,
     first_name TEXT,
     username TEXT,
-    email TEXT,
-    password_hash TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT users_identity_check CHECK (max_id IS NOT NULL OR email IS NOT NULL),
-    CONSTRAINT users_email_password_check CHECK ((email IS NULL) = (password_hash IS NULL))
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE UNIQUE INDEX users_email_lower_idx ON users (lower(email)) WHERE email IS NOT NULL;
 
 CREATE TABLE user_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
