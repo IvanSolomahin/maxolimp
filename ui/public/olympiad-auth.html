@@ -3,31 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Аккаунт — Maxolimp</title>
+  <title>Вход через MAX — Maxolimp</title>
   <script src="https://st.max.ru/js/max-web-app.js"></script>
   <link rel="stylesheet" href="./olympiad-layout.css" />
   <style>
     main { max-width: 420px; margin: 8vh auto; padding: 24px; }
-    form { display: grid; gap: 16px; }
-    label { display: grid; gap: 6px; }
-    input { width: 100%; padding: 12px; border: 1px solid #aaa; border-radius: 8px; }
-    button { padding: 12px; border: 0; border-radius: 8px; cursor: pointer; background: #d7fa6c; }
-    #auth-error { color: #a20; }
+    main a { color: inherit; }
   </style>
 </head>
 <body>
   <olympiad-header title="Аккаунт"></olympiad-header>
   <main>
-    <h1 id="auth-title">Вход в Maxolimp</h1>
-    <p id="auth-description">В приложении MAX вход выполняется автоматически. В браузере используйте email и пароль.</p>
-    <form id="auth-form">
-      <label>Email <input id="auth-email" type="email" autocomplete="email" required /></label>
-      <label>Пароль <input id="auth-password" type="password" minlength="8" autocomplete="current-password" required /></label>
-      <button id="login-button" type="submit">Войти</button>
-      <button id="register-button" type="button">Создать аккаунт</button>
-      <p id="auth-switch">Нет аккаунта? <a href="./olympiad-auth.html?mode=register">Зарегистрируйтесь</a></p>
-    </form>
-    <p id="auth-error" role="alert" hidden></p>
+    <h1>Вход через MAX</h1>
+    <p>Откройте мини-приложение Maxolimp из чата с ботом в MAX. Вход произойдёт автоматически.</p>
+    <p><a href="./olympiad-home.html">Вернуться на главную</a></p>
   </main>
   <script src="./olympiad-shell.js"></script>
   <script src="./max-init.js"></script>

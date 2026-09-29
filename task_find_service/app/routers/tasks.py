@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -35,7 +35,7 @@ from app.schemas import (
     UpdateTaskRequest,
 )
 from app.services.embeddings import compute_and_store_task_embedding
-from app.services.llm import generate_hint, generate_solution
+from app.services.llm import generate_hint, generate_solution, check_solution
 from app.services.search import (
     hybrid_search_tasks,
     keyword_search,
@@ -562,3 +562,58 @@ async def set_difficulty(
     task.difficulty = body.difficulty
     await db.commit()
     return SetDifficultyResponse(task_id=task_id, difficulty=body.difficulty)
+
+@router.post("/tasks/{task_id}/check")
+async def check_task_solution(
+    task_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    file: UploadFile = File(...),
+):
+    task = await db.get(Task, task_id)
+
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="File is required")
+
+    import os
+    import tempfile
+
+    suffix = os.path.splitext(file.filename)[1].lower()
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+        content = await file.read()
+        temp_file.write(content)
+        temp_path = temp_file.name
+
+    try:
+        prompt = f"""
+Ты проверяешь решение олимпиадной математической задачи.
+
+Условие задачи:
+{task.statement}
+
+Во вложенном файле находится решение ученика.
+
+Проверь решение и дай ответ по структуре:
+
+1. Вердикт: верно / неверно / частично верно.
+2. Какие шаги решения правильные.
+3. Какие ошибки допущены.
+4. Как исправить ошибки.
+5. Итоговый правильный ответ, если его можно определить.
+
+Не придумывай отсутствующие в решении шаги и не выдавай полное решение вместо проверки.
+"""
+
+        result = check_solution(temp_path, prompt)
+
+        return {
+            "task_id": str(task_id),
+            "filename": file.filename,
+            "result": result,
+        }
+
+    finally:
+        os.remove(temp_path)

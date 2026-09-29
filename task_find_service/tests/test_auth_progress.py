@@ -7,17 +7,17 @@ from datetime import datetime
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
-from app.auth import hash_password, verify_init_data, verify_password
+from app.auth import router, verify_init_data
+from app.models import User
 from app.routers.progress import period_bounds
 
 
 class AuthProgressTests(unittest.TestCase):
-    def test_password_hash_has_random_salt_and_verifies(self):
-        first = hash_password('correct horse battery staple')
-        second = hash_password('correct horse battery staple')
-        self.assertNotEqual(first, second)
-        self.assertTrue(verify_password('correct horse battery staple', first))
-        self.assertFalse(verify_password('wrong password', first))
+    def test_only_max_account_fields_and_session_routes_remain(self):
+        self.assertNotIn('email', User.__table__.columns)
+        self.assertNotIn('password_hash', User.__table__.columns)
+        routes = {route.path for route in router.routes}
+        self.assertEqual(routes, {'/api/auth/me', '/api/auth/logout'})
 
     def test_max_signature_and_expiry(self):
         token = 'test-bot-token'
