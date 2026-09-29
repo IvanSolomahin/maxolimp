@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     embedding_model: str = "qwen/qwen3-embedding-4b"
     embedding_dimension: int = 2560
     aitunnel_api_key: str | None = None
+    gigachat_credentials: str | None = None
+    gigachat_scope: str = "GIGACHAT_API_PERS"
     rrf_k: int = 60
     olymp_find_service_url: str = "http://olymp-app:8000"
 

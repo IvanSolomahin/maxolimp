@@ -229,6 +229,90 @@ function showSearchPage() {
   searchScreen.hidden = false;
 }
 
+function formatCheckResult(markdown) {
+
+  let text = escapeHtml(markdown || 'Результат проверки отсутствует.');
+
+  text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+
+  text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  text = text.replace(/(^|\n)([1-5]\.)\s+/g, '$1<strong>$2</strong> ');
+
+  text = text.replace(/\n{2,}/g, '<br><br>');
+
+  text = text.replace(/\n/g, '<br>');
+
+  return text;
+} 
+const checkSolutionButton = $('#detail-check-solution-button');
+const solutionFileInput = $('#solution-file');
+const solutionCheckStatus = $('#solution-check-status');
+const solutionCheckResult = $('#solution-check-result');
+
+checkSolutionButton.addEventListener('click', async () => {
+  if (!openedTask) {
+    return;
+  }
+
+  const file = solutionFileInput.files?.[0];
+
+  if (!file) {
+    solutionCheckStatus.textContent = 'Сначала загрузите файл с решением.';
+    solutionCheckStatus.hidden = false;
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  checkSolutionButton.disabled = true;
+  solutionCheckStatus.textContent = 'Проверяем решение…';
+  solutionCheckStatus.hidden = false;
+  solutionCheckResult.hidden = true;
+  solutionCheckResult.textContent = '';
+
+  try {
+    const response = await fetch(
+      `${api}/tasks/${encodeURIComponent(openedTask.id)}/check`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
+
+    const responseText = await response.text();
+
+    let data = {};
+
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch {
+    throw new Error(
+      `Backend вернул не JSON (${response.status}): ${responseText.slice(0, 300)}`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(data.detail || `HTTP ${response.status}`);
+  }
+
+    solutionCheckStatus.textContent = 'Проверка завершена.';
+    solutionCheckResult.innerHTML = formatCheckResult(
+      data.result || 'Результат проверки отсутствует.'
+    );
+    solutionCheckResult.textContent = data.result || 'Результат проверки отсутствует.';
+    solutionCheckResult.hidden = false;
+  } catch (error) {
+    solutionCheckStatus.textContent =
+      `Ошибка проверки: ${error.message}`;
+  } finally {
+    checkSolutionButton.disabled = false;
+  }
+});
+
 function routeFromLocation() {
   const match = location.pathname.match(/^\/tasks\/([^/]+)\/?$/);
   if (match) openTask(decodeURIComponent(match[1]));
