@@ -39,7 +39,10 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="Gazprompt Tasks API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Gazprompt Tasks API", version="1.0.0", lifespan=lifespan,
+    docs_url="/tasks-docs",
+    openapi_url="/tasks-openapi.json",
+    redoc_url="/tasks-redoc",)
 webhook.setup(app, path="/webhook")
 
 app.include_router(tasks.router)

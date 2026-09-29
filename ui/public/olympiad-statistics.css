@@ -74,7 +74,7 @@ h1 {
 }
 .stats-grid {
   display: grid;
-  grid-template-columns: 1.15fr 1fr 1fr;
+  grid-template-columns: 1.15fr minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 .metric {
@@ -209,8 +209,11 @@ h1 {
 }
 .breakdown {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+.breakdown > div {
+  min-width: 0;
 }
 .list-card {
   padding: 0;
@@ -247,6 +250,7 @@ h1 {
   min-width: 0;
 }
 .row-title {
+  display: block;
   font-weight: 650;
   white-space: nowrap;
   overflow: hidden;
@@ -265,10 +269,12 @@ h1 {
   gap: 7px;
 }
 .tag {
+  max-width: 100%;
   padding: 6px 10px;
   border-radius: 999px;
   background: var(--surface);
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 .tag b {
   margin-left: 5px;
@@ -303,7 +309,7 @@ h1 {
     padding: 24px 16px 40px;
   }
   .stats-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .metric.primary {
     grid-column: 1/-1;
@@ -328,7 +334,7 @@ h1 {
     min-width: 0;
   }
   .breakdown {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .periods {
     width: 100%;
