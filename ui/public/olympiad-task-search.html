@@ -6,12 +6,225 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
+
     <title>Поиск олимпиадных задач</title>
 
     <script src="https://st.max.ru/js/max-web-app.js"></script>
 
     <link rel="stylesheet" href="./olympiad-task-search.css" />
     <link rel="stylesheet" href="./olympiad-layout.css" />
+
+    <style>
+      /* =========================
+         MAX
+         ========================= */
+
+      .task-share-max {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 12px 24px;
+        border: 0;
+        border-radius: 50px;
+        background: linear-gradient(135deg, #667eea 0%, #334bb7 100%);
+        color: #fff;
+        font-family:
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        transition:
+          transform 0.3s ease,
+          box-shadow 0.3s ease;
+      }
+
+      .task-share-max:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+      }
+
+      .task-share-max:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .task-share-max:focus-visible {
+        outline: 3px solid rgba(102, 126, 234, 0.35);
+        outline-offset: 3px;
+      }
+
+      .task-share-max svg {
+        width: 24px;
+        height: 24px;
+        flex: 0 0 24px;
+      }
+
+      @media (max-width: 700px) {
+        .task-share-max {
+          width: 100%;
+        }
+      }
+
+      /* =========================
+         ПРОВЕРКА РЕШЕНИЯ
+         ========================= */
+
+      #detail-check-solution {
+        margin-top: 24px;
+      }
+
+      #detail-check-solution h2 {
+        margin: 0 0 8px;
+      }
+
+      .solution-upload {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .solution-file-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px;
+        border: 1px dashed #cfd4dc;
+        border-radius: 14px;
+        background: #fafbfc;
+      }
+
+      #solution-file {
+        width: 100%;
+        max-width: 100%;
+        font: inherit;
+        color: #20242a;
+      }
+
+      #solution-file::file-selector-button {
+        margin-right: 12px;
+        padding: 9px 14px;
+        border: 0;
+        border-radius: 10px;
+        background: #eef1f5;
+        color: #111827;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      #solution-file::file-selector-button:hover {
+        background: #e4e8ee;
+      }
+
+      #detail-check-solution-button {
+        align-self: flex-start;
+        padding: 12px 20px;
+        border: 0;
+        border-radius: 12px;
+        background: var(--accent);
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      #detail-check-solution-button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        opacity: 0.92;
+      }
+
+      #detail-check-solution-button:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      #detail-check-solution-button:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      #solution-check-status {
+        margin: 14px 0 0;
+        font-size: 14px;
+        color: #667085;
+      }
+
+      #solution-check-result {
+        margin-top: 18px;
+        padding: 22px;
+        border: 1px solid #e3e7ec;
+        border-radius: 16px;
+        background: #fff;
+        color: #20242a;
+        font-size: 15px;
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+      }
+
+      #solution-check-result h2 {
+        margin: 0 0 14px;
+        font-size: 20px;
+        line-height: 1.35;
+      }
+
+      #solution-check-result h3 {
+        margin: 20px 0 8px;
+        font-size: 16px;
+        line-height: 1.4;
+      }
+
+      #solution-check-result p {
+        margin: 10px 0;
+      }
+
+      #solution-check-result strong {
+        font-weight: 700;
+      }
+
+      #solution-check-result .check-verdict {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 14px;
+        padding: 7px 11px;
+        border-radius: 999px;
+        background: #f0f2f5;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      #solution-check-result .check-section {
+        margin-top: 18px;
+      }
+
+      @media (max-width: 700px) {
+        .solution-file-wrap {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        #detail-check-solution-button {
+          width: 100%;
+        }
+
+        #solution-check-result {
+          padding: 16px;
+        }
+      }
+    </style>
   </head>
 
   <body class="app-shell">
@@ -23,6 +236,7 @@
     <main class="app-main" id="content">
       <section class="section" data-od-id="task-search-screen">
         <div class="container">
+
           <label
             class="subject-switch"
             for="subject-select"
@@ -53,7 +267,10 @@
               <path d="m20 20-4-4"></path>
             </svg>
 
-            <label class="visually-hidden" for="task-query">
+            <label
+              class="visually-hidden"
+              for="task-query"
+            >
               Поиск по задачам
             </label>
 
@@ -85,7 +302,10 @@
             </button>
           </div>
 
-          <div class="toolbar" data-od-id="search-toolbar">
+          <div
+            class="toolbar"
+            data-od-id="search-toolbar"
+          >
             <button
               class="control-btn"
               type="button"
@@ -125,7 +345,10 @@
                 <path d="M8 6h12M8 12h8M8 18h4M4 5v14"></path>
               </svg>
 
-              <label class="visually-hidden" for="sort-select">
+              <label
+                class="visually-hidden"
+                for="sort-select"
+              >
                 Сортировка
               </label>
 
@@ -134,9 +357,15 @@
                 id="sort-select"
                 data-od-id="sort-select"
               >
-                <option value="relevance">По релевантности</option>
-                <option value="newest">Сначала новые</option>
-                <option value="difficulty">По сложности</option>
+                <option value="relevance">
+                  По релевантности
+                </option>
+                <option value="newest">
+                  Сначала новые
+                </option>
+                <option value="difficulty">
+                  По сложности
+                </option>
               </select>
             </div>
           </div>
@@ -190,7 +419,9 @@
             role="status"
             hidden
           >
-            <h3 id="empty-title">Ничего не найдено</h3>
+            <h3 id="empty-title">
+              Ничего не найдено
+            </h3>
 
             <p id="empty-copy">
               Попробуйте другой запрос или уберите часть фильтров.
@@ -209,13 +440,17 @@
       </section>
     </main>
 
+    <!-- ФИЛЬТРЫ -->
+
     <dialog
       id="filter-dialog"
       aria-labelledby="filter-title"
       data-od-id="filter-dialog"
     >
       <div class="sheet-head">
-        <h2 id="filter-title">Фильтры</h2>
+        <h2 id="filter-title">
+          Фильтры
+        </h2>
 
         <button
           class="icon-btn"
@@ -236,8 +471,11 @@
       </div>
 
       <div class="sheet-body">
+
         <div class="filter-group">
-          <h3 id="classifier-title">Теги классификатора</h3>
+          <h3 id="classifier-title">
+            Теги классификатора
+          </h3>
 
           <input
             class="filter-select"
@@ -257,9 +495,12 @@
         </div>
 
         <div class="filter-group">
-          <h3>Олимпиада</h3>
+          <h3>
+            Олимпиада
+          </h3>
 
           <div class="olympiad-picker">
+
             <input
               class="filter-select"
               id="olympiad-search"
@@ -299,14 +540,21 @@
                 ×
               </button>
             </div>
+
           </div>
         </div>
 
         <div class="filter-group">
-          <h3>Сложность</h3>
+          <h3>
+            Сложность
+          </h3>
 
           <div class="filter-selects">
-            <label class="select-field" for="difficulty-min">
+
+            <label
+              class="select-field"
+              for="difficulty-min"
+            >
               <span>От</span>
 
               <input
@@ -319,7 +567,10 @@
               />
             </label>
 
-            <label class="select-field" for="difficulty-max">
+            <label
+              class="select-field"
+              for="difficulty-max"
+            >
               <span>До</span>
 
               <input
@@ -331,23 +582,41 @@
                 placeholder="10"
               />
             </label>
+
           </div>
         </div>
 
         <div class="filter-group">
-          <h3>Класс</h3>
+          <h3>
+            Класс
+          </h3>
 
-          <select class="filter-select" id="grade-filter">
-            <option value="">Все классы</option>
-            <option value="8">8 класс</option>
-            <option value="9">9 класс</option>
-            <option value="10">10 класс</option>
-            <option value="11">11 класс</option>
+          <select
+            class="filter-select"
+            id="grade-filter"
+          >
+            <option value="">
+              Все классы
+            </option>
+            <option value="8">
+              8 класс
+            </option>
+            <option value="9">
+              9 класс
+            </option>
+            <option value="10">
+              10 класс
+            </option>
+            <option value="11">
+              11 класс
+            </option>
           </select>
         </div>
+
       </div>
 
       <div class="sheet-actions">
+
         <button
           class="btn btn-secondary"
           type="button"
@@ -363,10 +632,17 @@
         >
           Показать задачи
         </button>
+
       </div>
     </dialog>
 
-    <main class="task-page app-main" id="task-page" hidden>
+    <!-- СТРАНИЦА ЗАДАЧИ -->
+
+    <main
+      class="task-page app-main"
+      id="task-page"
+      hidden
+    >
       <div class="task-page-inner">
 
         <button
@@ -374,11 +650,16 @@
           type="button"
           id="task-back"
         >
-          <span aria-hidden="true">←</span>
+          <span aria-hidden="true">
+            ←
+          </span>
           К результатам поиска
         </button>
 
+        <!-- УСЛОВИЕ ЗАДАЧИ -->
+
         <article class="task-detail-card">
+
           <p
             class="task-page-meta"
             id="detail-meta"
@@ -411,91 +692,112 @@
             Открыть источник ↗
           </a>
 
-          <div class="max-share-wrap">
-            <a
-              id="task-share-max"
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
+          <!-- MAX -->
+
+          <button
+            class="task-share-max"
+            id="task-share-max"
+            type="button"
+            aria-label="Поделиться задачей в MAX"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 1000 1000"
+              aria-hidden="true"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 1000 1000"
-                aria-hidden="true"
-              >
-                <defs>
-                  <linearGradient id="max-gradient-1">
-                    <stop offset="0" stop-color="#00f" />
-                    <stop offset="1" stop-opacity="0" />
-                  </linearGradient>
+              <defs>
 
-                  <linearGradient id="max-gradient-2">
-                    <stop offset="0" stop-color="#4cf" />
-                    <stop offset=".662" stop-color="#53e" />
-                    <stop offset="1" stop-color="#93d" />
-                  </linearGradient>
-
-                  <linearGradient
-                    id="max-gradient-3"
-                    x1="117.847"
-                    x2="1000"
-                    y1="760.536"
-                    y2="500"
-                    gradientUnits="userSpaceOnUse"
-                    href="#max-gradient-2"
+                <linearGradient id="max-gradient-1">
+                  <stop
+                    offset="0"
+                    stop-color="#00f"
                   />
-
-                  <radialGradient
-                    id="max-gradient-4"
-                    cx="-87.392"
-                    cy="1166.116"
-                    r="500"
-                    fx="-87.392"
-                    fy="1166.116"
-                    gradientTransform="rotate(51.356 1551.478 559.3) scale(2.42703433 1)"
-                    gradientUnits="userSpaceOnUse"
-                    href="#max-gradient-1"
+                  <stop
+                    offset="1"
+                    stop-opacity="0"
                   />
-                </defs>
+                </linearGradient>
 
-                <rect
-                  width="1000"
-                  height="1000"
-                  fill="url(#max-gradient-3)"
-                  ry="249.681"
+                <linearGradient id="max-gradient-2">
+                  <stop
+                    offset="0"
+                    stop-color="#4cf"
+                  />
+                  <stop
+                    offset=".662"
+                    stop-color="#53e"
+                  />
+                  <stop
+                    offset="1"
+                    stop-color="#93d"
+                  />
+                </linearGradient>
+
+                <linearGradient
+                  id="max-gradient-3"
+                  x1="117.847"
+                  x2="1000"
+                  y1="760.536"
+                  y2="500"
+                  gradientUnits="userSpaceOnUse"
+                  href="#max-gradient-2"
                 />
 
-                <rect
-                  width="1000"
-                  height="1000"
-                  fill="url(#max-gradient-4)"
-                  ry="249.681"
+                <radialGradient
+                  id="max-gradient-4"
+                  cx="-87.392"
+                  cy="1166.116"
+                  r="500"
+                  fx="-87.392"
+                  fy="1166.116"
+                  gradientTransform="rotate(51.356 1551.478 559.3) scale(2.42703433 1)"
+                  gradientUnits="userSpaceOnUse"
+                  href="#max-gradient-1"
                 />
+              </defs>
 
-                <path
-                  fill="#fff"
-                  fill-rule="evenodd"
-                  d="M508.211 878.328c-75.007 0-109.864-10.95-170.453-54.75-38.325 49.275-159.686 87.783-164.979 21.9 0-49.456-10.95-91.248-23.36-136.873-14.782-56.21-31.572-118.807-31.572-209.508 0-216.626 177.754-379.597 388.357-379.597 210.785 0 375.947 171.001 375.947 381.604.707 207.346-166.595 376.118-373.94 377.224m3.103-571.585c-102.564-5.292-182.499 65.7-200.201 177.024-14.6 92.162 11.315 204.398 33.397 210.238 10.585 2.555 37.23-18.98 53.837-35.587a189.8 189.8 0 0 0 92.71 33.032c106.273 5.112 197.08-75.794 204.215-181.95 4.154-106.382-77.67-196.486-183.958-202.574Z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              <rect
+                width="1000"
+                height="1000"
+                fill="url(#max-gradient-3)"
+                ry="249.681"
+              />
 
-              <span>
-                Поделиться в MAX
-              </span>
-            </a>
-          </div>
+              <rect
+                width="1000"
+                height="1000"
+                fill="url(#max-gradient-4)"
+                ry="249.681"
+              />
+
+              <path
+                fill="#fff"
+                fill-rule="evenodd"
+                d="M508.211 878.328c-75.007 0-109.864-10.95-170.453-54.75-38.325 49.275-159.686 87.783-164.979 21.9 0-49.456-10.95-91.248-23.36-136.873-14.782-56.21-31.572-118.807-31.572-209.508 0-216.626 177.754-379.597 388.357-379.597 210.785 0 375.947 171.001 375.947 381.604.707 207.346-166.595 376.118-373.94 377.224m3.103-571.585c-102.564-5.292-182.499 65.7-200.201 177.024-14.6 92.162 11.315 204.398 33.397 210.238 10.585 2.555 37.23-18.98 53.837-35.587a189.8 189.8 0 0 0 92.71 33.032c106.273 5.112 197.08-75.794 204.215-181.95 4.154-106.382-77.67-196.486-183.958-202.574Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+
+            <span>
+              Поделиться в MAX
+            </span>
+          </button>
+
         </article>
+
+        <!-- ОТВЕТ ПОЛЬЗОВАТЕЛЯ -->
 
         <section
           class="task-solution"
           id="detail-answer-form"
         >
+
           <label for="detail-user-answer">
             Ваш ответ
           </label>
 
           <div class="detail-answer-row">
+
             <input
               id="detail-user-answer"
               type="text"
@@ -509,6 +811,7 @@
             >
               Отправить
             </button>
+
           </div>
 
           <p
@@ -516,7 +819,55 @@
             role="status"
             hidden
           ></p>
+
         </section>
+
+        <!-- ПРОВЕРКА РЕШЕНИЯ -->
+
+        <section
+          class="task-solution"
+          id="detail-check-solution"
+        >
+
+          <h2>
+            Проверка решения
+          </h2>
+
+          <div class="solution-upload">
+
+            <div class="solution-file-wrap">
+
+              <input
+                id="solution-file"
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,.pdf"
+              />
+
+            </div>
+
+            <button
+              id="detail-check-solution-button"
+              type="button"
+            >
+              Отправить на проверку
+            </button>
+
+          </div>
+
+          <p
+            id="solution-check-status"
+            role="status"
+            hidden
+          ></p>
+
+          <div
+            id="solution-check-result"
+            hidden
+          ></div>
+
+        </section>
+
+        <!-- ГОТОВОЕ РЕШЕНИЕ -->
 
         <section
           class="task-solution"
@@ -524,6 +875,7 @@
           aria-labelledby="detail-solution-title"
           hidden
         >
+
           <h2 id="detail-solution-title">
             Решение
           </h2>
@@ -533,7 +885,10 @@
             id="detail-answer"
             hidden
           >
-            <span>Ответ</span>
+            <span>
+              Ответ
+            </span>
+
             <b id="detail-answer-text"></b>
           </p>
 
@@ -549,7 +904,9 @@
           >
             Отметить решённой
           </button>
+
         </section>
+
       </div>
     </main>
 
@@ -566,8 +923,19 @@
     <script src="./olympiad-shell.js"></script>
     <script src="./max-init.js"></script>
 
-    <script src="./math-render.js" defer></script>
-    <script src="./answer-viewport.js" defer></script>
-    <script src="./task-search.js" defer></script>
+    <script
+      src="./math-render.js"
+      defer
+    ></script>
+
+    <script
+      src="./answer-viewport.js"
+      defer
+    ></script>
+
+    <script
+      src="./task-search.js"
+      defer
+    ></script>
   </body>
 </html>
