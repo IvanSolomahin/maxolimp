@@ -15,7 +15,10 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="Gazprompt Olympiads API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Gazprompt Olympiads API", version="1.0.0", lifespan=lifespan,
+    docs_url="/olymp-docs",
+    openapi_url="/olymp-openapi.json",
+    redoc_url="/olymp-redoc",)
 
 app.include_router(catalog.router)
 app.include_router(olympiads.router)
