@@ -29,11 +29,9 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    max_id: Mapped[int | None] = mapped_column(BigInteger, unique=True)
+    max_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
     first_name: Mapped[str | None] = mapped_column(Text)
     username: Mapped[str | None] = mapped_column(Text)
-    email: Mapped[str | None] = mapped_column(Text)
-    password_hash: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

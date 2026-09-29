@@ -18,12 +18,15 @@ PostgreSQL хранит задачи, их источник и поисковы�
 `sql/migrate_v5.sql` заполняет короткие названия для списка и карточек задач.
 
 Для действующей базы после `migrate_v6.sql` выполните `sql/migrate_v7.sql`:
-она добавляет вход по email, сессии и список решённых задач. На новой базе
-эти таблицы создаёт `sql/init.sql`. Перед запуском обновлённого приложения
-миграция должна быть применена к `task-db`.
+она добавляет сессии и список решённых задач. Затем выполните `sql/migrate_v8.sql`
+перед запуском обновлённого приложения: она удаляет поля email и пароля и
+аккаунты без MAX ID. Сессии и решённые задачи таких аккаунтов удаляются по
+каскаду. Аккаунты MAX и их данные сохраняются. На новой базе итоговую схему
+создаёт `sql/init.sql`.
 
 ```bash
 docker compose exec -T task-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < task_find_service/sql/migrate_v7.sql
+docker compose exec -T task-db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < task_find_service/sql/migrate_v8.sql
 ```
 
 ```bash
