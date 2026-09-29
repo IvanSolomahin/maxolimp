@@ -1,0 +1,318 @@
+
+# DATA-API.yaml
+# Схема описания API для платформы оценки хакатона MAX
+
+config_version: "1.0"
+
+solution:
+  name: "Газпромпт"
+
+base_url: "https://gazprompt.duckdns.org"
+
+# Перечень обязательных проверок — методы, относящиеся к основной функциональности.
+required_checks:
+  - id: "tasks_list"
+    description: "Получение списка олимпиадных задач с фильтрацией и пагинацией"
+    method: "GET"
+    path: "/tasks"
+    required: true
+
+  - id: "task_detail"
+    description: "Получение детальной информации о задаче по её идентификатору"
+    method: "GET"
+    path: "/tasks/{task_id}"
+    required: true
+
+  - id: "olympiads_list"
+    description: "Получение списка олимпиад"
+    method: "GET"
+    path: "/olympiads"
+    required: true
+
+  - id: "clubs_list"
+    description: "Получение списка офлайн кружков в городе"
+    method: "GET"
+    path: "/communities/clubs"
+    required: false
+
+  - id: "progress_stats"
+    description: "Статистика прогресса пользователя за период"
+    method: "GET"
+    path: "/progress/statistics"
+    required: false
+
+# Описание эндпоинтов (пункты 4-9)
+endpoints:
+  - id: "tasks_list"
+    description: "Получение списка олимпиадных задач с фильтрацией и пагинацией"
+    method: "GET"
+    path: "/tasks"
+    auth: "anonymous"
+    required: true
+    parameters:
+      query:
+        - name: "q"
+          type: "string"
+          required: false
+          description: "Поиск по тексту"
+        - name: "subject"
+          type: "string"
+          required: false
+          enum: ["math", "physics"]
+        - name: "olympiad_id"
+          type: "string"
+          format: "uuid"
+          required: false
+        - name: "classifiers"
+          type: "array"
+          items: "string"
+          required: false
+          default: []
+        - name: "grade"
+          type: "integer"
+          required: false
+        - name: "mode"
+          type: "string"
+          required: false
+          enum: ["topic", "solution", "both"]
+          default: "topic"
+        - name: "difficulty_min"
+          type: "integer"
+          required: false
+        - name: "difficulty_max"
+          type: "integer"
+          required: false
+        - name: "year_from"
+          type: "integer"
+          required: false
+        - name: "year_to"
+          type: "integer"
+          required: false
+        - name: "stage"
+          type: "string"
+          required: false
+        - name: "solution_method_id"
+          type: "string"
+          format: "uuid"
+          required: false
+        - name: "sort"
+          type: "string"
+          required: false
+          enum: ["relevance", "newest", "difficulty"]
+          default: "relevance"
+        - name: "page"
+          type: "integer"
+          required: false
+          minimum: 1
+          default: 1
+        - name: "size"
+          type: "integer"
+          required: false
+          minimum: 1
+          maximum: 100
+          default: 20
+      path: []
+      headers: []
+      body: null
+    expected_status: [200, 422]
+    response_format:
+      content_type: "application/json"
+      schema: "PaginatedTasks"
+      required: ["total", "page", "size", "items"]
+      properties:
+        total: "integer"
+        page: "integer"
+        size: "integer"
+        items:
+          type: "array"
+          item_required: ["id", "title", "difficulty"]
+          item_properties:
+            id: "uuid"
+            title: "string"
+            difficulty: "integer"
+            solution_method:
+              type: "object"
+              properties:
+                id: "uuid"
+                name: "string"
+                path: "string|null"
+            snippet: "string|null"
+            number: "string|null"
+            olympiad: "string|null"
+            olympiad_short_name: "string|null"
+            score: "number"
+            rank: "number"
+
+  - id: "task_detail"
+    description: "Получение детальной информации о задаче по её идентификатору"
+    method: "GET"
+    path: "/tasks/{task_id}"
+    auth: "anonymous"
+    required: true
+    parameters:
+      query: []
+      path:
+        - name: "task_id"
+          type: "string"
+          format: "uuid"
+          required: true
+      headers: []
+      body: null
+    expected_status: [200, 422]
+    response_format:
+      content_type: "application/json"
+      schema: "TaskDetail"
+      required:
+        - "id"
+        - "title"
+        - "statement"
+        - "answer"
+        - "difficulty"
+        - "topics"
+        - "olympiads"
+        - "solution_method"
+        - "source"
+        - "has_solution"
+        - "hints_count"
+      properties:
+        id: "uuid"
+        title: "string"
+        statement: "string"
+        answer: "string|null"
+        difficulty: "integer"
+        subject: "string|null"
+        grade: "integer"
+        classifier: "string|null"
+        problem_type: "string|null"
+        topics:
+          type: "array"
+          item_properties:
+            id: "uuid"
+            name: "string"
+            path: "string"
+        olympiads:
+          type: "array"
+          item_properties:
+            id: "uuid"
+            name: "string"
+            short_name: "string|null"
+        solution_method:
+          type: "object"
+          properties:
+            id: "uuid"
+            name: "string"
+            path: "string|null"
+        source:
+          type: "object"
+          properties:
+            system: "string|null"
+            external_id: "string|null"
+            url: "string|null"
+            subject: "string|null"
+            grade: "integer"
+            year: "integer"
+            stage: "string|null"
+            number: "string|null"
+        has_solution: "boolean"
+        hints_count: "integer"
+
+  - id: "olympiads_list"
+    description: "Получение списка олимпиад"
+    method: "GET"
+    path: "/olympiads"
+    auth: "anonymous"
+    required: true
+    parameters:
+      query:
+        - name: "q"
+          type: "string"
+          required: false
+          description: "Поиск по названию"
+      path: []
+      headers: []
+      body: null
+    expected_status: [200, 422]
+    response_format:
+      content_type: "application/json"
+      schema: "OlympiadsResponse"
+      required: ["items"]
+      properties:
+        items:
+          type: "array"
+          item_required: ["id", "name", "short_name"]
+          item_properties:
+            id: "uuid"
+            name: "string"
+            short_name: "string|null"
+
+  - id: "clubs_list"
+    description: "Получение списка офлайн кружков в городе"
+    method: "GET"
+    path: "/communities/clubs"
+    auth: "anonymous"
+    required: false
+    parameters:
+      query:
+        - name: "subject"
+          type: "string"
+          required: false
+        - name: "city"
+          type: "string"
+          required: false
+          minLength: 1
+          default: "Санкт-Петербург"
+        - name: "q"
+          type: "string"
+          required: false
+        - name: "lat"
+          type: "number"
+          required: false
+          minimum: -90
+          maximum: 90
+        - name: "lon"
+          type: "number"
+          required: false
+          minimum: -180
+          maximum: 180
+        - name: "radius_km"
+          type: "number"
+          required: false
+          exclusiveMinimum: 0
+          maximum: 500
+      path: []
+      headers: []
+      body: null
+    expected_status: [200, 422]
+    response_format:
+      content_type: "application/json"
+      schema: "unspecified"
+      note: "Схема в OpenAPI не описана (schema: {}). Ожидается список/объект с клубами."
+
+  - id: "progress_stats"
+    description: "Статистика прогресса пользователя за период"
+    method: "GET"
+    path: "/progress/statistics"
+    auth: "anonymous"
+    required: false
+    parameters:
+      query:
+        - name: "period"
+          type: "string"
+          required: false
+          enum: ["week", "month", "year"]
+          default: "week"
+        - name: "olympiad_id"
+          type: "string"
+          format: "uuid"
+          required: false
+        - name: "tag"
+          type: "string"
+          required: false
+      path: []
+      headers: []
+      body: null
+    expected_status: [200, 422]
+    response_format:
+      content_type: "application/json"
+      schema: "unspecified"
+      note: "Схема в OpenAPI не описана (schema: {}). Ожидается объект со статистикой прогресса."
