@@ -41,6 +41,7 @@ def check_solution(file_path: str, prompt: str) -> dict:
         })
 
         content = result.choices[0].message.content
+        content = content[7:-3]
         try:
             return json.loads(content)
         except (json.JSONDecodeError, TypeError):
