@@ -112,6 +112,26 @@
                   Отметить решённой
                 </button>
               </section>
+
+              <!-- ПРОВЕРКА РЕШЕНИЯ НЕЙРОСЕТЬЮ -->
+              <section class="solution-check" id="solution-check">
+                <p class="solution-label">Проверка решения</p>
+                <input
+                  class="answer-input"
+                  id="solution-file"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.pdf"
+                />
+                <button
+                  class="check-btn"
+                  id="check-solution-button"
+                  type="button"
+                >
+                  Отправить на проверку
+                </button>
+                <p class="hint-text" id="solution-check-status" hidden></p>
+                <div class="hint-text" id="solution-check-result" hidden></div>
+              </section>
             </div>
 
             <div class="hint-block">

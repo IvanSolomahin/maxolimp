@@ -566,6 +566,7 @@ async def set_difficulty(
     await db.commit()
     return SetDifficultyResponse(task_id=task_id, difficulty=body.difficulty)
 
+
 @router.post("/tasks/{task_id}/check")
 async def check_task_solution(
     task_id: uuid.UUID,
@@ -599,23 +600,27 @@ async def check_task_solution(
 
 Во вложенном файле находится решение ученика.
 
-Проверь решение и дай ответ по структуре:
+Проверь решение и верни ответ строго в формате JSON с двумя полями:
 
-1. Вердикт: верно / неверно / частично верно.
-2. Какие шаги решения правильные.
-3. Какие ошибки допущены.
-4. Как исправить ошибки.
-5. Итоговый правильный ответ, если его можно определить.
+- "text" — текстовый разбор решения по следующей структуре:
+    1. Вердикт: верно / неверно / частично верно.
+    2. Какие шаги решения правильные.
+    3. Какие ошибки допущены.
+    4. Как исправить ошибки.
+    5. Итоговый правильный ответ, если его можно определить.
+- "verdict" — целое число: 0, если задача зачтена (решение и ответ верные),
+  1, если задача не зачтена (решение или ответ неверные).
 
 Не придумывай отсутствующие в решении шаги и не выдавай полное решение вместо проверки.
 """
 
-        result = check_solution(temp_path, prompt)
+        parsed = check_solution(temp_path, prompt)
 
         return {
             "task_id": str(task_id),
             "filename": file.filename,
-            "result": result,
+            "result": parsed.get("text", ""),
+            "verdict": parsed.get("verdict", 1),
         }
 
     finally:
