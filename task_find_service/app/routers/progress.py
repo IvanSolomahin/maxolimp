@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import check_origin, current_user
 from app.db import get_db
-from app.models import Olympiad, SolvedTask, Task, User
+from app.models import ClassifierTag, Olympiad, SolvedTask, Task, TaskClassifierTag, User
 
 router = APIRouter(prefix="/progress", tags=["progress"])
 MOSCOW = ZoneInfo("Europe/Moscow")
@@ -43,7 +43,9 @@ def filtered_query(user_id: int, olympiad_id: uuid.UUID | None, tag: str | None)
     if olympiad_id is not None:
         query = query.where(Task.olympiad_id == olympiad_id)
     if tag is not None:
-        query = query.where(Task.classifier == tag)
+        query = query.where(select(TaskClassifierTag.task_id)
+            .join(ClassifierTag, ClassifierTag.id == TaskClassifierTag.tag_id)
+            .where(TaskClassifierTag.task_id == Task.id, ClassifierTag.name == tag).exists())
     return query
 
 
@@ -93,9 +95,10 @@ async def list_solved(
     return {
         "total": total, "page": page, "size": size,
         "items": [
-            {"id": task.id, "title": task.title or task.classifier or task.statement[:100],
+            {"id": task.id, "title": task.title or task.statement[:100],
              "olympiad_id": task.olympiad_id, "olympiad": olympiad_name,
-             "tag": task.classifier, "solved_at": solved.solved_at}
+             "tags": sorted(link.tag.name for link in task.task_classifier_tags),
+             "solved_at": solved.solved_at}
             for solved, task, olympiad_name in rows
         ],
     }
@@ -125,7 +128,9 @@ async def statistics(
     for _, task, name in period_rows:
         key = (task.olympiad_id, name)
         olympiads[key] = olympiads.get(key, 0) + 1
-        tags[task.classifier] = tags.get(task.classifier, 0) + 1
+        task_tags = [link.tag.name for link in task.task_classifier_tags]
+        for name in task_tags or [None]:
+            tags[name] = tags.get(name, 0) + 1
     active_days = len({solved.solved_at.astimezone(MOSCOW).date() for solved, _, _ in period_rows})
     return {
         "period": period, "from": start.isoformat(), "to": end.isoformat(),

@@ -49,7 +49,9 @@ def _task_filters_sql(prefix: str = "t") -> str:
         AND (CAST(:olympiad_id AS UUID) IS NULL
             OR {prefix}.olympiad_id = CAST(:olympiad_id AS UUID))
         AND (CAST(:filter_classifiers AS BOOLEAN) IS FALSE
-            OR {prefix}.classifier = ANY(CAST(:classifiers AS TEXT[])))
+            OR EXISTS (SELECT 1 FROM task_classifier_tags tct
+                JOIN classifier_tags ct ON ct.id = tct.tag_id
+                WHERE tct.task_id = {prefix}.id AND ct.name = ANY(CAST(:classifiers AS TEXT[]))))
         AND ({prefix}.status = 'published' OR CAST(:include_draft AS BOOLEAN) IS TRUE)
     """
 
@@ -160,7 +162,10 @@ async def hybrid_search_tasks(
                        ) DESC
                    ) AS rn
             FROM tasks t
-            WHERE ((:mode IN ('topic', 'both') AND t.topic_search_vector @@ plainto_tsquery('russian', :q))
+            WHERE ((:mode IN ('topic', 'both') AND (t.topic_search_vector @@ plainto_tsquery('russian', :q)
+                OR EXISTS (SELECT 1 FROM task_classifier_tags tct
+                    JOIN classifier_tags ct ON ct.id = tct.tag_id
+                    WHERE tct.task_id = t.id AND to_tsvector('russian', ct.name) @@ plainto_tsquery('russian', :q))))
                 OR (:mode IN ('solution', 'both') AND EXISTS (
                     SELECT 1 FROM solutions s WHERE s.task_id = t.id AND NOT s.is_generated
                     AND s.search_vector @@ plainto_tsquery('russian', :q))))

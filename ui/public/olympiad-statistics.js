@@ -27,7 +27,7 @@ const demoTasks = demoOffsets.map((offset, index) => {
   solved.setDate(solved.getDate() - offset);
   const olympiad = demoOlympiads[index % demoOlympiads.length];
   const tag = demoTags[index % demoTags.length];
-  return {id: `demo-${index}`, title: demoTitles[index % demoTitles.length], olympiad_id: olympiad.id, olympiad: olympiad.name, tag, solved_at: solved.toISOString()};
+  return {id: `demo-${index}`, title: demoTitles[index % demoTitles.length], olympiad_id: olympiad.id, olympiad: olympiad.name, tags: [tag], solved_at: solved.toISOString()};
 });
 
 function demoResponse(path) {
@@ -36,7 +36,7 @@ function demoResponse(path) {
   const period = params.get('period') || 'week';
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const matches = demoTasks.filter(item => (!params.get('olympiad_id') || item.olympiad_id === params.get('olympiad_id')) && (!params.get('tag') || item.tag === params.get('tag')));
+  const matches = demoTasks.filter(item => (!params.get('olympiad_id') || item.olympiad_id === params.get('olympiad_id')) && (!params.get('tag') || item.tags.includes(params.get('tag'))));
   const buckets = [];
   if (period === 'year') {
     for (let offset = 11; offset >= 0; offset--) {
@@ -63,7 +63,7 @@ function demoResponse(path) {
     return {total: periodTasks.length, items: periodTasks.slice((page - 1) * size, page * size)};
   }
   const by_olympiad = demoOlympiads.map(item => ({...item, count: periodTasks.filter(task => task.olympiad_id === item.id).length})).filter(item => item.count).sort((a, b) => b.count - a.count);
-  const by_tag = demoTags.map(tag => ({tag, name: tag, count: periodTasks.filter(task => task.tag === tag).length})).filter(item => item.count).sort((a, b) => b.count - a.count);
+  const by_tag = demoTags.map(tag => ({tag, name: tag, count: periodTasks.filter(task => task.tags.includes(tag)).length})).filter(item => item.count).sort((a, b) => b.count - a.count);
   return {period, from, to, total_period: periodTasks.length, total_all_time: matches.length, active_days: new Set(periodTasks.map(item => dayKey(new Date(item.solved_at)))).size, buckets, by_olympiad, by_tag};
 }
 
@@ -101,7 +101,7 @@ function archiveRow(item) {
   if (!demoMode) name.href = `/tasks/${encodeURIComponent(item.id)}`;
   const sub = document.createElement('p');
   sub.className = 'row-sub';
-  sub.textContent = `${item.olympiad || item.tag || 'Задача'} · ${formatDay(item.solved_at)}`;
+  sub.textContent = [item.olympiad, item.tags?.join(', '), formatDay(item.solved_at)].filter(Boolean).join(' · ');
   copy.append(name, sub);
   root.append(icon, copy);
   return root;

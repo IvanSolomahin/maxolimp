@@ -11,7 +11,8 @@ from app.models import Task
 
 
 def topic_text(task: Task) -> str:
-    return "\n".join(part for part in ((task.classifier or "").strip(), task.statement.strip()) if part)
+    names = sorted(link.tag.name for link in task.task_classifier_tags)
+    return "\n".join([*names, task.statement.strip()])
 
 
 def vector_to_pg(vec: list[float]) -> str:

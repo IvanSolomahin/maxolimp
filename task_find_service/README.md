@@ -24,6 +24,17 @@ PostgreSQL хранит задачи, их источник и поисковы�
 каскаду. Аккаунты MAX и их данные сохраняются. На новой базе итоговую схему
 создаёт `sql/init.sql`.
 
+Перед запуском версии с отдельными тегами выполните `sql/migrate_v9.sql`.
+Она разделяет `classifier` по разделителю ` , `, сохраняя запятые внутри
+названий тегов, и записывает уникальные имена в
+`classifier_tags`, связи с задачами в `task_classifier_tags` и удаляет старый
+столбец. Миграцию можно повторить безопасно. На новой базе эти таблицы уже
+создаёт `sql/init.sql`.
+
+```bash
+docker compose exec -T task-db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < task_find_service/sql/migrate_v9.sql
+```
+
 ```bash
 docker compose exec -T task-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < task_find_service/sql/migrate_v7.sql
 docker compose exec -T task-db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < task_find_service/sql/migrate_v8.sql
@@ -59,7 +70,8 @@ docker compose run --rm \
 Ожидаемый результат для текущего снимка: 19 646 задач и 39 221 вектор.
 13 задач без условия остаются черновиками без сложности. Решения ETL
 сохраняются как исходные, но не как проверенные человеком. Исходное поле
-`classifier` не превращается автоматически в темы или методы решения.
+`classifier` делится на отдельные теги классификатора, но не превращается в
+темы или методы решения.
 
 Для поиска по смыслу запрос должен кодироваться моделью Qwen3 Embedding 4B через
 [AITunnel](https://aitunnel.ru/models/qwen3-embedding-4b). Установите

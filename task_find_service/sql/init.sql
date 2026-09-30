@@ -61,7 +61,6 @@ CREATE TABLE tasks (
     subject TEXT CHECK (subject IN ('math', 'physics')),
     grade SMALLINT,
     problem_type TEXT,
-    classifier TEXT,
     difficulty SMALLINT CHECK (difficulty BETWEEN 1 AND 10),
     solution_method_id UUID REFERENCES solution_methods (id) ON DELETE SET NULL,
     olympiad_id UUID REFERENCES olympiads (id) ON DELETE SET NULL,
@@ -70,8 +69,7 @@ CREATE TABLE tasks (
     source_problem_number TEXT,
     status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
     topic_search_vector tsvector GENERATED ALWAYS AS (
-        setweight(to_tsvector('russian', coalesce(classifier, '')), 'A')
-        || setweight(to_tsvector('russian', coalesce(title, '')), 'A')
+        setweight(to_tsvector('russian', coalesce(title, '')), 'A')
         || setweight(to_tsvector('russian', coalesce(statement, '')), 'B')
     ) STORED,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -85,6 +83,18 @@ CREATE INDEX tasks_status_idx ON tasks (status);
 CREATE INDEX tasks_subject_grade_year_idx ON tasks (subject, grade, source_year);
 CREATE INDEX tasks_solution_method_id_idx ON tasks (solution_method_id);
 CREATE INDEX tasks_olympiad_id_idx ON tasks (olympiad_id);
+
+CREATE TABLE classifier_tags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE CHECK (btrim(name) <> '')
+);
+
+CREATE TABLE task_classifier_tags (
+    task_id UUID NOT NULL REFERENCES tasks (id) ON DELETE CASCADE,
+    tag_id UUID NOT NULL REFERENCES classifier_tags (id) ON DELETE CASCADE,
+    PRIMARY KEY (task_id, tag_id)
+);
+CREATE INDEX task_classifier_tags_tag_id_idx ON task_classifier_tags (tag_id, task_id);
 
 CREATE TABLE task_sources (
     task_id UUID NOT NULL REFERENCES tasks (id) ON DELETE CASCADE,

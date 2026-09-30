@@ -51,7 +51,7 @@ async function render() {
     const detail = await getJson(`/tasks/${encodeURIComponent(current.id)}`);
     if (queue[index].id !== current.id) return;
     task = detail;
-    els.taskTopic.textContent = detail.classifier || detail.olympiads?.[0]?.name || 'Задача';
+    els.taskTopic.textContent = detail.tags?.join(' · ') || detail.olympiads?.[0]?.name || 'Задача';
     els.taskDiff.textContent = detail.difficulty == null ? '' : `Сложность ${detail.difficulty} / 10`;
     els.taskTitle.textContent = detail.title;
     els.taskStatement.textContent = detail.statement;

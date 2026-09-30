@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db import SessionLocal, get_db
-from app.models import Hint, Solution, Task, TaskTopic, TaskEmbedding
+from app.models import ClassifierTag, Hint, Solution, Task, TaskClassifierTag, TaskTopic, TaskEmbedding
+from app.services.classifier_tags import replace_task_tags
 from app.config import settings
 from app.schemas import (
     AssignOlympiadsRequest,
@@ -49,7 +50,7 @@ router = APIRouter(tags=["tasks"])
 
 
 def _display_title(task: Task) -> str:
-    return task.title or task.classifier or _snippet(task.statement, 100) or "Задача без условия"
+    return task.title or _snippet(task.statement, 100) or "Задача без условия"
 
 
 def _parse_csv_uuids(value: str | None) -> list[uuid.UUID]:
@@ -145,15 +146,15 @@ async def list_classifiers(
     subject: str = Query(..., pattern="^(math|physics)$"),
 ):
     result = await db.execute(
-        select(Task.classifier)
+        select(ClassifierTag.name)
+        .join(TaskClassifierTag, TaskClassifierTag.tag_id == ClassifierTag.id)
+        .join(Task, Task.id == TaskClassifierTag.task_id)
         .where(
             Task.subject == subject,
             Task.status == "published",
-            Task.classifier.is_not(None),
-            func.btrim(Task.classifier) != "",
         )
         .distinct()
-        .order_by(Task.classifier)
+        .order_by(ClassifierTag.name)
     )
     return {"items": list(result.scalars().all())}
 
@@ -289,7 +290,7 @@ async def get_task(task_id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_d
         difficulty=task.difficulty,
         subject=task.subject,
         grade=task.grade,
-        classifier=task.classifier,
+        tags=sorted(link.tag.name for link in task.task_classifier_tags),
         problem_type=task.problem_type,
         topics=topics,
         olympiads=olympiads,
@@ -480,7 +481,6 @@ async def create_task(
         difficulty=body.difficulty,
         subject=body.subject,
         grade=body.grade,
-        classifier=body.classifier,
         problem_type=body.problem_type,
         status=body.status,
         solution_method_id=body.solution_method_id,
@@ -490,6 +490,7 @@ async def create_task(
     )
     db.add(task)
     await db.flush()
+    await replace_task_tags(db, task.id, body.tags)
     for tid in body.topics:
         db.add(TaskTopic(task_id=task.id, topic_id=tid))
     await db.commit()
@@ -514,9 +515,11 @@ async def update_task(
     task = await db.get(Task, task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    for field, value in body.model_dump(exclude_unset=True).items():
+    for field, value in body.model_dump(exclude_unset=True, exclude={"tags"}).items():
         setattr(task, field, value)
-    needs_reindex = bool({"statement", "classifier"} & body.model_fields_set)
+    if "tags" in body.model_fields_set:
+        await replace_task_tags(db, task_id, body.tags or [])
+    needs_reindex = bool({"statement", "tags"} & body.model_fields_set)
     if needs_reindex:
         await db.execute(delete(TaskEmbedding).where(
             TaskEmbedding.task_id == task_id, TaskEmbedding.kind == "topic"

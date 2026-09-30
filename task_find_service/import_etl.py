@@ -14,6 +14,7 @@ import uuid
 from sqlalchemy import text
 
 from app.db import SessionLocal
+from app.services.classifier_tags import split_source_classifier
 from app.olympiad_names import (
     canonical_olympiad_name,
     has_grade_suffix,
@@ -132,7 +133,7 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                 )
                 ORDER BY p.subject, p.problem_id
             """ if has_exclusions else "SELECT * FROM problems ORDER BY subject, problem_id"), batch_size):
-                tasks, refs, solutions, removed_solutions = [], [], [], []
+                tasks, refs, solutions, removed_solutions, task_tags = [], [], [], [], []
                 for row in rows:
                     ident = task_id(row["subject"], row["problem_id"])
                     tasks.append({
@@ -140,12 +141,13 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                         "answer": row["answer"] or None,
                         "subject": row["subject"], "grade": optional_int(row["grade"]),
                         "problem_type": row["problem_type"],
-                        "classifier": row["classifier"], "difficulty": row["difficulty"],
+                        "difficulty": row["difficulty"],
                         "stage": row["tour"] or None, "year": optional_int(row["year"]),
                         "number": str(row["problem_id"]),
                         "olympiad_id": olympiads.get(row["olympiad"].strip()) if row["olympiad"].strip() else None,
                         "status": "published" if row["statement"].strip() else "draft",
                     })
+                    task_tags.extend({"task_id": ident, "name": name} for name in split_source_classifier(row["classifier"]))
                     refs.append({
                         "id": ident, "subject": row["subject"],
                         "external_id": str(row["problem_id"]), "url": row["url"],
@@ -159,18 +161,31 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                 async with session.begin():
                     await session.execute(text("""
                         INSERT INTO tasks(id, statement, answer, subject, grade, problem_type,
-                            classifier, difficulty, olympiad_id, source_stage, source_year,
+                            difficulty, olympiad_id, source_stage, source_year,
                             source_problem_number, status)
                         VALUES (:id, :statement, :answer, :subject, :grade, :problem_type,
-                            :classifier, :difficulty, :olympiad_id, :stage, :year, :number, :status)
+                            :difficulty, :olympiad_id, :stage, :year, :number, :status)
                         ON CONFLICT(id) DO UPDATE SET
                             statement = EXCLUDED.statement, answer = EXCLUDED.answer,
                             subject = EXCLUDED.subject, grade = EXCLUDED.grade,
-                            problem_type = EXCLUDED.problem_type, classifier = EXCLUDED.classifier,
+                            problem_type = EXCLUDED.problem_type,
                             difficulty = EXCLUDED.difficulty, olympiad_id = EXCLUDED.olympiad_id,
                             source_stage = EXCLUDED.source_stage,
                             source_year = EXCLUDED.source_year, status = EXCLUDED.status
                     """), tasks)
+                    await session.execute(text("DELETE FROM task_classifier_tags WHERE task_id = ANY(:ids)"),
+                                          {"ids": [task["id"] for task in tasks]})
+                    if task_tags:
+                        await session.execute(text("""
+                            INSERT INTO classifier_tags (name)
+                            SELECT DISTINCT source.name FROM unnest(CAST(:names AS TEXT[])) AS source(name)
+                            ON CONFLICT (name) DO NOTHING
+                        """), {"names": [item["name"] for item in task_tags]})
+                        await session.execute(text("""
+                            INSERT INTO task_classifier_tags (task_id, tag_id)
+                            SELECT CAST(:task_id AS UUID), id FROM classifier_tags WHERE name = :name
+                            ON CONFLICT DO NOTHING
+                        """), task_tags)
                     await session.execute(text("""
                         INSERT INTO task_sources(task_id, source_system, subject, external_id, url, scraped_at)
                         VALUES (:id, 'sdamgia', :subject, :external_id, :url, :scraped_at)

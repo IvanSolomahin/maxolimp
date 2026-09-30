@@ -182,7 +182,9 @@ endpoints:
         difficulty: "integer"
         subject: "string|null"
         grade: "integer"
-        classifier: "string|null"
+        tags:
+          type: "array"
+          items: "string"
         problem_type: "string|null"
         topics:
           type: "array"

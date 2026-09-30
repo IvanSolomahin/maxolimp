@@ -66,7 +66,7 @@ class TaskDetail(BaseModel):
     difficulty: int | None
     subject: str | None = None
     grade: int | None = None
-    classifier: str | None = None
+    tags: list[str] = Field(default_factory=list)
     problem_type: str | None = None
     topics: list[TopicRef]
     olympiads: list[OlympiadRef]
@@ -174,7 +174,7 @@ class CreateTaskRequest(BaseModel):
     difficulty: int | None = Field(default=None, ge=1, le=10)
     subject: Literal["math", "physics"] | None = None
     grade: int | None = None
-    classifier: str | None = None
+    tags: list[str] = Field(default_factory=list)
     problem_type: str | None = None
     status: str = "draft"
     topics: list[uuid.UUID] = Field(default_factory=list)
@@ -195,7 +195,7 @@ class UpdateTaskRequest(BaseModel):
     difficulty: int | None = Field(default=None, ge=1, le=10)
     subject: Literal["math", "physics"] | None = None
     grade: int | None = None
-    classifier: str | None = None
+    tags: list[str] | None = None
     problem_type: str | None = None
     status: str | None = None
     solution_method_id: uuid.UUID | None = None

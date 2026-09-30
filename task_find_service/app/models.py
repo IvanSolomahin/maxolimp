@@ -142,7 +142,6 @@ class Task(Base):
     subject: Mapped[str | None] = mapped_column(Text)
     grade: Mapped[int | None] = mapped_column(SmallInteger)
     problem_type: Mapped[str | None] = mapped_column(Text)
-    classifier: Mapped[str | None] = mapped_column(Text)
     difficulty: Mapped[int | None] = mapped_column(SmallInteger)
     solution_method_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("solution_methods.id", ondelete="SET NULL")
@@ -157,8 +156,7 @@ class Task(Base):
     topic_search_vector = mapped_column(
         TSVECTOR,
         Computed(
-            "setweight(to_tsvector('russian', coalesce(classifier, '')), 'A') "
-            "|| setweight(to_tsvector('russian', coalesce(title, '')), 'A') "
+            "setweight(to_tsvector('russian', coalesce(title, '')), 'A') "
             "|| setweight(to_tsvector('russian', coalesce(statement, '')), 'B')",
             persisted=True,
         ),
@@ -169,10 +167,28 @@ class Task(Base):
     solution_method: Mapped[SolutionMethod | None] = relationship("SolutionMethod")
     olympiad: Mapped[Olympiad | None] = relationship("Olympiad")
     task_topics: Mapped[list["TaskTopic"]] = relationship("TaskTopic", back_populates="task")
+    task_classifier_tags: Mapped[list["TaskClassifierTag"]] = relationship("TaskClassifierTag", back_populates="task", lazy="selectin")
     solutions: Mapped[list["Solution"]] = relationship("Solution", back_populates="task")
     hints: Mapped[list["Hint"]] = relationship("Hint", back_populates="task")
     sources: Mapped[list["TaskSource"]] = relationship("TaskSource", back_populates="task")
     embeddings: Mapped[list["TaskEmbedding"]] = relationship("TaskEmbedding", back_populates="task")
+
+
+class ClassifierTag(Base):
+    __tablename__ = "classifier_tags"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+
+
+class TaskClassifierTag(Base):
+    __tablename__ = "task_classifier_tags"
+    __table_args__ = (Index("task_classifier_tags_tag_id_idx", "tag_id", "task_id"),)
+
+    task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True)
+    tag_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("classifier_tags.id", ondelete="CASCADE"), primary_key=True)
+    task: Mapped[Task] = relationship("Task", back_populates="task_classifier_tags")
+    tag: Mapped[ClassifierTag] = relationship("ClassifierTag", lazy="joined")
 
 
 class TaskSource(Base):
