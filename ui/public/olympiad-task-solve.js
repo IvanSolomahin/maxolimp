@@ -12,7 +12,6 @@ const els = {
   solutionCard: document.getElementById('solution-card'),
   hintToggle: document.getElementById('hint-toggle'),
   nextButton: document.getElementById('next-button'),
-  markSolved: document.getElementById('mark-solved'),
 };
 
 // === Проверка решения нейросетью ===
@@ -86,11 +85,6 @@ async function render() {
   els.feedback.hidden = true;
   els.hintToggle.hidden = true;
   document.getElementById('hint-text').hidden = true;
-  if (els.markSolved) {
-    els.markSolved.hidden = false;
-    els.markSolved.disabled = false;
-    els.markSolved.textContent = 'Отметить решённой';
-  }
   resetCheckUi();
   solved = false;
   task = null;
@@ -123,7 +117,7 @@ async function submitAnswer() {
   const submitted = task;
   els.answerInput.disabled = true;
   els.checkButton.disabled = true;
-  showError('Ответ отправлен. Сверьте его с эталоном и решите, отмечать ли задачу.');
+  showError('Ответ отправлен. Сверьте его с эталоном.');
   const answer = document.getElementById('reference-answer');
   const solution = document.getElementById('reference-solution');
   answer.textContent = submitted.answer || '';
@@ -133,11 +127,6 @@ async function submitAnswer() {
   solution.textContent = '';
   solution.previousElementSibling.hidden = !submitted.has_solution;
   solution.hidden = !submitted.has_solution;
-  if (els.markSolved) {
-    els.markSolved.hidden = false;
-    els.markSolved.disabled = solved;
-    els.markSolved.textContent = solved ? 'Задача решена' : 'Отметить решённой';
-  }
   els.solutionCard.hidden = false;
   if (submitted.has_solution) {
     solution.textContent = 'Загрузка решения…';
@@ -208,9 +197,6 @@ async function submitSolutionForCheck() {
     checkResult.textContent = data.result || 'Разбор не получен.';
     checkResult.hidden = false;
 
-    // Ручную кнопку отметки убираем — решение проверено нейросетью
-    if (els.markSolved) els.markSolved.hidden = true;
-
     const verdict = data.verdict === 0 ? 0 : 1;
 
     if (verdict === 0) {
@@ -230,26 +216,6 @@ async function submitSolutionForCheck() {
 
 els.checkButton.addEventListener('click', submitAnswer);
 els.answerInput.addEventListener('keydown', event => { if (event.key === 'Enter') submitAnswer(); });
-
-if (els.markSolved) {
-  els.markSolved.addEventListener('click', async () => {
-    if (!task || els.solutionCard.hidden) return;
-    els.markSolved.disabled = true;
-    try {
-      const response = await fetch(`/api/progress/tasks/${encodeURIComponent(task.id)}/solved`, {method:'POST'});
-      if (response.status === 401) {
-        location.href = `./olympiad-auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
-        return;
-      }
-      if (!response.ok) throw new Error();
-      solved = true;
-      els.markSolved.textContent = 'Задача решена';
-    } catch {
-      els.markSolved.disabled = false;
-      showError('Не удалось сохранить решение. Попробуйте ещё раз.');
-    }
-  });
-}
 
 if (checkSolutionBtn) {
   checkSolutionBtn.addEventListener('click', submitSolutionForCheck);
