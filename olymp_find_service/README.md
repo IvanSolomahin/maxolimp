@@ -24,7 +24,7 @@
 | `sql/remove_favorites.sql` | Удаление старой таблицы избранного из существующей БД без изменения каталога. |
 | `sql/add_confirmed_subject_links.sql` | Добавление подтверждённых связей предметов с олимпиадами без удаления существующих строк. |
 | `import_workbook.py` | Проверка книги Excel и генерация SQL-файла seed. |
-| `extract_openapi.py` | Генерация `openapi.json` и `openapi.yaml` из приложения; YAML-генератор использует PyYAML. |
+| `extract_openapi.py` | Обновление корневого снимка `olymp-openapi.json` или проверка его актуальности с `--check`. |
 | `main.py` | Экспорт объекта FastAPI для запуска `uvicorn main:app` из каталога сервиса. |
 | `requirements.txt` | Python-зависимости сервиса. |
 | `Dockerfile` | Сборка API-контейнера; запускает Uvicorn на порту контейнера `8000`. |

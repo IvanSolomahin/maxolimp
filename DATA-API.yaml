@@ -9,36 +9,39 @@ solution:
 
 base_url: "https://gazprompt.duckdns.org"
 
+# Пути ниже — внешние URL через Nginx. Внутренние пути FastAPI и полные
+# контракты сервисов находятся в tasks-openapi.json и olymp-openapi.json.
+
 # Перечень обязательных проверок — методы, относящиеся к основной функциональности.
 required_checks:
   - id: "tasks_list"
     description: "Получение списка олимпиадных задач с фильтрацией и пагинацией"
     method: "GET"
-    path: "/tasks"
+    path: "/api/tasks/tasks"
     required: true
 
   - id: "task_detail"
     description: "Получение детальной информации о задаче по её идентификатору"
     method: "GET"
-    path: "/tasks/{task_id}"
+    path: "/api/tasks/tasks/{task_id}"
     required: true
 
   - id: "olympiads_list"
     description: "Получение списка олимпиад"
     method: "GET"
-    path: "/olympiads"
+    path: "/api/tasks/olympiads"
     required: true
 
   - id: "clubs_list"
     description: "Получение списка офлайн кружков в городе"
     method: "GET"
-    path: "/communities/clubs"
+    path: "/api/olympiads/communities/clubs"
     required: false
 
   - id: "progress_stats"
     description: "Статистика прогресса пользователя за период"
     method: "GET"
-    path: "/progress/statistics"
+    path: "/api/progress/statistics"
     required: false
 
 # Описание эндпоинтов (пункты 4-9)
@@ -46,7 +49,7 @@ endpoints:
   - id: "tasks_list"
     description: "Получение списка олимпиадных задач с фильтрацией и пагинацией"
     method: "GET"
-    path: "/tasks"
+    path: "/api/tasks/tasks"
     auth: "anonymous"
     required: true
     parameters:
@@ -129,9 +132,9 @@ endpoints:
           item_properties:
             id: "uuid"
             title: "string"
-            difficulty: "integer"
+            difficulty: "integer|null"
             solution_method:
-              type: "object"
+              type: "object|null"
               properties:
                 id: "uuid"
                 name: "string"
@@ -140,13 +143,13 @@ endpoints:
             number: "string|null"
             olympiad: "string|null"
             olympiad_short_name: "string|null"
-            score: "number"
-            rank: "number"
+            score: "number|null"
+            rank: "number|null"
 
   - id: "task_detail"
     description: "Получение детальной информации о задаче по её идентификатору"
     method: "GET"
-    path: "/tasks/{task_id}"
+    path: "/api/tasks/tasks/{task_id}"
     auth: "anonymous"
     required: true
     parameters:
@@ -179,9 +182,9 @@ endpoints:
         title: "string"
         statement: "string"
         answer: "string|null"
-        difficulty: "integer"
+        difficulty: "integer|null"
         subject: "string|null"
-        grade: "integer"
+        grade: "integer|null"
         tags:
           type: "array"
           items: "string"
@@ -199,7 +202,7 @@ endpoints:
             name: "string"
             short_name: "string|null"
         solution_method:
-          type: "object"
+          type: "object|null"
           properties:
             id: "uuid"
             name: "string"
@@ -211,8 +214,8 @@ endpoints:
             external_id: "string|null"
             url: "string|null"
             subject: "string|null"
-            grade: "integer"
-            year: "integer"
+            grade: "integer|null"
+            year: "integer|null"
             stage: "string|null"
             number: "string|null"
         has_solution: "boolean"
@@ -221,7 +224,7 @@ endpoints:
   - id: "olympiads_list"
     description: "Получение списка олимпиад"
     method: "GET"
-    path: "/olympiads"
+    path: "/api/tasks/olympiads"
     auth: "anonymous"
     required: true
     parameters:
@@ -250,7 +253,7 @@ endpoints:
   - id: "clubs_list"
     description: "Получение списка офлайн кружков в городе"
     method: "GET"
-    path: "/communities/clubs"
+    path: "/api/olympiads/communities/clubs"
     auth: "anonymous"
     required: false
     parameters:
@@ -293,8 +296,8 @@ endpoints:
   - id: "progress_stats"
     description: "Статистика прогресса пользователя за период"
     method: "GET"
-    path: "/progress/statistics"
-    auth: "anonymous"
+    path: "/api/progress/statistics"
+    auth: "session_cookie"
     required: false
     parameters:
       query:
@@ -313,7 +316,7 @@ endpoints:
       path: []
       headers: []
       body: null
-    expected_status: [200, 422]
+    expected_status: [200, 401, 422]
     response_format:
       content_type: "application/json"
       schema: "unspecified"
