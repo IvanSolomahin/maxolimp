@@ -23,7 +23,7 @@ let openedTask = null;
 let taskAlreadySolved = false;
 
 function loginUrl() {
-  return `./olympiad-auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+  return `/olympiad-auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
 }
 
 async function getJson(path, signal) {
