@@ -107,6 +107,46 @@ async function loadTasks(append = false) {
   }
 }
 
+async function showReferenceSolution() {
+  if (!openedTask) return;
+  const id = openedTask.id;
+  const current = detailRequestId;
+
+  $('#detail-solution-section').hidden = false;
+  $('#detail-solution-title').textContent =
+    openedTask.answer?.trim() || openedTask.has_solution
+      ? 'Эталонные материалы'
+      : 'Отметка о решении';
+
+  $('#detail-answer').hidden = !openedTask.answer?.trim();
+  if (openedTask.answer?.trim()) {
+    taskMath.renderMathText($('#detail-answer-text'), openedTask.answer);
+  }
+
+  const solutionText = $('#detail-solution');
+  if (!openedTask.has_solution) {
+    solutionText.textContent = '';
+    solutionText.hidden = true;
+    return;
+  }
+
+  solutionText.hidden = false;
+  solutionText.textContent = 'Загрузка решения…';
+  try {
+    const data = await getJson(`/tasks/${encodeURIComponent(id)}/solutions`);
+    if (current !== detailRequestId) return;
+    const solution = data.items?.find(item => item.is_verified || !item.is_generated);
+    taskMath.renderMathText(
+      solutionText,
+      solution?.content?.trim() || 'Решение пока не добавлено.'
+    );
+  } catch {
+    if (current === detailRequestId) {
+      solutionText.textContent = 'Не удалось загрузить решение.';
+    }
+  }
+}
+
 async function openTask(id) {
   const current = ++detailRequestId;
   openedTask = null;
@@ -128,6 +168,12 @@ async function openTask(id) {
   $('#detail-feedback').hidden = true;
   $('#detail-mark-solved').disabled = false;
   $('#detail-mark-solved').textContent = 'Отметить решённой';
+  $('#detail-mark-solved').hidden = false;
+  $('#solution-check-result').hidden = true;
+  $('#solution-check-result').textContent = '';
+  $('#solution-check-status').hidden = true;
+  $('#solution-check-status').textContent = '';
+solutionFileInput.value = '';
   try {
     const task = await getJson(`/tasks/${encodeURIComponent(id)}`);
     if (current !== detailRequestId || location.pathname !== taskUrl) return;
@@ -167,29 +213,34 @@ async function revealOpenedTask() {
   $('#detail-submit-answer').disabled = true;
   $('#detail-feedback').textContent = 'Ответ отправлен. Сверьте его с эталоном и решите, отмечать ли задачу.';
   $('#detail-feedback').hidden = false;
-  $('#detail-solution-section').hidden = false;
-  $('#detail-solution-title').textContent = openedTask.answer?.trim() || openedTask.has_solution ? 'Эталонные материалы' : 'Отметка о решении';
-  $('#detail-answer').hidden = !openedTask.answer?.trim();
-  if (openedTask.answer?.trim()) taskMath.renderMathText($('#detail-answer-text'), openedTask.answer);
   $('#detail-mark-solved').disabled = taskAlreadySolved;
   $('#detail-mark-solved').textContent = taskAlreadySolved ? 'Задача решена' : 'Отметить решённой';
-  const solutionText = $('#detail-solution');
-  if (!openedTask.has_solution) {
-    solutionText.textContent = '';
-    solutionText.hidden = true;
-    return;
-  }
-  solutionText.hidden = false;
-  solutionText.textContent = 'Загрузка решения…';
+  await showReferenceSolution();
+}
+
+async function saveSolvedProgress(taskId) {
   try {
-    const data = await getJson(`/tasks/${encodeURIComponent(id)}/solutions`);
-    if (current !== detailRequestId) return;
-    const solution = data.items?.find(item => item.is_verified || !item.is_generated);
-    taskMath.renderMathText(solutionText, solution?.content?.trim() || 'Решение пока не добавлено.');
+    let response = await fetch(
+      `/api/progress/tasks/${encodeURIComponent(taskId)}/solved`,
+      { method: 'POST' }
+    );
+    if (response.status === 401) {
+      await window.maxUserReady;
+      response = await fetch(
+        `/api/progress/tasks/${encodeURIComponent(taskId)}/solved`,
+        { method: 'POST' }
+      );
+    }
+    if (response.ok) {
+      taskAlreadySolved = true;
+      return true;
+    }
+    return false;
   } catch {
-    if (current === detailRequestId) solutionText.textContent = 'Не удалось загрузить решение.';
+    return false;
   }
 }
+
 
 $('#detail-submit-answer').addEventListener('click', revealOpenedTask);
 $('#detail-user-answer').addEventListener('keydown', event => {
@@ -253,12 +304,9 @@ const solutionCheckStatus = $('#solution-check-status');
 const solutionCheckResult = $('#solution-check-result');
 
 checkSolutionButton.addEventListener('click', async () => {
-  if (!openedTask) {
-    return;
-  }
+  if (!openedTask) return;
 
   const file = solutionFileInput.files?.[0];
-
   if (!file) {
     solutionCheckStatus.textContent = 'Сначала загрузите файл с решением.';
     solutionCheckStatus.hidden = false;
@@ -274,40 +322,68 @@ checkSolutionButton.addEventListener('click', async () => {
   solutionCheckResult.hidden = true;
   solutionCheckResult.textContent = '';
 
+  const taskId = openedTask.id;
+
   try {
-    const response = await fetch(
-      `${api}/tasks/${encodeURIComponent(openedTask.id)}/check`,
-      {
-        method: 'POST',
-        body: formData,
-      }
+    let response = await fetch(
+      `${api}/tasks/${encodeURIComponent(taskId)}/check`,
+      { method: 'POST', body: formData }
     );
 
+    // При 401 пробуем после maxUserReady, как в остальном коде
+    if (response.status === 401) {
+      await window.maxUserReady;
+      response = await fetch(
+        `${api}/tasks/${encodeURIComponent(taskId)}/check`,
+        { method: 'POST', body: formData }
+      );
+      if (response.status === 401) {
+        location.href = loginUrl();
+        return;
+      }
+    }
+
     const responseText = await response.text();
-
     let data = {};
-
     try {
       data = responseText ? JSON.parse(responseText) : {};
     } catch {
-    throw new Error(
-      `Backend вернул не JSON (${response.status}): ${responseText.slice(0, 300)}`
-    );
-  }
+      throw new Error(
+        `Backend вернул не JSON (${response.status}): ${responseText.slice(0, 300)}`
+      );
+    }
+    if (!response.ok) {
+      throw new Error(data.detail || `HTTP ${response.status}`);
+    }
 
-  if (!response.ok) {
-    throw new Error(data.detail || `HTTP ${response.status}`);
-  }
-
+    // Показываем разбор от нейросети
     solutionCheckStatus.textContent = 'Проверка завершена.';
     solutionCheckResult.innerHTML = formatCheckResult(
       data.result || 'Результат проверки отсутствует.'
     );
-    solutionCheckResult.textContent = data.result || 'Результат проверки отсутствует.';
     solutionCheckResult.hidden = false;
+
+    // Ручную кнопку отметки убираем — решение проверено нейросетью
+    const manualButton = $('#detail-mark-solved');
+    manualButton.hidden = true;
+
+    const verdict = data.verdict === 0 ? 0 : 1;
+
+    if (verdict === 0) {
+      // Задача зачтена — автосохраняем прогресс и показываем эталон
+      await saveSolvedProgress(taskId);
+      await showReferenceSolution();
+      $('#detail-feedback').textContent = 'Задача зачтена. Прогресс сохранён.';
+      $('#detail-feedback').hidden = false;
+    } else {
+      // Не зачтена — эталон всё равно показываем, чтобы ученик мог сверить
+      await showReferenceSolution();
+      $('#detail-feedback').textContent =
+        'Решение не зачтено. Сверьтесь с эталоном и попробуйте ещё раз.';
+      $('#detail-feedback').hidden = false;
+    }
   } catch (error) {
-    solutionCheckStatus.textContent =
-      `Ошибка проверки: ${error.message}`;
+    solutionCheckStatus.textContent = `Ошибка проверки: ${error.message}`;
   } finally {
     checkSolutionButton.disabled = false;
   }

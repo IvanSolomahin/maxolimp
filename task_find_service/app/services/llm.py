@@ -1,5 +1,6 @@
 from gigachat import GigaChat
 from app.config import settings
+import json
 
 def generate_hint(statement: str, level: int) -> str:
     preview = statement.strip().replace("\n", " ")[:120]
@@ -18,7 +19,7 @@ def generate_solution(statement: str, style: str, steps: bool) -> str:
         f"Условие (фрагмент): «{preview}…»"
     )
 
-def check_solution(file_path: str, prompt: str) -> str:
+def check_solution(file_path: str, prompt: str) -> dict:
     with GigaChat(
         base_url="https://api.giga.chat/v1",
         credentials=settings.gigachat_credentials,
@@ -39,7 +40,38 @@ def check_solution(file_path: str, prompt: str) -> str:
                     }
                 ],
                 "temperature": 0.1,
+                "response_format": {
+                    "type": "json_schema",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "text": {
+                                "type": "string",
+                                "description": (
+                                    "Подробный разбор решения: вердикт, "
+                                    "правильные шаги, ошибки, как исправить, "
+                                    "итоговый правильный ответ."
+                                )
+                            },
+                            "verdict": {
+                                "type": "integer",
+                                "enum": [0, 1],
+                                "description": (
+                                    "0 — задача зачтена (решение и ответ верные), "
+                                    "1 — задача не зачтена (решение или ответ неверные)."
+                                )
+                            }
+                        },
+                        "required": ["text", "verdict"],
+                        "additionalProperties": False
+                    },
+                    "strict": True
+                }
             }
         )
 
-        return result.choices[0].message.content
+        content = result.choices[0].message.content
+        try:
+            return json.loads(content)
+        except (json.JSONDecodeError, TypeError):
+            return {"text": content or "", "verdict": 1}
