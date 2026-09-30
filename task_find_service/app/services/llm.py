@@ -23,7 +23,9 @@ def check_solution(file_path: str, prompt: str) -> dict:
     with GigaChat(
         base_url="https://api.giga.chat/v1",
         credentials=settings.gigachat_credentials,
-        scope=settings.gigachat_scope
+        scope=settings.gigachat_scope,
+        timeout=120,
+        verify_ssl_certs=False,
     ) as client:
         with open(file_path, "rb") as f:
             uploaded = client.upload_file(f, purpose="general")
