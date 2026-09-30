@@ -211,10 +211,8 @@ async function revealOpenedTask() {
   const current = detailRequestId;
   $('#detail-user-answer').disabled = true;
   $('#detail-submit-answer').disabled = true;
-  $('#detail-feedback').textContent = 'Ответ отправлен. Сверьте его с эталоном и решите, отмечать ли задачу.';
+  $('#detail-feedback').textContent = 'Ответ отправлен. Можете сверить его с эталоном. Загрузите свое решение ниже и система выдаст вердикт о проверке';
   $('#detail-feedback').hidden = false;
-  $('#detail-mark-solved').disabled = taskAlreadySolved;
-  $('#detail-mark-solved').textContent = taskAlreadySolved ? 'Задача решена' : 'Отметить решённой';
   await showReferenceSolution();
 }
 
@@ -363,9 +361,6 @@ checkSolutionButton.addEventListener('click', async () => {
     );
     solutionCheckResult.hidden = false;
 
-    // Ручную кнопку отметки убираем — решение проверено нейросетью
-    const manualButton = $('#detail-mark-solved');
-    manualButton.hidden = true;
 
     const verdict = data.verdict === 0 ? 0 : 1;
 
@@ -386,7 +381,7 @@ checkSolutionButton.addEventListener('click', async () => {
     solutionCheckStatus.textContent = `Ошибка проверки: ${error.message}`;
   } finally {
     checkSolutionButton.disabled = false;
-  }
+  }jn
 });
 
 function routeFromLocation() {
