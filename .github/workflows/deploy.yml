@@ -47,11 +47,17 @@ jobs:
           if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
             git merge --abort
           fi
-          if [[ -n "$(git status --porcelain)" ]]; then
+          if ! git diff --quiet || ! git diff --cached --quiet; then
             git status --short
-            echo "Deployment checkout has uncommitted changes; refusing to overwrite them" >&2
+            echo "Deployment checkout has tracked changes; refusing to overwrite them" >&2
             exit 1
           fi
+          while IFS= read -r -d '' path; do
+            case "$path" in
+              docs/images/*) ;;
+              *) echo "Unexpected untracked file: $path" >&2; exit 1 ;;
+            esac
+          done < <(git ls-files --others --exclude-standard -z)
           previous_commit="$(git rev-parse HEAD)"
           git fetch origin main
           git merge --no-edit -X theirs origin/main
