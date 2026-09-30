@@ -176,7 +176,6 @@ endpoints:
         - "solution_method"
         - "source"
         - "has_solution"
-        - "hints_count"
       properties:
         id: "uuid"
         title: "string"
@@ -219,7 +218,6 @@ endpoints:
             stage: "string|null"
             number: "string|null"
         has_solution: "boolean"
-        hints_count: "integer"
 
   - id: "olympiads_list"
     description: "Получение списка олимпиад"

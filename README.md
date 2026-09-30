@@ -32,7 +32,7 @@ Compose задаёт сервисам внутренние адреса друг
    | `OLYMP_DB_USER`, `OLYMP_DB_PASSWORD`, `OLYMP_DB_NAME` | База каталога. |
    | `MAX_BOT_TOKEN` | Бот MAX и проверка данных входа в мини-приложение. |
    | `AITUNNEL_API_KEY`, `EMBEDDING_MODEL`, `EMBEDDING_DIMENSION` | Семантический поиск и создание векторов задач. Модель и размерность должны соответствовать уже сохранённым векторам. |
-   | `GIGACHAT_CREDENTIALS`, `GIGACHAT_SCOPE` | Проверка и генерация решений через GigaChat. |
+   | `GIGACHAT_CREDENTIALS`, `GIGACHAT_SCOPE` | Проверка решений через GigaChat. |
    | `FRONTEND_PORT` | Необязательный HTTP-порт на сервере; по умолчанию `8080`. HTTPS занимает `443`. |
    | `FRONTEND_URL`, `MAX_WEBHOOK_SECRET` | Передаются в `task-app`; текущий код не использует их для настройки домена Nginx или регистрации webhook. |
 
@@ -92,7 +92,7 @@ docker compose exec -T olymp-db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USE
 docker compose up -d --build
 ```
 
-Push в `main` запускает `.github/workflows/deploy.yml`: он подключается к серверу по SSH, обновляет чистый checkout ветки `main` и вызывает `scripts/deploy.sh`. Для workflow нужны GitHub Secrets `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`, `DEPLOY_PATH`; `SSH_PORT` необязателен. Скрипт пересобирает изменённые сервисы, а изменения в `ui/public/` видны через подключённый том без перезапуска. Изменения документации и SQL-файлов сами по себе не применяют миграции к существующим базам.
+Push в `main` запускает `.github/workflows/deploy.yml`: он подключается к серверу по SSH, обновляет чистый checkout ветки `main` и вызывает `scripts/deploy.sh`. Для workflow нужны GitHub Secrets `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`, `DEPLOY_PATH`; `SSH_PORT` необязателен. Скрипт пересобирает изменённые сервисы, а изменения в `ui/public/` видны через подключённый том без перезапуска. При изменении сервиса задач скрипт также применяет `remove_stub_generation.sql` к существующей БД; остальные SQL-файлы по-прежнему требуют отдельного применения.
 
 ## Дополнительная документация
 

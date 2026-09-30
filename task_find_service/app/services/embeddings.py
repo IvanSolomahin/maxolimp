@@ -43,7 +43,7 @@ async def compute_and_store_task_embedding(session: AsyncSession, task_id: uuid.
     if task is None:
         return
     result = await session.execute(
-        text("SELECT content FROM solutions WHERE task_id = :id AND NOT is_generated ORDER BY created_at LIMIT 1"),
+        text("SELECT content FROM solutions WHERE task_id = :id ORDER BY created_at LIMIT 1"),
         {"id": task_id},
     )
     solution = result.scalar_one_or_none() or ""

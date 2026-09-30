@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db import SessionLocal, get_db
-from app.models import ClassifierTag, Hint, Solution, Task, TaskClassifierTag, TaskTopic, TaskEmbedding
+from app.models import ClassifierTag, Solution, Task, TaskClassifierTag, TaskTopic, TaskEmbedding
 from app.services.classifier_tags import replace_task_tags
 from app.config import settings
 from app.schemas import (
@@ -16,10 +16,7 @@ from app.schemas import (
     AssignTopicsRequest,
     CreateTaskRequest,
     CreateTaskResponse,
-    GenerateSolutionRequest,
-    GenerateSolutionResponse,
     EmbeddingQueuedResponse,
-    HintResponse,
     PaginatedTasks,
     SetDifficultyRequest,
     SetDifficultyResponse,
@@ -36,7 +33,7 @@ from app.schemas import (
     UpdateTaskRequest,
 )
 from app.services.embeddings import compute_and_store_task_embedding
-from app.services.llm import generate_hint, generate_solution, check_solution
+from app.services.llm import check_solution
 from app.services.search import (
     hybrid_search_tasks,
     keyword_search,
@@ -267,7 +264,6 @@ async def get_task(task_id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_d
             selectinload(Task.task_topics).selectinload(TaskTopic.topic),
             selectinload(Task.olympiad),
             selectinload(Task.solutions),
-            selectinload(Task.hints),
             selectinload(Task.sources),
         )
     )
@@ -307,8 +303,7 @@ async def get_task(task_id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_d
             stage=task.source_stage,
             number=task.source_problem_number,
         ),
-        has_solution=any(s.is_verified or not s.is_generated for s in task.solutions),
-        hints_count=len(task.hints),
+        has_solution=bool(task.solutions),
     )
 
 
@@ -376,59 +371,6 @@ async def assign_solution_method(
     return StatusOk()
 
 
-@router.get("/tasks/{task_id}/hints", response_model=HintResponse)
-async def get_hint(
-    task_id: uuid.UUID,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    level: int = Query(1, ge=1),
-):
-    task = await db.get(Task, task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    result = await db.execute(
-        select(Hint).where(Hint.task_id == task_id, Hint.level == level)
-    )
-    hint = result.scalar_one_or_none()
-    if hint:
-        return HintResponse(
-            task_id=task_id,
-            level=level,
-            content=hint.content,
-            is_verified=hint.is_verified,
-            cached=True,
-        )
-
-    content = generate_hint(task.statement, level)
-    hint = Hint(task_id=task_id, level=level, content=content, is_verified=False)
-    db.add(hint)
-    await db.commit()
-    return HintResponse(
-        task_id=task_id,
-        level=level,
-        content=content,
-        is_verified=False,
-        cached=False,
-    )
-
-
-@router.post("/tasks/{task_id}/hints/{level}/verify", response_model=StatusOk)
-async def verify_hint(
-    task_id: uuid.UUID,
-    level: int,
-    db: Annotated[AsyncSession, Depends(get_db)],
-):
-    result = await db.execute(
-        select(Hint).where(Hint.task_id == task_id, Hint.level == level)
-    )
-    hint = result.scalar_one_or_none()
-    if hint is None:
-        raise HTTPException(status_code=404, detail="Hint not found")
-    hint.is_verified = True
-    await db.commit()
-    return StatusOk()
-
-
 @router.get("/tasks/{task_id}/solutions", response_model=SolutionsResponse)
 async def list_solutions(
     task_id: uuid.UUID,
@@ -443,29 +385,11 @@ async def list_solutions(
         SolutionItem(
             id=s.id,
             content=s.content,
-            is_generated=s.is_generated,
             is_verified=s.is_verified,
         )
         for s in result.scalars().all()
     ]
     return SolutionsResponse(items=items)
-
-
-@router.post("/tasks/{task_id}/solutions/generate", response_model=GenerateSolutionResponse)
-async def generate_task_solution(
-    task_id: uuid.UUID,
-    body: GenerateSolutionRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-):
-    task = await db.get(Task, task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-    content = generate_solution(task.statement, body.style, body.steps)
-    sol = Solution(task_id=task_id, content=content, is_generated=True, is_verified=False)
-    db.add(sol)
-    await db.commit()
-    await db.refresh(sol)
-    return GenerateSolutionResponse(solution_id=sol.id, content=content)
 
 
 @router.post("/tasks", response_model=CreateTaskResponse)

@@ -118,7 +118,7 @@ async function showReferenceSolution() {
     try {
       const data = await getJson(`/tasks/${encodeURIComponent(submitted.id)}/solutions`);
       if (version !== renderVersion) return;
-      const item = data.items?.find(value => value.is_verified || !value.is_generated);
+      const item = data.items?.find(value => value.is_verified) || data.items?.[0];
       solution.textContent = item?.content || 'Решение пока не добавлено.';
       if (item?.content) taskMath.renderMathText(solution, item.content);
     } catch {

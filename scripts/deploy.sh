@@ -68,3 +68,7 @@ fi
 echo "Updating: ${services[*]}"
 build_with_retries "${services[@]}"
 docker compose up -d --no-build --no-deps "${services[@]}"
+
+if [[ $task_changed == true ]]; then
+  docker compose exec -T task-db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < task_find_service/sql/remove_stub_generation.sql
+fi

@@ -157,7 +157,7 @@ async def hybrid_search_tasks(
                            CASE WHEN :mode IN ('topic', 'both') THEN ts_rank(t.topic_search_vector, plainto_tsquery('russian', :q)) ELSE 0 END,
                            CASE WHEN :mode IN ('solution', 'both') THEN COALESCE((
                                SELECT max(ts_rank(s.search_vector, plainto_tsquery('russian', :q)))
-                               FROM solutions s WHERE s.task_id = t.id AND NOT s.is_generated
+                               FROM solutions s WHERE s.task_id = t.id
                            ), 0) ELSE 0 END
                        ) DESC
                    ) AS rn
@@ -167,14 +167,14 @@ async def hybrid_search_tasks(
                     JOIN classifier_tags ct ON ct.id = tct.tag_id
                     WHERE tct.task_id = t.id AND to_tsvector('russian', ct.name) @@ plainto_tsquery('russian', :q))))
                 OR (:mode IN ('solution', 'both') AND EXISTS (
-                    SELECT 1 FROM solutions s WHERE s.task_id = t.id AND NOT s.is_generated
+                    SELECT 1 FROM solutions s WHERE s.task_id = t.id
                     AND s.search_vector @@ plainto_tsquery('russian', :q))))
               AND {_task_filters_sql("t")}
             ORDER BY GREATEST(
                 CASE WHEN :mode IN ('topic', 'both') THEN ts_rank(t.topic_search_vector, plainto_tsquery('russian', :q)) ELSE 0 END,
                 CASE WHEN :mode IN ('solution', 'both') THEN COALESCE((
                     SELECT max(ts_rank(s.search_vector, plainto_tsquery('russian', :q)))
-                    FROM solutions s WHERE s.task_id = t.id AND NOT s.is_generated
+                    FROM solutions s WHERE s.task_id = t.id
                 ), 0) ELSE 0 END
             ) DESC
             LIMIT 500

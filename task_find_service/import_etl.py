@@ -194,8 +194,8 @@ async def import_snapshot(path: Path, batch_size: int = 200) -> None:
                     """), refs)
                     if solutions:
                         await session.execute(text("""
-                            INSERT INTO solutions(id, task_id, content, is_generated, is_verified)
-                            VALUES (:id, :task_id, :content, false, false)
+                            INSERT INTO solutions(id, task_id, content, is_verified)
+                            VALUES (:id, :task_id, :content, false)
                             ON CONFLICT(id) DO UPDATE SET content = EXCLUDED.content
                         """), solutions)
                     if removed_solutions:

@@ -73,7 +73,6 @@ class TaskDetail(BaseModel):
     solution_method: SolutionMethodRef | None
     source: SourceInfo
     has_solution: bool
-    hints_count: int
 
 
 class SimilarTaskItem(BaseModel):
@@ -137,34 +136,14 @@ class OlympiadsResponse(BaseModel):
     items: list[OlympiadRef]
 
 
-class HintResponse(BaseModel):
-    task_id: uuid.UUID
-    level: int
-    content: str
-    is_verified: bool
-    cached: bool
-
-
 class SolutionItem(BaseModel):
     id: uuid.UUID
     content: str
-    is_generated: bool
     is_verified: bool
 
 
 class SolutionsResponse(BaseModel):
     items: list[SolutionItem]
-
-
-class GenerateSolutionRequest(BaseModel):
-    style: str = "olymp"
-    steps: bool = True
-
-
-class GenerateSolutionResponse(BaseModel):
-    solution_id: uuid.UUID
-    content: str
-    is_generated: bool = True
 
 
 class CreateTaskRequest(BaseModel):

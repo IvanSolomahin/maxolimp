@@ -169,7 +169,6 @@ class Task(Base):
     task_topics: Mapped[list["TaskTopic"]] = relationship("TaskTopic", back_populates="task")
     task_classifier_tags: Mapped[list["TaskClassifierTag"]] = relationship("TaskClassifierTag", back_populates="task", lazy="selectin")
     solutions: Mapped[list["Solution"]] = relationship("Solution", back_populates="task")
-    hints: Mapped[list["Hint"]] = relationship("Hint", back_populates="task")
     sources: Mapped[list["TaskSource"]] = relationship("TaskSource", back_populates="task")
     embeddings: Mapped[list["TaskEmbedding"]] = relationship("TaskEmbedding", back_populates="task")
 
@@ -243,25 +242,8 @@ class Solution(Base):
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     author: Mapped[str | None] = mapped_column(Text)
-    is_generated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     search_vector = mapped_column(TSVECTOR, Computed("to_tsvector('russian', content)", persisted=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     task: Mapped[Task] = relationship("Task", back_populates="solutions")
-
-
-class Hint(Base):
-    __tablename__ = "hints"
-    __table_args__ = (UniqueConstraint("task_id", "level", name="hints_task_level_unique"),)
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    task_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False
-    )
-    level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    task: Mapped[Task] = relationship("Task", back_populates="hints")

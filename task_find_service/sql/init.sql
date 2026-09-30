@@ -137,7 +137,6 @@ CREATE TABLE solutions (
     task_id UUID NOT NULL REFERENCES tasks (id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     author TEXT,
-    is_generated BOOLEAN NOT NULL DEFAULT false,
     is_verified BOOLEAN NOT NULL DEFAULT false,
     search_vector tsvector GENERATED ALWAYS AS (
         to_tsvector('russian', content)
@@ -147,16 +146,6 @@ CREATE TABLE solutions (
 
 CREATE INDEX solutions_task_id_idx ON solutions (task_id);
 CREATE INDEX solutions_search_vector_gin_idx ON solutions USING gin (search_vector);
-
-CREATE TABLE hints (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    task_id UUID NOT NULL REFERENCES tasks (id) ON DELETE CASCADE,
-    level SMALLINT NOT NULL,
-    content TEXT NOT NULL,
-    is_verified BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (task_id, level)
-);
 
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
