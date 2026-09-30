@@ -1,9 +1,3 @@
-from typing import Annotated
-
-from fastapi import Header
-
-from app.config import settings
-
 BENEFIT_ALIASES = {
     "bvi": "no entrance exams",
     "no entrance exams": "no entrance exams",
@@ -28,9 +22,3 @@ def normalize_benefit_type(value: str | None) -> str | None:
 
 def public_benefit_type(stored: str) -> str:
     return RESPONSE_BENEFIT_ALIASES.get(stored, stored)
-
-
-def current_user_id(
-    x_user_id: Annotated[int | None, Header()] = None,
-) -> int:
-    return x_user_id if x_user_id is not None else settings.default_user_id

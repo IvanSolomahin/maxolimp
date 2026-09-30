@@ -2,13 +2,12 @@ const api = '/api/olympiads';
 const $ = selector => document.querySelector(selector);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const storageKey = 'onboarding-live-v1';
-const favoritesKey = 'olympiad-favorites-local-v1';
+localStorage.removeItem('olympiad-favorites-local-v1');
 const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
 const state = {step:0, university:'', direction:'', ...saved};
 delete state.subject;
 if (state.step === 3) state.step = 2;
 const names = {university:new Map(), direction:new Map()};
-const favorites = new Set(JSON.parse(localStorage.getItem(favoritesKey) || '[]'));
 let activeBenefit = 'all';
 let recommendations = [];
 let requestId = 0;
@@ -88,7 +87,7 @@ function renderResults(total) {
   $('#results-list').innerHTML = recommendations.map(item => {
     return `
     <article class="olympiad-card">
-      <div class="card-head"><div><h2>${escapeHtml(item.name)}</h2></div><button class="icon-btn favorite" type="button" data-favorite="${item.id}" aria-label="${favorites.has(item.id) ? 'Убрать из избранного' : 'Добавить в избранное'}" aria-pressed="${favorites.has(item.id)}">♡</button></div>
+      <div class="card-head"><h2>${escapeHtml(item.name)}</h2></div>
       <div class="card-facts"><div class="fact-row"><span class="fact-label">Сложность</span><span class="fact-value">${item.complexity == null ? 'Не указана' : `${escapeHtml(item.complexity)}/5`}</span></div><div class="fact-row"><span class="fact-value">${escapeHtml(benefitLabel(item.benefit.type))}</span></div></div>
       <div class="card-foot"><p>Условия льготы уточняйте в правилах приёма вуза.</p><button class="places-btn" type="button" data-places="${item.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C9.5 4.5 6.5 4 3 5v14c3.5-1 6.5-.5 9 1.5m0-14C14.5 4.5 17.5 4 21 5v14c-3.5-1-6.5-.5-9 1.5m0-14v14"/></svg><span>Подходит для вашей программы</span></button></div>
     </article>`;
@@ -143,14 +142,6 @@ document.querySelectorAll('[data-benefit]').forEach(button => button.addEventLis
 }));
 $('#more-results').addEventListener('click', () => loadRecommendations(true));
 $('#results-list').addEventListener('click', async event => {
-  const favorite = event.target.closest('[data-favorite]');
-  if (favorite) {
-    const id = Number(favorite.dataset.favorite);
-    favorites.has(id) ? favorites.delete(id) : favorites.add(id);
-    localStorage.setItem(favoritesKey, JSON.stringify([...favorites]));
-    renderResults(Number($('#result-count').textContent.split(' ')[0]));
-    return;
-  }
   const places = event.target.closest('[data-places]');
   if (!places) return;
   const id = Number(places.dataset.places);

@@ -129,7 +129,7 @@ def build_sql(sheets):
         "ALTER TABLE olympiad ALTER COLUMN host_university_id DROP NOT NULL;",
         "ALTER TABLE olympiad ALTER COLUMN complexity DROP NOT NULL;",
         "ALTER TABLE olympiad ALTER COLUMN description DROP NOT NULL;",
-        "TRUNCATE favorite, benefit, stage, subject_olympiad, olympiad, subject, programs_universities, program, universities_cities, city, university RESTART IDENTITY CASCADE;",
+        "TRUNCATE benefit, stage, subject_olympiad, olympiad, subject, programs_universities, program, universities_cities, city, university RESTART IDENTITY CASCADE;",
     ]
     for sheet_no in ORDER:
         table, columns = COLUMNS[sheet_no]

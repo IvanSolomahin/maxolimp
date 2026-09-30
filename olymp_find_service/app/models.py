@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -127,19 +127,6 @@ class Benefit(Base):
     olympiad: Mapped[Olympiad] = relationship("Olympiad", back_populates="benefits")
     program: Mapped[Program] = relationship("Program")
     university: Mapped[University] = relationship("University")
-
-
-class Favorite(Base):
-    __tablename__ = "favorite"
-    __table_args__ = (UniqueConstraint("user_id", "olympiad_id", name="favorite_user_olympiad_pk"),)
-
-    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    olympiad_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("subject_olympiad.id", ondelete="CASCADE"), primary_key=True
-    )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    olympiad: Mapped[SubjectOlympiad] = relationship("SubjectOlympiad")
 
 
 class Club(Base):

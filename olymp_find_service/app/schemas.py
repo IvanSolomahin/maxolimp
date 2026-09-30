@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class SubjectRef(BaseModel):
@@ -109,27 +109,3 @@ class BenefitItem(BaseModel):
 
 class BenefitsResponse(BaseModel):
     items: list[BenefitItem]
-
-
-class FavoriteItem(BaseModel):
-    olympiad_id: int
-    name: str
-    subject: str | None
-    complexity: int | None
-    benefit_type: str | None
-
-
-class PaginatedFavorites(BaseModel):
-    total: int
-    page: int
-    size: int
-    items: list[FavoriteItem]
-
-
-class AddFavoriteRequest(BaseModel):
-    olympiad_id: int = Field(ge=1)
-
-
-class FavoriteMutationResponse(BaseModel):
-    success: bool = True
-    olympiad_id: int

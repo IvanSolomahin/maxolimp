@@ -5,7 +5,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+asyncpg://olymp:olymp@localhost:5433/olymp"
-    default_user_id: int = 1
     task_find_service_url: str = "http://task-app:8000"
 
 

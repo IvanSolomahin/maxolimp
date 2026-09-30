@@ -611,9 +611,6 @@ p {
 }
 
 .card-head {
-  display: grid;
-  grid-template-columns: 1fr 44px;
-  gap: var(--space-2);
   padding: var(--space-4) var(--space-4) var(--space-3);
 }
 
@@ -627,14 +624,6 @@ p {
   font-size: var(--text-lg);
   line-height: 1.25;
   letter-spacing: -0.01em;
-}
-
-.favorite {
-  align-self: start;
-}
-
-.favorite[aria-pressed="true"] svg {
-  fill: var(--fg);
 }
 
 .card-facts {
@@ -791,9 +780,6 @@ p {
   margin-top: 8px;
   font-size: 23px;
   line-height: 1.28;
-}
-.olympiad-card .favorite {
-  display: none;
 }
 .card-facts {
   display: flex;

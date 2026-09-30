@@ -70,10 +70,3 @@ CREATE TABLE benefit (
 
 CREATE INDEX benefit_olympiad_id_idx ON benefit (olympiad_id);
 CREATE INDEX benefit_university_program_idx ON benefit (university_id, program_id);
-
-CREATE TABLE favorite (
-    user_id INTEGER NOT NULL,
-    olympiad_id INTEGER NOT NULL REFERENCES subject_olympiad (id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (user_id, olympiad_id)
-);
