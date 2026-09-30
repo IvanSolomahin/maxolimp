@@ -243,7 +243,8 @@ $('#detail-user-answer').addEventListener('keydown', event => {
 });
 $('#task-share-max').addEventListener('click', () => {
     if (!openedTask) return;
-    const text = `Попробуй решить эту задачу:\n${location.href}`;
+    const taskLink = `https://max.ru/t92_hakaton_max_bot?startapp=task_${openedTask.id}`;
+    const text = `Попробуй решить эту задачу:\n${taskLink}`;
     const maxShareUrl = `https://max.ru/:share?text=${encodeURIComponent(text)}`;
     window.open(maxShareUrl, '_blank');
 });

@@ -1,5 +1,13 @@
 (function () {
   const ENDPOINT = '/api/max/validate';
+  const startParam = new URLSearchParams(location.search).get('WebAppStartParam')
+    || window.WebApp?.initDataUnsafe?.start_param;
+  const taskMatch = /^task_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.exec(startParam || '');
+  if (taskMatch && /^\/(?:olympiad-home\.html|olympiad-task-search\.html)?$/.test(location.pathname)) {
+    location.replace(`/tasks/${taskMatch[1]}${location.hash}`);
+    return;
+  }
+
   function getInitData() {
     return (window.WebApp && window.WebApp.initData) || '';
   }
