@@ -96,12 +96,25 @@
 
       .solution-file-wrap {
         display: flex;
-        align-items: center;
+        align-items: stretch;
+        flex-direction: column;
         gap: 14px;
         padding: 16px;
         border: 1px dashed #cfd4dc;
         border-radius: 14px;
         background: #fafbfc;
+      }
+
+      #detail-user-answer {
+        width: 100%;
+        min-height: 110px;
+        padding: 12px;
+        border: 1px solid #cfd4dc;
+        border-radius: 12px;
+        background: #fafbfc;
+        color: #20242a;
+        font: inherit;
+        resize: vertical;
       }
 
       #solution-file {
@@ -785,58 +798,23 @@
 
         </article>
 
-        <!-- ОТВЕТ ПОЛЬЗОВАТЕЛЯ -->
-
-        <section
-          class="task-solution"
-          id="detail-answer-form"
-        >
-
-          <label for="detail-user-answer">
-            Ваш ответ
-          </label>
-
-          <div class="detail-answer-row">
-
-            <input
-              id="detail-user-answer"
-              type="text"
-              autocomplete="off"
-              placeholder="Введите ответ"
-            />
-
-            <button
-              id="detail-submit-answer"
-              type="button"
-            >
-              Отправить
-            </button>
-
-          </div>
-
-          <p
-            id="detail-feedback"
-            role="status"
-            hidden
-          ></p>
-
-        </section>
-
-        <!-- ПРОВЕРКА РЕШЕНИЯ -->
-
         <section
           class="task-solution"
           id="detail-check-solution"
         >
 
           <h2>
-            Проверка решения
+            Проверка решения с ИИ
           </h2>
+          <p>Напишите решение, приложите фото или отправьте оба варианта.</p>
 
           <div class="solution-upload">
+            <label for="detail-user-answer">Ваше решение</label>
+            <textarea id="detail-user-answer" rows="5"
+              placeholder="Напишите ответ и ход решения"></textarea>
 
             <div class="solution-file-wrap">
-
+              <label for="solution-file">Фото или файл с решением</label>
               <input
                 id="solution-file"
                 type="file"
@@ -849,7 +827,7 @@
               id="detail-check-solution-button"
               type="button"
             >
-              Отправить на проверку
+              Проверить с ИИ
             </button>
 
           </div>
@@ -864,6 +842,7 @@
             id="solution-check-result"
             hidden
           ></div>
+          <p id="detail-feedback" role="status" hidden></p>
 
         </section>
 

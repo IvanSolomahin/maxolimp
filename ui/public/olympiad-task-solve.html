@@ -86,23 +86,21 @@
             </article>
 
             <div class="answer-block">
-              <label class="field-label" for="answer-input">Ваш ответ</label>
+              <label class="field-label" for="answer-input">Ваше решение</label>
               <p class="answer-note">
-                Отправьте свой вариант, чтобы открыть эталонный ответ и решение.
+                Напишите решение, приложите фото или отправьте оба варианта на проверку ИИ.
               </p>
-              <div class="answer-row">
-                <input
-                  class="answer-input"
-                  id="answer-input"
-                  type="text"
-                  placeholder="Введите ответ"
-                  autocomplete="off"
-                />
-                <button class="check-btn" id="check-button" type="button">
-                  Отправить
-                </button>
-              </div>
+              <textarea class="answer-input" id="answer-input" rows="4"
+                placeholder="Напишите ответ и ход решения"></textarea>
+              <label class="field-label file-label" for="solution-file">Фото или файл с решением</label>
+              <input class="answer-input file-input" id="solution-file" type="file"
+                accept=".jpg,.jpeg,.png,.webp,.pdf" />
+              <button class="check-btn submit-check" id="check-solution-button" type="button">
+                Проверить с ИИ
+              </button>
               <div class="feedback" id="feedback" hidden></div>
+              <p class="hint-text" id="solution-check-status" role="status" hidden></p>
+              <div class="hint-text" id="solution-check-result" hidden></div>
               <section class="solution-card" id="solution-card" hidden>
                 <p class="solution-label">Эталонный ответ</p>
                 <p id="reference-answer" class="reference-answer"></p>
@@ -110,33 +108,8 @@
                 <p id="reference-solution" class="hint-text"></p>
               </section>
 
-              <!-- ПРОВЕРКА РЕШЕНИЯ НЕЙРОСЕТЬЮ -->
-              <section class="solution-check" id="solution-check">
-                <p class="solution-label">Проверка решения</p>
-                <input
-                  class="answer-input"
-                  id="solution-file"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.webp,.pdf"
-                />
-                <button
-                  class="check-btn"
-                  id="check-solution-button"
-                  type="button"
-                >
-                  Отправить на проверку
-                </button>
-                <p class="hint-text" id="solution-check-status" hidden></p>
-                <div class="hint-text" id="solution-check-result" hidden></div>
-              </section>
             </div>
 
-            <div class="hint-block">
-              <button class="hint-toggle" id="hint-toggle" type="button">
-                Показать подсказку
-              </button>
-              <p class="hint-text" id="hint-text" hidden></p>
-            </div>
           </main>
 
           <div class="bottom-action">

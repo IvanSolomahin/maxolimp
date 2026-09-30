@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -571,25 +571,27 @@ async def set_difficulty(
 async def check_task_solution(
     task_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
+    answer_text: str | None = Form(None),
 ):
     task = await db.get(Task, task_id)
 
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="File is required")
+    answer_text = (answer_text or "").strip()
+    if not answer_text and (file is None or not file.filename):
+        raise HTTPException(status_code=400, detail="Введите решение или приложите файл")
 
     import os
     import tempfile
 
-    suffix = os.path.splitext(file.filename)[1].lower()
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-        content = await file.read()
-        temp_file.write(content)
-        temp_path = temp_file.name
+    temp_path = None
+    if file is not None and file.filename:
+        suffix = os.path.splitext(file.filename)[1].lower()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            temp_file.write(await file.read())
+            temp_path = temp_file.name
 
     try:
         prompt = f"""
@@ -598,7 +600,10 @@ async def check_task_solution(
 Условие задачи:
 {task.statement}
 
-Во вложенном файле находится решение ученика.
+Решение ученика текстом:
+{answer_text or '(текст не предоставлен)'}
+
+{('Во вложенном файле также находится решение ученика.' if temp_path else 'Вложенного файла нет.')}
 
 Проверь решение и верни ответ строго в формате JSON с двумя полями:
 
@@ -618,10 +623,11 @@ async def check_task_solution(
 
         return {
             "task_id": str(task_id),
-            "filename": file.filename,
+            "filename": file.filename if file is not None else None,
             "result": parsed.get("text", ""),
             "verdict": parsed.get("verdict", 1),
         }
 
     finally:
-        os.remove(temp_path)
+        if temp_path is not None:
+            os.remove(temp_path)

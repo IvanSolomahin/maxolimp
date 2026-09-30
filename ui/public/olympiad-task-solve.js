@@ -7,10 +7,8 @@ const els = {
   taskTitle: document.getElementById('task-title'),
   taskStatement: document.getElementById('task-statement'),
   answerInput: document.getElementById('answer-input'),
-  checkButton: document.getElementById('check-button'),
   feedback: document.getElementById('feedback'),
   solutionCard: document.getElementById('solution-card'),
-  hintToggle: document.getElementById('hint-toggle'),
   nextButton: document.getElementById('next-button'),
 };
 
@@ -23,7 +21,7 @@ const checkResult = document.getElementById('solution-check-result');
 let queue = [];
 let index = 0;
 let task = null;
-let solved = false;
+let renderVersion = 0;
 
 async function getJson(path) {
   const response = await fetch(`/api/tasks${path}`);
@@ -61,17 +59,14 @@ async function saveSolvedProgress(taskId) {
         { method: 'POST' }
       );
     }
-    if (response.ok) {
-      solved = true;
-      return true;
-    }
-    return false;
+    return response.ok;
   } catch {
     return false;
   }
 }
 
 async function render() {
+  const version = ++renderVersion;
   if (!queue.length) { showError('Задачи пока не найдены.'); return; }
   const current = queue[index];
   els.progressLabel.textContent = `Задание ${index + 1} из ${queue.length}`;
@@ -80,17 +75,15 @@ async function render() {
   els.taskTitle.textContent = 'Загрузка задачи…';
   els.answerInput.value = '';
   els.answerInput.disabled = true;
-  els.checkButton.disabled = true;
+  solutionFile.disabled = true;
+  checkSolutionBtn.disabled = true;
   els.solutionCard.hidden = true;
   els.feedback.hidden = true;
-  els.hintToggle.hidden = true;
-  document.getElementById('hint-text').hidden = true;
   resetCheckUi();
-  solved = false;
   task = null;
   try {
     const detail = await getJson(`/tasks/${encodeURIComponent(current.id)}`);
-    if (queue[index].id !== current.id) return;
+    if (version !== renderVersion) return;
     task = detail;
     els.taskTopic.textContent = detail.tags?.join(' · ') || detail.olympiads?.[0]?.name || 'Задача';
     els.taskDiff.textContent = detail.difficulty == null ? '' : `Сложность ${detail.difficulty} / 10`;
@@ -99,25 +92,17 @@ async function render() {
     taskMath.renderMathText(els.taskTitle, detail.title);
     taskMath.renderMathText(els.taskStatement, detail.statement);
     els.answerInput.disabled = false;
-    els.checkButton.disabled = false;
-    let response = await fetch(`/api/progress/tasks/${encodeURIComponent(detail.id)}`);
-    if (response.status === 401) {
-      await window.maxUserReady;
-      response = await fetch(`/api/progress/tasks/${encodeURIComponent(detail.id)}`);
-    }
-    if (response.ok) solved = (await response.json()).solved;
+    solutionFile.disabled = false;
+    checkSolutionBtn.disabled = false;
   } catch {
-    showError('Не удалось загрузить задачу. Попробуйте следующую.');
+    if (version === renderVersion) showError('Не удалось загрузить задачу. Попробуйте следующую.');
   }
 }
 
-async function submitAnswer() {
-  if (!task || !els.answerInput.value.trim() || els.checkButton.disabled) return;
-  els.answerInput.blur();
+async function showReferenceSolution() {
+  if (!task) return;
   const submitted = task;
-  els.answerInput.disabled = true;
-  els.checkButton.disabled = true;
-  showError('Ответ отправлен. Сверьте его с эталоном.');
+  const version = renderVersion;
   const answer = document.getElementById('reference-answer');
   const solution = document.getElementById('reference-solution');
   answer.textContent = submitted.answer || '';
@@ -127,42 +112,50 @@ async function submitAnswer() {
   solution.textContent = '';
   solution.previousElementSibling.hidden = !submitted.has_solution;
   solution.hidden = !submitted.has_solution;
-  els.solutionCard.hidden = false;
+  els.solutionCard.hidden = !submitted.answer && !submitted.has_solution;
   if (submitted.has_solution) {
     solution.textContent = 'Загрузка решения…';
     try {
       const data = await getJson(`/tasks/${encodeURIComponent(submitted.id)}/solutions`);
-      if (task?.id !== submitted.id) return;
+      if (version !== renderVersion) return;
       const item = data.items?.find(value => value.is_verified || !value.is_generated);
       solution.textContent = item?.content || 'Решение пока не добавлено.';
       if (item?.content) taskMath.renderMathText(solution, item.content);
     } catch {
-      solution.textContent = 'Не удалось загрузить решение.';
+      if (version === renderVersion) solution.textContent = 'Не удалось загрузить решение.';
     }
   }
 }
 
 // === Отправка решения на проверку нейросетью ===
 async function submitSolutionForCheck() {
-  if (!task) return;
+  if (!task || checkSolutionBtn.disabled) return;
 
   const file = solutionFile?.files?.[0];
-  if (!file) {
-    checkStatus.textContent = 'Сначала загрузите файл с решением.';
+  const answerText = els.answerInput.value.trim();
+  if (!file && !answerText) {
+    checkStatus.textContent = 'Напишите решение или приложите файл.';
     checkStatus.hidden = false;
     return;
   }
 
   const form = new FormData();
-  form.append('file', file);
+  if (file) form.append('file', file);
+  if (answerText) form.append('answer_text', answerText);
 
   checkSolutionBtn.disabled = true;
+  els.answerInput.disabled = true;
+  solutionFile.disabled = true;
+  els.answerInput.blur();
+  els.feedback.hidden = true;
+  els.solutionCard.hidden = true;
   checkStatus.textContent = 'Проверяем решение…';
   checkStatus.hidden = false;
   checkResult.hidden = true;
   checkResult.textContent = '';
 
   const taskId = task.id;
+  const version = renderVersion;
 
   try {
     let response = await fetch(
@@ -192,15 +185,19 @@ async function submitSolutionForCheck() {
       );
     }
     if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+    if (version !== renderVersion) return;
 
     checkStatus.textContent = 'Проверка завершена.';
     checkResult.textContent = data.result || 'Разбор не получен.';
     checkResult.hidden = false;
 
     const verdict = data.verdict === 0 ? 0 : 1;
+    await showReferenceSolution();
+    if (version !== renderVersion) return;
 
     if (verdict === 0) {
       const saved = await saveSolvedProgress(taskId);
+      if (version !== renderVersion) return;
       showError(saved
         ? 'Задача зачтена. Прогресс сохранён.'
         : 'Задача зачтена, но не удалось сохранить прогресс.');
@@ -208,18 +205,17 @@ async function submitSolutionForCheck() {
       showError('Решение не зачтено. Сверьтесь с эталоном и попробуйте ещё раз.');
     }
   } catch (error) {
-    checkStatus.textContent = `Ошибка проверки: ${error.message}`;
+    if (version === renderVersion) checkStatus.textContent = `Ошибка проверки: ${error.message}`;
   } finally {
-    checkSolutionBtn.disabled = false;
+    if (version === renderVersion) {
+      checkSolutionBtn.disabled = false;
+      els.answerInput.disabled = false;
+      solutionFile.disabled = false;
+    }
   }
 }
 
-els.checkButton.addEventListener('click', submitAnswer);
-els.answerInput.addEventListener('keydown', event => { if (event.key === 'Enter') submitAnswer(); });
-
-if (checkSolutionBtn) {
-  checkSolutionBtn.addEventListener('click', submitSolutionForCheck);
-}
+checkSolutionBtn.addEventListener('click', submitSolutionForCheck);
 
 els.nextButton.addEventListener('click', () => { if (queue.length) { index = (index + 1) % queue.length; render(); } });
 document.getElementById('back-button').addEventListener('click', () => history.back());

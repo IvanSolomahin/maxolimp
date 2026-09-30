@@ -1111,12 +1111,6 @@ dialog::backdrop {
     transform: translateY(0);
 }
 
-.detail-answer-row { display:flex; gap:10px; margin-top:10px; }
-.detail-answer-row input { flex:1; min-width:0; min-height:48px; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--fg); }
-.detail-answer-row input::placeholder { color:var(--muted); }
-.detail-answer-row button, #detail-mark-solved { min-height:48px; padding:10px 14px; border:0; border-radius:8px; background:var(--accent); color:var(--accent-on); font-weight:650; cursor:pointer; }
-#detail-mark-solved { margin-top:16px; }
-.detail-answer-row button:disabled, #detail-mark-solved:disabled { opacity:.6; cursor:default; }
 
 @media (max-width: 700px) {
   body.answer-input-focused olympiad-nav { display:none; }

@@ -20,7 +20,6 @@ let requestId = 0;
 let detailRequestId = 0;
 let debounce;
 let openedTask = null;
-let taskAlreadySolved = false;
 
 function loginUrl() {
   return `/olympiad-auth.html?next=${encodeURIComponent(location.pathname + location.search)}`;
@@ -112,11 +111,9 @@ async function showReferenceSolution() {
   const id = openedTask.id;
   const current = detailRequestId;
 
-  $('#detail-solution-section').hidden = false;
+  $('#detail-solution-section').hidden = !openedTask.answer?.trim() && !openedTask.has_solution;
   $('#detail-solution-title').textContent =
-    openedTask.answer?.trim() || openedTask.has_solution
-      ? 'Эталонные материалы'
-      : 'Отметка о решении';
+    'Эталонные материалы';
 
   $('#detail-answer').hidden = !openedTask.answer?.trim();
   if (openedTask.answer?.trim()) {
@@ -150,7 +147,6 @@ async function showReferenceSolution() {
 async function openTask(id) {
   const current = ++detailRequestId;
   openedTask = null;
-  taskAlreadySolved = false;
   const taskUrl = `/tasks/${encodeURIComponent(id)}`;
   if (location.pathname !== taskUrl) history.pushState({taskId: id}, '', taskUrl);
   showTaskPage();
@@ -161,20 +157,23 @@ async function openTask(id) {
   $('#detail-source').hidden = true;
   $('#detail-solution-section').hidden = true;
   $('#detail-answer').hidden = true;
-  $('#detail-answer-form').hidden = false;
   $('#detail-user-answer').value = '';
-  $('#detail-user-answer').disabled = false;
-  $('#detail-submit-answer').disabled = false;
+  $('#detail-user-answer').disabled = true;
+  solutionFileInput.disabled = true;
+  checkSolutionButton.disabled = true;
   $('#detail-feedback').hidden = true;
   $('#solution-check-result').hidden = true;
   $('#solution-check-result').textContent = '';
   $('#solution-check-status').hidden = true;
   $('#solution-check-status').textContent = '';
-solutionFileInput.value = '';
+  solutionFileInput.value = '';
   try {
     const task = await getJson(`/tasks/${encodeURIComponent(id)}`);
     if (current !== detailRequestId || location.pathname !== taskUrl) return;
     openedTask = task;
+    $('#detail-user-answer').disabled = false;
+    solutionFileInput.disabled = false;
+    checkSolutionButton.disabled = false;
     taskMath.renderMathText($('#detail-title'), task.title);
     taskMath.renderMathText($('#detail-statement'), task.statement || 'Условие не указано');
     $('#detail-statement').classList.remove('task-loading');
@@ -183,34 +182,12 @@ solutionFileInput.value = '';
       $('#detail-source').href = task.source.url;
       $('#detail-source').hidden = false;
     }
-    try {
-      let progress = await fetch(`/api/progress/tasks/${encodeURIComponent(id)}`);
-      if (progress.status === 401) {
-        await window.maxUserReady;
-        progress = await fetch(`/api/progress/tasks/${encodeURIComponent(id)}`);
-      }
-      if (current === detailRequestId && progress.ok) taskAlreadySolved = (await progress.json()).solved;
-    } catch {
-      // The task remains readable if the progress service is unavailable.
-    }
   } catch {
     if (current !== detailRequestId || location.pathname !== taskUrl) return;
     $('#detail-title').textContent = 'Не удалось загрузить задачу';
     $('#detail-statement').textContent = 'Закройте окно и попробуйте снова.';
     $('#detail-statement').classList.remove('task-loading');
   }
-}
-
-async function revealOpenedTask() {
-  if (!openedTask || !$('#detail-user-answer').value.trim()) return;
-  $('#detail-user-answer').blur();
-  const id = openedTask.id;
-  const current = detailRequestId;
-  $('#detail-user-answer').disabled = true;
-  $('#detail-submit-answer').disabled = true;
-  $('#detail-feedback').textContent = 'Ответ отправлен. Можете сверить его с эталоном. Загрузите свое решение ниже и система выдаст вердикт о проверке';
-  $('#detail-feedback').hidden = false;
-  await showReferenceSolution();
 }
 
 async function saveSolvedProgress(taskId) {
@@ -226,21 +203,13 @@ async function saveSolvedProgress(taskId) {
         { method: 'POST' }
       );
     }
-    if (response.ok) {
-      taskAlreadySolved = true;
-      return true;
-    }
-    return false;
+    return response.ok;
   } catch {
     return false;
   }
 }
 
 
-$('#detail-submit-answer').addEventListener('click', revealOpenedTask);
-$('#detail-user-answer').addEventListener('keydown', event => {
-  if (event.key === 'Enter') revealOpenedTask();
-});
 $('#task-share-max').addEventListener('click', () => {
     if (!openedTask) return;
     const taskLink = `https://max.ru/t92_hakaton_max_bot?startapp=task_${openedTask.id}`;
@@ -285,25 +254,33 @@ const solutionCheckStatus = $('#solution-check-status');
 const solutionCheckResult = $('#solution-check-result');
 
 checkSolutionButton.addEventListener('click', async () => {
-  if (!openedTask) return;
+  if (!openedTask || checkSolutionButton.disabled) return;
 
   const file = solutionFileInput.files?.[0];
-  if (!file) {
-    solutionCheckStatus.textContent = 'Сначала загрузите файл с решением.';
+  const answerText = $('#detail-user-answer').value.trim();
+  if (!file && !answerText) {
+    solutionCheckStatus.textContent = 'Напишите решение или приложите файл.';
     solutionCheckStatus.hidden = false;
     return;
   }
 
   const formData = new FormData();
-  formData.append('file', file);
+  if (file) formData.append('file', file);
+  if (answerText) formData.append('answer_text', answerText);
 
   checkSolutionButton.disabled = true;
+  $('#detail-user-answer').disabled = true;
+  solutionFileInput.disabled = true;
+  $('#detail-user-answer').blur();
+  $('#detail-feedback').hidden = true;
+  $('#detail-solution-section').hidden = true;
   solutionCheckStatus.textContent = 'Проверяем решение…';
   solutionCheckStatus.hidden = false;
   solutionCheckResult.hidden = true;
   solutionCheckResult.textContent = '';
 
   const taskId = openedTask.id;
+  const current = detailRequestId;
 
   try {
     let response = await fetch(
@@ -336,6 +313,7 @@ checkSolutionButton.addEventListener('click', async () => {
     if (!response.ok) {
       throw new Error(data.detail || `HTTP ${response.status}`);
     }
+    if (current !== detailRequestId) return;
 
     // Показываем разбор от нейросети
     solutionCheckStatus.textContent = 'Проверка завершена.';
@@ -347,24 +325,29 @@ checkSolutionButton.addEventListener('click', async () => {
 
     const verdict = data.verdict === 0 ? 0 : 1;
 
+    await showReferenceSolution();
+    if (current !== detailRequestId) return;
     if (verdict === 0) {
-      // Задача зачтена — автосохраняем прогресс и показываем эталон
-      await saveSolvedProgress(taskId);
-      await showReferenceSolution();
-      $('#detail-feedback').textContent = 'Задача зачтена. Прогресс сохранён.';
+      const saved = await saveSolvedProgress(taskId);
+      if (current !== detailRequestId) return;
+      $('#detail-feedback').textContent = saved
+        ? 'Задача зачтена. Прогресс сохранён.'
+        : 'Задача зачтена, но не удалось сохранить прогресс.';
       $('#detail-feedback').hidden = false;
     } else {
-      // Не зачтена — эталон всё равно показываем, чтобы ученик мог сверить
-      await showReferenceSolution();
       $('#detail-feedback').textContent =
         'Решение не зачтено. Сверьтесь с эталоном и попробуйте ещё раз.';
       $('#detail-feedback').hidden = false;
     }
   } catch (error) {
-    solutionCheckStatus.textContent = `Ошибка проверки: ${error.message}`;
+    if (current === detailRequestId) solutionCheckStatus.textContent = `Ошибка проверки: ${error.message}`;
   } finally {
-    checkSolutionButton.disabled = false;
-  }jn
+    if (current === detailRequestId) {
+      checkSolutionButton.disabled = false;
+      $('#detail-user-answer').disabled = false;
+      solutionFileInput.disabled = false;
+    }
+  }
 });
 
 function routeFromLocation() {

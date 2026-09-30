@@ -11,10 +11,6 @@
   --accent-on: #ffffff;
   --accent-hover: color-mix(in oklab, var(--accent), black 8%);
   --accent-active: color-mix(in oklab, var(--accent), black 14%);
-  --success: #168a46;
-  --success-bg: #eaf6ee;
-  --danger: #c53030;
-  --danger-bg: #fbeaea;
   --font-display: Inter, system-ui, sans-serif;
   --font-body: Inter, system-ui, sans-serif;
   --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
@@ -71,7 +67,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 button {
@@ -302,12 +299,9 @@ p {
   font-size: var(--text-sm);
   font-weight: 650;
 }
-.answer-row {
-  display: flex;
-  gap: var(--space-2);
-}
 .answer-input {
-  flex: 1 1 auto;
+  display: block;
+  width: 100%;
   min-width: 0;
   min-height: 48px;
   padding: 12px 14px;
@@ -316,6 +310,10 @@ p {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+textarea.answer-input { resize: vertical; }
+.file-label { margin-top: var(--space-4); }
+.file-input { padding: 10px; }
+.submit-check { width: 100%; margin-top: var(--space-4); }
 .answer-input::placeholder {
   color: var(--muted);
 }
@@ -355,15 +353,6 @@ p {
   font-size: var(--text-sm);
   font-weight: 650;
 }
-.feedback.correct {
-  background: var(--success-bg);
-  color: var(--success);
-}
-.feedback.incorrect {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
-
 .answer-note {
   margin: 0 0 10px;
   color: var(--muted);
@@ -387,37 +376,6 @@ p {
   margin-bottom: 14px;
   font-size: 22px;
   font-weight: 700;
-}
-.mark-solved {
-  width: 100%;
-  min-height: 44px;
-  margin-top: 14px;
-  border: 1px solid var(--fg);
-  border-radius: 10px;
-  background: #fff;
-  font-weight: 650;
-}
-.mark-solved:disabled {
-  border-color: #b7d98a;
-  background: #edf6e3;
-  color: #38600a;
-}
-.hint-block {
-  margin-top: var(--space-4);
-}
-.hint-toggle {
-  min-height: 44px;
-  padding: 0 var(--space-4);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
-  background: transparent;
-  color: var(--fg-2);
-  font-size: var(--text-sm);
-  font-weight: 650;
-}
-.hint-toggle:hover {
-  border-color: var(--fg-2);
-  background: var(--surface);
 }
 .hint-text {
   margin-top: var(--space-3);
