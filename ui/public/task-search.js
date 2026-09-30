@@ -166,9 +166,6 @@ async function openTask(id) {
   $('#detail-user-answer').disabled = false;
   $('#detail-submit-answer').disabled = false;
   $('#detail-feedback').hidden = true;
-  $('#detail-mark-solved').disabled = false;
-  $('#detail-mark-solved').textContent = 'Отметить решённой';
-  $('#detail-mark-solved').hidden = false;
   $('#solution-check-result').hidden = true;
   $('#solution-check-result').textContent = '';
   $('#solution-check-status').hidden = true;
@@ -249,21 +246,6 @@ $('#task-share-max').addEventListener('click', () => {
     const text = `Попробуй решить эту задачу:\n${location.href}`;
     const maxShareUrl = `https://max.ru/:share?text=${encodeURIComponent(text)}`;
     window.open(maxShareUrl, '_blank');
-});
-$('#detail-mark-solved').addEventListener('click', async () => {
-  if (!openedTask || $('#detail-solution-section').hidden) return;
-  const button = $('#detail-mark-solved');
-  button.disabled = true;
-  try {
-    const response = await fetch(`/api/progress/tasks/${encodeURIComponent(openedTask.id)}/solved`, {method:'POST'});
-    if (response.status === 401) { location.href = loginUrl(); return; }
-    if (!response.ok) throw new Error();
-    taskAlreadySolved = true;
-    button.textContent = 'Задача решена';
-  } catch {
-    button.disabled = false;
-    $('#detail-feedback').textContent = 'Не удалось сохранить решение. Попробуйте ещё раз.';
-  }
 });
 
 function showTaskPage() {
