@@ -3,6 +3,12 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      audit_fields:
+        description: Count values in candidate database fields (read only)
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-main
@@ -20,6 +26,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          AUDIT_FIELDS: ${{ inputs.audit_fields || false }}
         run: |
           set -euo pipefail
           : "${SSH_HOST:?SSH_HOST is required}"
@@ -39,7 +46,7 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$ssh_dir/known_hosts" \
             -p "$ssh_port" \
-            -- "$SSH_USER@$SSH_HOST" bash -s -- "$encoded_path" <<'REMOTE'
+            -- "$SSH_USER@$SSH_HOST" bash -s -- "$encoded_path" "$AUDIT_FIELDS" <<'REMOTE'
           set -euo pipefail
           deploy_path="$(printf '%s' "$1" | base64 --decode)"
           cd "$deploy_path"
@@ -63,4 +70,16 @@ jobs:
           git merge --no-edit -X theirs origin/main
           current_commit="$(git rev-parse HEAD)"
           bash scripts/deploy.sh "$previous_commit" "$current_commit"
+          if [[ "${2:-false}" == true ]]; then
+            docker compose exec -T task-db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+          BEGIN READ ONLY;
+          SELECT 'solutions.author' AS field, count(*) FILTER (WHERE author IS NOT NULL) AS populated FROM solutions
+          UNION ALL SELECT 'solution_methods.embedding metadata', count(*) FILTER (WHERE embedding IS NOT NULL OR embedding_model IS NOT NULL OR embedding_model_version IS NOT NULL) FROM solution_methods
+          UNION ALL SELECT 'topics.embedding metadata', count(*) FILTER (WHERE embedding IS NOT NULL OR embedding_model IS NOT NULL OR embedding_model_version IS NOT NULL) FROM topics
+          UNION ALL SELECT 'olympiads.embedding metadata', count(*) FILTER (WHERE embedding IS NOT NULL OR embedding_model IS NOT NULL OR embedding_model_version IS NOT NULL) FROM olympiads
+          UNION ALL SELECT 'task_topics.weight <> 1', count(*) FILTER (WHERE weight <> 1.0) FROM task_topics
+          UNION ALL SELECT 'task_sources.scraped_at', count(*) FILTER (WHERE scraped_at IS NOT NULL) FROM task_sources;
+          COMMIT;
+          SQL
+          fi
           REMOTE
