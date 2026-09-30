@@ -113,20 +113,4 @@ docker compose exec -T task-db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER
 
 `migrate_v9.sql` создаёт таблицы тегов классификатора. Если старый столбец `tasks.classifier` ещё существует, скрипт переносит его значения и удаляет столбец; при повторном запуске этот этап пропускается. Другие миграции преобразуют схему и данные олимпиад, задач, аккаунтов и прогресса; точные действия описаны внутри SQL-файлов.
 
-## Импорт ETL из SQLite
 
-Импорт выполняет upsert по UUID, устойчиво полученному из `subject + problem_id`, поэтому повторный запуск не должен создавать копии записей. SQLite открывается только для чтения. Исходный каталог `etl/` не входит в этот репозиторий: замените путь в примерах на путь к вашему снимку. Из каталога `task_find_service`, если PostgreSQL доступен на `localhost:5432`:
-
-```bash
-python import_etl.py --sqlite ../etl/olimpiads_data_v2/olimpiads.sqlite3
-```
-
-Параметр `--batch-size` задаёт размер пакета (по умолчанию `200`). Для импорта из одноразового контейнера Compose и монтирования исходной БД только для чтения:
-
-```bash
-docker compose run --rm \
-  -v "$(realpath etl/olimpiads_data_v2/olimpiads.sqlite3):/data/olimpiads.sqlite3:ro" \
-  task-app python import_etl.py --sqlite /data/olimpiads.sqlite3
-```
-
-Ожидаемые количества записей и контрольные SQL-запросы зависят от снимка ETL; сверяйте их с фактическим файлом импорта.
