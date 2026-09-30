@@ -48,6 +48,7 @@ jobs:
             git merge --abort
           fi
           if [[ -n "$(git status --porcelain)" ]]; then
+            git status --short
             echo "Deployment checkout has uncommitted changes; refusing to overwrite them" >&2
             exit 1
           fi
